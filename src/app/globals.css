@@ -121,3 +121,77 @@ body::after {
 .reveal-delay-2    { transition-delay:0.2s; }
 .reveal-delay-3    { transition-delay:0.3s; }
 .reveal-delay-4    { transition-delay:0.4s; }
+
+/* ── RESPONSIVE ── */
+
+/* Nav */
+@media (max-width: 768px) {
+  .nav-bar { padding: 16px 24px !important; }
+  .nav-links { display: none !important; }
+}
+
+/* Hero */
+@media (max-width: 768px) {
+  .hero-section { padding-bottom: 80px !important; }
+  .hero-stats { display: none !important; }
+  .hero-scroll-hint { display: none !important; }
+}
+
+/* Why grid */
+@media (max-width: 768px) {
+  .why-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Numbers grid */
+@media (max-width: 900px) {
+  .numbers-inner { grid-template-columns: repeat(2,1fr) !important; }
+  .numbers-item { border-left: none !important; }
+  .numbers-item:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+@media (max-width: 500px) {
+  .numbers-inner { grid-template-columns: 1fr !important; }
+  .numbers-item:nth-child(n+2) { border-top: 1px solid var(--border); }
+}
+
+/* How layout */
+@media (max-width: 900px) {
+  .how-layout { grid-template-columns: 1fr !important; }
+  .fan-demo-card { display: none !important; }
+}
+
+/* Tiers grid */
+@media (max-width: 768px) {
+  .tiers-layout { grid-template-columns: 1fr !important; }
+}
+
+/* Stats row (dashboard) */
+@media (max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(2,1fr) !important; }
+}
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr !important; }
+}
+
+/* Waitlist form */
+@media (max-width: 480px) {
+  .waitlist-row { flex-direction: column !important; }
+  .waitlist-row select {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.055) !important;
+    width: 100% !important;
+  }
+  .waitlist-row button { width: 100% !important; }
+}
+
+/* Apply page */
+@media (max-width: 768px) {
+  .apply-grid { grid-template-columns: 1fr !important; }
+  .apply-left {
+    position: static !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px !important;
+  }
+  .apply-right { padding: 32px 24px !important; }
+}

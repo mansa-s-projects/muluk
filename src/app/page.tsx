@@ -90,7 +90,7 @@ function WaitlistForm({ id }: { id: string }): React.JSX.Element {
       </div>
 
       {/* input row */}
-      <div style={{
+      <div className="waitlist-row" style={{
         display: "flex",
         border: `1px solid ${err ? "rgba(200,76,76,0.55)" : "rgba(255,255,255,0.10)"}`,
         borderRadius: "3px",
@@ -182,15 +182,17 @@ export default function Home() {
       <Cursor />
 
       {/* ══ NAV ══ */}
-      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: "28px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(to bottom, rgba(2,2,3,0.92) 0%, transparent 100%)" }}>
+      <nav className="nav-bar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: "28px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(to bottom, rgba(2,2,3,0.92) 0%, transparent 100%)" }}>
         <a href="#" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>CIPHER</a>
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
-          {[["#why","Why"],["#how","How it works"],["#tiers","Tiers"]].map(([href, label]) => (
-            <a key={href} href={href} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.12em", ...muted, textDecoration: "none", textTransform: "uppercase" as const, transition: "color 0.2s" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.92)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
-            >{label}</a>
-          ))}
+          <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: "32px" }}>
+            {[["#why","Why"],["#how","How it works"],["#tiers","Tiers"]].map(([href, label]) => (
+              <a key={href} href={href} style={{ fontSize: "12px", fontWeight: 400, letterSpacing: "0.12em", ...muted, textDecoration: "none", textTransform: "uppercase" as const, transition: "color 0.2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.92)")}
+                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+              >{label}</a>
+            ))}
+          </div>
           <a href="#waitlist" style={{ ...mono, fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", ...gold, textTransform: "uppercase" as const, textDecoration: "none", border: "1px solid rgba(200,169,110,0.3)", padding: "10px 20px", borderRadius: "2px", transition: "all 0.25s" }}
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,169,110,0.12)"; e.currentTarget.style.borderColor = "rgba(200,169,110,0.6)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)"; }}
@@ -199,7 +201,7 @@ export default function Home() {
       </nav>
 
       {/* ══ HERO ══ */}
-      <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "140px 24px 100px", position: "relative", overflow: "hidden" }}>
+      <section className="hero-section" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "140px 24px 100px", position: "relative", overflow: "hidden" }}>
 
         {/* orb */}
         <div className="hero-orb" style={{ position: "absolute", width: "700px", height: "700px", borderRadius: "50%", background: "radial-gradient(circle at center, rgba(200,169,110,0.07) 0%, transparent 65%)", top: "50%", left: "50%", pointerEvents: "none" }} />
@@ -233,7 +235,7 @@ export default function Home() {
         </div>
 
         {/* stats */}
-        <div className="anim-stats" style={{ position: "absolute", bottom: "52px", left: 0, right: 0, display: "flex", justifyContent: "center" }}>
+        <div className="anim-stats hero-stats" style={{ position: "absolute", bottom: "52px", left: 0, right: 0, display: "flex", justifyContent: "center" }}>
           {[["8–12%","Platform cut"],["∞","Referral lifetime"],["0","Fan data required"]].map(([num, label], i) => (
             <div key={i} style={{ padding: "0 48px", textAlign: "center", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.10)" : "none" }}>
               <span style={{ display: "block", ...disp, fontSize: "32px", fontWeight: 300, ...gold, lineHeight: 1, marginBottom: "6px" }}>{num}</span>
@@ -243,7 +245,7 @@ export default function Home() {
         </div>
 
         {/* scroll hint */}
-        <div className="anim-scroll" style={{ position: "absolute", bottom: "52px", right: "56px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+        <div className="anim-scroll hero-scroll-hint" style={{ position: "absolute", bottom: "52px", right: "56px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
           <span style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase" as const, ...dim, writingMode: "vertical-rl" }}>Scroll</span>
           <span className="scroll-hint-line" style={{ width: "1px", height: "48px", background: "linear-gradient(to bottom, var(--dim), transparent)" }} />
         </div>
@@ -265,7 +267,7 @@ export default function Home() {
 
       {/* ══ WHY CIPHER ══ */}
       <div id="why">
-        <div style={{ padding: "140px 56px", maxWidth: "1320px", margin: "0 auto" }}>
+        <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>
             <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Why CIPHER
           </div>
@@ -276,7 +278,7 @@ export default function Home() {
             We built CIPHER to fix every broken assumption in the creator economy. Not incrementally. Completely.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
+          <div className="why-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
             {[
               { num:"01", title:"Fans stay", em:"anonymous. Always.", text:"No email. No account. No credit card trail. Every fan gets a unique code — FAN-4729 — that's their entire identity. They pay, they access. Nothing else required.", callout:"No forms. No tracking. No identity required — ever." },
               { num:"02", title:"Splits happen", em:"automatically.", text:"Every payment — card, crypto, wallet — splits in real time. Creator gets their share. Platform takes its cut. Referrer earns their commission. All in one transaction.", callout:"You refer a creator earning $10K/month → you earn $400/month. Forever. No cap." },
@@ -305,9 +307,9 @@ export default function Home() {
 
       {/* ══ NUMBERS ══ */}
       <div style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
-        <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "100px 56px", display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+        <div className="numbers-inner" style={{ maxWidth: "1320px", margin: "0 auto", padding: "clamp(60px,8vw,100px) clamp(20px,4vw,56px)", display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
           {[["88%","Creator keeps","Platform takes just 12% — nothing more"],["∞","Referral lifetime","Every competitor caps or expires it"],["0","Fan data collected","No email, no name, no account ever"],["190","Countries supported","Crypto payouts reach where banks don't"]].map(([val, label, sub], i) => (
-            <div key={i} className={`reveal reveal-delay-${i}`} style={{ padding: "40px 32px", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
+            <div key={i} className={`reveal reveal-delay-${i} numbers-item`} style={{ padding: "40px 32px", textAlign: "center", borderLeft: i > 0 ? "1px solid var(--border)" : "none" }}>
               <span style={{ display: "block", ...disp, fontSize: "clamp(48px,6vw,80px)", fontWeight: 300, lineHeight: 1, marginBottom: "12px", ...gold }}>{val}</span>
               <span style={{ ...mono, fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase" as const, ...dim, display: "block", marginBottom: "8px" }}>{label}</span>
               <span style={{ fontSize: "12px", fontWeight: 300, color: "rgba(255,255,255,0.25)", lineHeight: 1.5 }}>{sub}</span>
@@ -318,7 +320,7 @@ export default function Home() {
 
       {/* ══ HOW IT WORKS ══ */}
       <div id="how">
-        <div style={{ padding: "140px 56px", maxWidth: "1320px", margin: "0 auto" }}>
+        <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>
             <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />How it works
           </div>
@@ -326,7 +328,7 @@ export default function Home() {
             Simple for fans.<br /><em style={{ fontStyle: "italic", ...gold }}>Powerful for creators.</em>
           </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "start" }}>
+          <div className="how-layout" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "start" }}>
             {/* steps */}
             <div className="reveal reveal-delay-2">
               {[
@@ -350,7 +352,7 @@ export default function Home() {
             </div>
 
             {/* fan code card */}
-            <div className="reveal reveal-delay-3" style={{ background: "var(--card)", border: "1px solid var(--border-mid)", borderRadius: "4px", padding: "40px", position: "sticky", top: "100px" }}>
+            <div className="reveal reveal-delay-3 fan-demo-card" style={{ background: "var(--card)", border: "1px solid var(--border-mid)", borderRadius: "4px", padding: "40px", position: "sticky", top: "100px" }}>
               <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase" as const, ...dim, marginBottom: "24px" }}>Fan identity</div>
               <span style={{ ...mono, fontSize: "52px", fontWeight: 300, ...gold, letterSpacing: "0.05em", display: "block", marginBottom: "8px", lineHeight: 1 }}>FAN-4729</span>
               <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.2em", ...dim, marginBottom: "32px" }}>Permanent · Anonymous · Active</div>
@@ -387,7 +389,7 @@ export default function Home() {
 
       {/* ══ TIERS ══ */}
       <div id="tiers">
-        <div style={{ padding: "140px 56px", maxWidth: "1320px", margin: "0 auto" }}>
+        <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>
             <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Creator tiers
           </div>
@@ -398,7 +400,7 @@ export default function Home() {
             Not cosmetic upgrades — actual economic and tooling advantages at every level.
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
+          <div className="tiers-layout" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
             {[
               { tag:"Entry",       name:"Cipher", cut:"Platform keeps 12%", featured:false, tagColor:"#9898cc", tagBg:"rgba(140,140,200,0.08)", tagBorder:"rgba(140,140,200,0.15)", arrow:"#7878aa", bg:"var(--card)",   bgHover:"var(--card-hover)", features:["Up to 500 fan codes","Video, photo, text content","Analytics dashboard","Referral program unlocked","Standard 7-day payouts","All payout rails available"] },
               { tag:"Most Popular",name:"Legend", cut:"Platform keeps 10%", featured:true,  tagColor:"var(--gold)", tagBg:"var(--gold-glow)", tagBorder:"rgba(200,169,110,0.25)", arrow:"var(--gold-dim)", bg:"#131220", bgHover:"#161528", features:["Unlimited fan codes","All formats + live rooms","AI content tools included","Collab split system","48-hour priority payouts","Dedicated success rep","Boosted referral rate","Algorithm placement boost"] },
@@ -442,7 +444,7 @@ export default function Home() {
       </div>
 
       {/* ══ FOOTER ══ */}
-      <footer style={{ borderTop: "1px solid var(--border)", padding: "48px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px" }}>
+      <footer style={{ borderTop: "1px solid var(--border)", padding: "48px clamp(20px,4vw,56px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px" }}>
         <div style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>CIPHER</div>
         <div style={{ display: "flex", gap: "32px" }}>
           {["Privacy","Terms","Contact"].map(l => (
