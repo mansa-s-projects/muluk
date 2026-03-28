@@ -50,6 +50,40 @@ export default async function DashboardPage() {
   const phantomMode = Boolean(creatorProfile?.phantom_mode ?? false);
   const hasVaultPin = Boolean(creatorProfile?.vault_pin_hash);
 
+  const { data: socialRaw, error: socialErr } = await supabase
+    .from("social_connections")
+    .select("platform, platform_username, platform_user_id, follower_count, connected_at")
+    .eq("creator_id", user.id)
+    .order("connected_at", { ascending: false });
+
+  if (socialErr && isMissingTable(socialErr.code, socialErr.message)) {
+    missingTables.add("social_connections");
+  }
+
+  const socialConnections: DashboardData["socialConnections"] = (socialRaw ?? []).map(row => ({
+    platform: String(row.platform ?? "twitter") as DashboardData["socialConnections"][number]["platform"],
+    platform_username: row.platform_username ? String(row.platform_username) : null,
+    platform_user_id: row.platform_user_id ? String(row.platform_user_id) : null,
+    follower_count: safeNum(row.follower_count),
+    connected_at: String(row.connected_at ?? ""),
+  }));
+
+  const socialReach: DashboardData["socialReach"] = {
+    totalFollowers: socialConnections.reduce((sum, c) => sum + c.follower_count, 0),
+    byPlatform: ["twitter", "tiktok", "instagram", "youtube", "telegram"].map(platform => ({
+      platform: platform as DashboardData["socialReach"]["byPlatform"][number]["platform"],
+      followers: socialConnections.find(c => c.platform === platform)?.follower_count ?? 0,
+    })),
+  };
+
+  const oauthAvailable: DashboardData["oauthAvailable"] = {
+    twitter: Boolean(process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CALLBACK_URL),
+    tiktok: Boolean(process.env.TIKTOK_CLIENT_KEY),
+    instagram: Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CALLBACK_URL),
+    youtube: Boolean(process.env.YOUTUBE_CLIENT_ID),
+    telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME),
+  };
+
   const { data: fanCodesRaw, count: fanCodeCount, error: fanErr } = await supabase
     .from("fan_codes")
     .select("id, code, status, created_at", { count: "exact" })
@@ -253,6 +287,9 @@ export default async function DashboardPage() {
     userId: user.id,
     phantomMode,
     hasVaultPin,
+    socialConnections,
+    socialReach,
+    oauthAvailable,
   };
 
   return <DashboardClient data={dashboardData} />;

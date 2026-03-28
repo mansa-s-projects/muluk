@@ -3,6 +3,8 @@
 
 -- Content Calendar: add scheduled_for column
 ALTER TABLE content_items ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;
+ALTER TABLE content_items ADD COLUMN IF NOT EXISTS auto_shared BOOLEAN DEFAULT false;
+ALTER TABLE content_items ADD COLUMN IF NOT EXISTS share_text TEXT;
 
 -- Creator profile: phantom mode, vault PIN, bio
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS phantom_mode BOOLEAN DEFAULT false;
@@ -42,3 +44,25 @@ CREATE POLICY "collab_proposals_creator_all" ON collab_proposals
 CREATE INDEX IF NOT EXISTS idx_fan_messages_creator ON fan_messages(creator_id);
 CREATE INDEX IF NOT EXISTS idx_collab_proposals_from ON collab_proposals(from_creator_id);
 CREATE INDEX IF NOT EXISTS idx_content_items_scheduled ON content_items(scheduled_for) WHERE scheduled_for IS NOT NULL;
+
+-- Social connections table
+CREATE TABLE IF NOT EXISTS social_connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  creator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL,
+  platform_username TEXT,
+  platform_user_id TEXT,
+  access_token TEXT,
+  refresh_token TEXT,
+  follower_count BIGINT DEFAULT 0,
+  connected_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(creator_id, platform)
+);
+
+ALTER TABLE social_connections ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "social_connections_all" ON social_connections;
+CREATE POLICY "social_connections_all" ON social_connections
+  FOR ALL USING (auth.uid() = creator_id);
+
+CREATE INDEX IF NOT EXISTS idx_social_connections_creator ON social_connections(creator_id);
+CREATE INDEX IF NOT EXISTS idx_social_connections_platform ON social_connections(platform);

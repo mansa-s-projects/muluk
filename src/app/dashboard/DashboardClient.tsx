@@ -79,6 +79,21 @@ export type NotificationItem = {
   unread: boolean;
 };
 
+export type SocialPlatform = "twitter" | "tiktok" | "instagram" | "youtube" | "telegram";
+
+export type SocialConnection = {
+  platform: SocialPlatform;
+  platform_username: string | null;
+  platform_user_id: string | null;
+  follower_count: number;
+  connected_at: string;
+};
+
+export type SocialReach = {
+  totalFollowers: number;
+  byPlatform: Array<{ platform: SocialPlatform; followers: number }>;
+};
+
 export type AnalyticsData = {
   pageViews: number;
   conversionRate: number;
@@ -114,6 +129,15 @@ export type DashboardData = {
   userId: string;
   phantomMode: boolean;
   hasVaultPin: boolean;
+  socialConnections: SocialConnection[];
+  socialReach: SocialReach;
+  oauthAvailable: {
+    twitter: boolean;
+    tiktok: boolean;
+    instagram: boolean;
+    youtube: boolean;
+    telegram: boolean;
+  };
 };
 
 const money = new Intl.NumberFormat("en-US", {
@@ -123,6 +147,58 @@ const money = new Intl.NumberFormat("en-US", {
 });
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 const disp: React.CSSProperties = { fontFamily: "var(--font-display)" };
+
+const PLATFORM_META: Record<SocialPlatform, { label: string; color: string }> = {
+  twitter: { label: "Twitter/X", color: "#1DA1F2" },
+  tiktok: { label: "TikTok", color: "#ff0050" },
+  instagram: { label: "Instagram", color: "#E1306C" },
+  youtube: { label: "YouTube", color: "#FF0000" },
+  telegram: { label: "Telegram", color: "#2AABEE" },
+};
+
+const SOCIAL_PLATFORMS: SocialPlatform[] = ["twitter", "tiktok", "instagram", "youtube", "telegram"];
+
+function SocialIcon({ platform }: { platform: SocialPlatform }) {
+  const iconStyle: React.CSSProperties = { width: "18px", height: "18px", display: "block" };
+  if (platform === "twitter") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
+        <path fill="#1DA1F2" d="M18.9 2H22l-6.8 7.8L23 22h-6.3l-4.9-6.4L6.2 22H3.1l7.2-8.2L1 2h6.5l4.4 5.8L18.9 2z" />
+      </svg>
+    );
+  }
+  if (platform === "tiktok") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
+        <path fill="#ffffff" d="M14.5 3c.4 1.6 1.8 3.1 3.5 3.5v3c-1.3-.1-2.6-.5-3.5-1.2v6.1a5.2 5.2 0 1 1-4.5-5.1v3a2.2 2.2 0 1 0 1.5 2.1V3h3z" />
+        <path fill="#ff0050" d="M14.5 3c.4 1.6 1.8 3.1 3.5 3.5v1.5c-1.3-.1-2.6-.5-3.5-1.2V3z" opacity="0.9" />
+      </svg>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
+        <rect x="4" y="4" width="16" height="16" rx="5" fill="none" stroke="#E1306C" strokeWidth="2" />
+        <circle cx="12" cy="12" r="3.5" fill="none" stroke="#E1306C" strokeWidth="2" />
+        <circle cx="17.2" cy="6.8" r="1.2" fill="#E1306C" />
+      </svg>
+    );
+  }
+  if (platform === "youtube") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
+        <rect x="2" y="5" width="20" height="14" rx="4" fill="#FF0000" />
+        <path d="M10 9l6 3-6 3V9z" fill="#fff" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" style={iconStyle}>
+      <circle cx="12" cy="12" r="10" fill="#2AABEE" />
+      <path d="M17.5 7.8 6.8 11.9c-.7.3-.7.7-.1.9l2.8.9 1.1 3.5c.1.4.1.6.6.6.4 0 .5-.2.8-.5l1.5-1.5 3 .2c.6 0 .9-.2 1-.8l1.8-8.5c.2-.7-.3-1-1-.7z" fill="#fff" />
+    </svg>
+  );
+}
 
 function formatDate(val: string) {
   if (!val) return "-";
@@ -210,6 +286,9 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     userId,
     phantomMode,
     hasVaultPin,
+    socialConnections,
+    socialReach,
+    oauthAvailable,
   } = data;
 
   const [activeSection, setActiveSection] = useState<SectionKey>("dashboard");
@@ -254,6 +333,11 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
   // Tool modals
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [connections, setConnections] = useState<SocialConnection[]>(socialConnections);
+  const [socialMsg, setSocialMsg] = useState("");
+  const [socialLoading, setSocialLoading] = useState<SocialPlatform | null>(null);
+  const [autoShareEnabled, setAutoShareEnabled] = useState(false);
+  const [shareText, setShareText] = useState("New exclusive content just dropped 🔒 cipher.co/@creator");
 
   const handle = userEmail.split("@")[0] || userId.slice(0, 8);
   const referralLink = `cipher.so/ref/${handle}`;
@@ -271,6 +355,24 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     withdrawalCount: withdrawals.length,
     retentionRate: analytics.retentionRate,
   };
+
+  const socialReachLive = useMemo(() => {
+    const byPlatform = SOCIAL_PLATFORMS.map(platform => {
+      const connection = connections.find(c => c.platform === platform);
+      return { platform, followers: Number(connection?.follower_count ?? 0) };
+    });
+    const totalFollowers = byPlatform.reduce((sum, item) => sum + item.followers, 0);
+    return { totalFollowers, byPlatform };
+  }, [connections]);
+
+  const effectiveReach = socialReachLive.totalFollowers > 0 ? socialReachLive : socialReach;
+
+  const potentialFans = Math.floor(effectiveReach.totalFollowers * 0.01);
+  const estimatedMonthly = potentialFans * 15;
+
+  useEffect(() => {
+    setShareText(`New exclusive content just dropped 🔒 cipher.co/@${handle}`);
+  }, [handle]);
 
   useEffect(() => {
     const duration = 800;
@@ -303,6 +405,77 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const refreshConnections = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("social_connections")
+        .select("platform, platform_username, platform_user_id, follower_count, connected_at")
+        .eq("creator_id", userId)
+        .order("connected_at", { ascending: false });
+      if (error) throw error;
+      setConnections((data ?? []) as SocialConnection[]);
+    } catch (err) {
+      console.error("Refresh social connections failed:", err);
+    }
+  };
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const connected = url.searchParams.get("connected");
+    const socialError = url.searchParams.get("social_error");
+    const socialMsgParam = url.searchParams.get("social_msg");
+    if (connected) {
+      setSocialMsg(`${connected.toUpperCase()} connected successfully.`);
+      refreshConnections();
+      url.searchParams.delete("connected");
+      url.searchParams.delete("social_error");
+      url.searchParams.delete("social_msg");
+      window.history.replaceState({}, "", url.toString());
+    } else if (socialError) {
+      setSocialMsg(socialMsgParam || `Could not connect ${socialError}.`);
+      url.searchParams.delete("connected");
+      url.searchParams.delete("social_error");
+      url.searchParams.delete("social_msg");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
+  const connectPlatform = async (platform: SocialPlatform) => {
+    if (!oauthAvailable[platform]) {
+      setSocialMsg(`${PLATFORM_META[platform].label} is coming soon. Add environment variables first.`);
+      return;
+    }
+
+    setSocialLoading(platform);
+    const connectUrl =
+      platform === "telegram"
+        ? "/api/auth/telegram/connect"
+        : `/api/auth/${platform}/connect`;
+    window.location.href = connectUrl;
+  };
+
+  const disconnectPlatform = async (platform: SocialPlatform) => {
+    setSocialLoading(platform);
+    setSocialMsg("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("social_connections")
+        .delete()
+        .eq("creator_id", userId)
+        .eq("platform", platform);
+      if (error) throw error;
+      await refreshConnections();
+      setSocialMsg(`${PLATFORM_META[platform].label} disconnected.`);
+    } catch (err) {
+      console.error("Disconnect failed:", err);
+      setSocialMsg(`Could not disconnect ${PLATFORM_META[platform].label}.`);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
 
   const copyLink = () => {
     navigator.clipboard
@@ -391,9 +564,23 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         burn_mode: burnMode,
         expires_at: burnMode ? expiresAt.toISOString() : null,
         status: "active",
+        auto_shared: autoShareEnabled,
+        share_text: autoShareEnabled ? shareText.trim() : null,
       });
 
       if (error) throw error;
+
+      if (autoShareEnabled) {
+        await fetch("/api/social/auto-share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contentTitle: contentTitle.trim(),
+            shareText: shareText.trim(),
+          }),
+        });
+      }
+
       setContentMsg("Content item saved. Refresh to see latest.");
       setContentTitle("");
       setContentDesc("");
@@ -613,6 +800,33 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
+                  <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "10px" }}>SOCIAL REACH</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px" }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.1em" }}>TOTAL COMBINED FOLLOWERS</div>
+                      <div style={{ ...disp, fontSize: "38px", color: "var(--gold)", marginTop: "4px" }}>{effectiveReach.totalFollowers.toLocaleString()}</div>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "8px" }}>
+                        Your potential CIPHER audience: {effectiveReach.totalFollowers.toLocaleString()} people.
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "4px" }}>
+                        If 1% convert: {potentialFans.toLocaleString()} fan codes = {money.format(estimatedMonthly)}/month estimated.
+                      </div>
+                    </div>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)", display: "grid", gap: "6px" }}>
+                      {effectiveReach.byPlatform.map(item => (
+                        <div key={item.platform} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", color: "var(--muted)" }}>
+                          <span style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+                            <SocialIcon platform={item.platform} />
+                            {PLATFORM_META[item.platform].label}
+                          </span>
+                          <span style={{ ...mono, color: "var(--gold)" }}>{item.followers.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
                     <div>
                       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", color: "var(--gold-dim)" }}>EARNINGS LAST 7 DAYS</div>
@@ -700,6 +914,20 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                     <input value={contentPrice} onChange={e => setContentPrice(e.target.value)} placeholder="Price" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   </div>
                   <textarea value={contentDesc} onChange={e => setContentDesc(e.target.value)} placeholder="Description" style={{ marginTop: "10px", width: "100%", minHeight: "72px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                  <div style={{ marginTop: "10px", border: "1px solid rgba(29,161,242,0.28)", borderRadius: "8px", padding: "10px", background: "rgba(29,161,242,0.06)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <div>
+                        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "#8dcfff" }}>AUTO-SHARE TO CONNECTED ACCOUNTS</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "2px" }}>Twitter + Telegram will post after publish when connected.</div>
+                      </div>
+                      <button type="button" onClick={() => setAutoShareEnabled(v => !v)} style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "999px", padding: "7px 12px", background: autoShareEnabled ? "rgba(29,161,242,0.2)" : "transparent", color: autoShareEnabled ? "#8dcfff" : "var(--dim)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>
+                        {autoShareEnabled ? "AUTO-SHARE ON" : "AUTO-SHARE OFF"}
+                      </button>
+                    </div>
+                    {autoShareEnabled && (
+                      <textarea value={shareText} onChange={e => setShareText(e.target.value)} placeholder="Share text" style={{ marginTop: "8px", width: "100%", minHeight: "56px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                    )}
+                  </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                     <select value={contentExpiry} onChange={e => setContentExpiry(e.target.value)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
                       <option value="24h">Expire in 24h</option>
@@ -991,6 +1219,88 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                     <button type="button" onClick={saveSettings} disabled={settingsSaving} style={{ border: "none", borderRadius: "6px", padding: "10px 14px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>{settingsSaving ? "SAVING" : "SAVE"}</button>
                   </div>
                   {settingsMsg && <div style={{ marginTop: "8px", color: settingsMsg.includes("saved") ? "var(--gold)" : "#ff6a6a", fontSize: "12px" }}>{settingsMsg}</div>}
+                </div>
+
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
+                  <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>CONNECTED ACCOUNTS</div>
+                  <div style={{ fontSize: "12px", color: "var(--dim)", marginBottom: "12px" }}>Connect your social platforms to grow and auto-share from CIPHER.</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
+                    {SOCIAL_PLATFORMS.map(platform => {
+                      const meta = PLATFORM_META[platform];
+                      const connected = connections.find(c => c.platform === platform) ?? null;
+                      const isConnected = Boolean(connected);
+                      const canConnect = oauthAvailable[platform];
+                      const isBusy = socialLoading === platform;
+
+                      return (
+                        <div
+                          key={platform}
+                          style={{
+                            border: `1px solid ${isConnected ? "rgba(57,197,111,0.5)" : `${meta.color}66`}`,
+                            borderRadius: "8px",
+                            padding: "12px",
+                            background: "rgba(255,255,255,0.02)",
+                            boxShadow: isConnected ? `0 0 18px ${meta.color}33` : "none",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                            <div style={{ display: "inline-flex", gap: "8px", alignItems: "center" }}>
+                              <SocialIcon platform={platform} />
+                              <div style={{ fontSize: "13px", color: "var(--white)" }}>{meta.label}</div>
+                            </div>
+                            <div style={{ ...mono, fontSize: "9px", color: isConnected ? "#39c56f" : "var(--dim)", letterSpacing: "0.08em" }}>
+                              {isConnected ? "CONNECTED" : "NOT CONNECTED"}
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: "12px", color: "var(--muted)", minHeight: "20px" }}>
+                            {isConnected
+                              ? `@${connected?.platform_username || "unknown"}`
+                              : canConnect
+                                ? "Ready to connect"
+                                : "Coming soon"}
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", gap: "8px" }}>
+                            {platform === "telegram" && canConnect && !isConnected && (
+                              <a
+                                href={`/api/auth/telegram/connect`}
+                                style={{ ...mono, fontSize: "10px", color: meta.color, letterSpacing: "0.08em", textDecoration: "none" }}
+                              >
+                                TELEGRAM LOGIN
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => {
+                                if (isConnected) {
+                                  void disconnectPlatform(platform);
+                                } else {
+                                  void connectPlatform(platform);
+                                }
+                              }}
+                              style={{
+                                border: "none",
+                                borderRadius: "6px",
+                                padding: "8px 10px",
+                                background: isConnected ? "rgba(255,255,255,0.1)" : canConnect ? meta.color : "rgba(255,255,255,0.08)",
+                                color: isConnected ? "var(--white)" : canConnect ? "#020203" : "var(--dim)",
+                                ...mono,
+                                fontSize: "10px",
+                                letterSpacing: "0.09em",
+                                cursor: "pointer",
+                                marginLeft: "auto",
+                              }}
+                            >
+                              {isBusy ? "WORKING..." : isConnected ? "DISCONNECT" : canConnect ? "CONNECT" : "COMING SOON"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {socialMsg && <div style={{ marginTop: "10px", fontSize: "12px", color: socialMsg.includes("success") || socialMsg.includes("connected") ? "#39c56f" : "#ffb86c" }}>{socialMsg}</div>}
                 </div>
 
                 <div style={{ border: "1px solid rgba(255,82,82,0.35)", background: "rgba(255,82,82,0.09)", borderRadius: "8px", padding: "14px" }}>
