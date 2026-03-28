@@ -12,13 +12,20 @@ type InstagramMe = {
   username?: string;
 };
 
+/** Always removes the oauth state cookie regardless of outcome. */
+function redirectWithCleanup(url: URL): NextResponse {
+  const res = NextResponse.redirect(url);
+  res.cookies.delete("instagram_oauth_state");
+  return res;
+}
+
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   const savedState = req.cookies.get("instagram_oauth_state")?.value;
 
   if (!code || !state || !savedState || state !== savedState) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return redirectWithCleanup(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram auth validation failed.",
     }));
@@ -29,7 +36,7 @@ export async function GET(req: NextRequest) {
   const callback = process.env.INSTAGRAM_CALLBACK_URL || `${appBaseUrl(req)}/api/auth/instagram/callback`;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return redirectWithCleanup(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram OAuth credentials missing.",
     }));
@@ -47,6 +54,14 @@ export async function GET(req: NextRequest) {
       }),
     });
 
+    if (!token?.access_token) {
+      console.error("Instagram token exchange missing access_token", token);
+      return redirectWithCleanup(dashboardUrl(req, {
+        social_error: "instagram",
+        social_msg: "Instagram connection failed.",
+      }));
+    }
+
     const me = await jsonFetch<InstagramMe>(`https://graph.instagram.com/me?fields=id,username&access_token=${token.access_token}`);
 
     const supabase = await createClient();
@@ -55,7 +70,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(dashboardUrl(req, { social_error: "instagram", social_msg: "Sign in to connect Instagram." }));
+      return redirectWithCleanup(dashboardUrl(req, { social_error: "instagram", social_msg: "Sign in to connect Instagram." }));
     }
 
     const { error } = await supabase
@@ -74,12 +89,10 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const res = NextResponse.redirect(dashboardUrl(req, { connected: "instagram" }));
-    res.cookies.delete("instagram_oauth_state");
-    return res;
+    return redirectWithCleanup(dashboardUrl(req, { connected: "instagram" }));
   } catch (err) {
     console.error("Instagram callback failed", err);
-    return NextResponse.redirect(dashboardUrl(req, {
+    return redirectWithCleanup(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram connection failed.",
     }));

@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   authUrl.searchParams.set("response_type", "code");
   authUrl.searchParams.set("state", state);
 
+  const isSecure = process.env.NODE_ENV !== "development";
   const res = NextResponse.redirect(authUrl);
-  res.cookies.set("instagram_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
+  res.cookies.set("instagram_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
   return res;
 }

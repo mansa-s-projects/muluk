@@ -3,9 +3,8 @@ import { appBaseUrl, dashboardUrl } from "@/app/api/auth/_utils";
 
 export async function GET(req: NextRequest) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME;
 
-  if (!botToken || !botUsername) {
+  if (!botToken) {
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "telegram",
       social_msg: "Telegram login is not configured yet.",

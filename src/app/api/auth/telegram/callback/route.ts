@@ -8,6 +8,14 @@ function verifyTelegramAuth(req: NextRequest, botToken: string) {
   const hash = params.get("hash") ?? "";
   if (!hash) return false;
 
+  // Validate auth_date to prevent replay attacks (allow 5-minute window)
+  const authDateStr = params.get("auth_date");
+  if (!authDateStr) return false;
+  const authDate = parseInt(authDateStr, 10);
+  if (!Number.isFinite(authDate)) return false;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSeconds - authDate) > 300) return false;
+
   const dataPairs: string[] = [];
   params.forEach((value, key) => {
     if (key !== "hash" && value !== "") {
@@ -19,7 +27,12 @@ function verifyTelegramAuth(req: NextRequest, botToken: string) {
   const dataCheckString = dataPairs.join("\n");
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
   const expectedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-  return expectedHash === hash;
+
+  // Timing-safe comparison to prevent timing attacks
+  const expectedBuf = Buffer.from(expectedHash, "utf8");
+  const hashBuf = Buffer.from(hash, "utf8");
+  if (expectedBuf.length !== hashBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, hashBuf);
 }
 
 export async function GET(req: NextRequest) {
@@ -41,6 +54,13 @@ export async function GET(req: NextRequest) {
   try {
     const telegramId = req.nextUrl.searchParams.get("id");
     const username = req.nextUrl.searchParams.get("username");
+
+    if (!telegramId) {
+      return NextResponse.redirect(dashboardUrl(req, {
+        social_error: "telegram",
+        social_msg: "Telegram verification failed: missing user ID.",
+      }));
+    }
 
     const supabase = await createClient();
     const {

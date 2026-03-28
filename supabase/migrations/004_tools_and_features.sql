@@ -1,6 +1,9 @@
 -- CIPHER Platform - Migration 004: Tools & Insane Features
 -- Run this in Supabase SQL Editor
 
+-- Enable pgcrypto for potential future DB-level encryption helpers
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Content Calendar: add scheduled_for column
 ALTER TABLE content_items ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;
 ALTER TABLE content_items ADD COLUMN IF NOT EXISTS auto_shared BOOLEAN DEFAULT false;
@@ -72,6 +75,9 @@ CREATE TABLE IF NOT EXISTS social_connections (
   platform TEXT NOT NULL,
   platform_username TEXT,
   platform_user_id TEXT,
+  -- access_token and refresh_token store AES-256-GCM encrypted ciphertext (hex).
+  -- Application code must encrypt before insert and decrypt after select.
+  -- See TOKEN_ENCRYPTION_KEY env var and encryptToken/decryptToken helpers.
   access_token TEXT,
   refresh_token TEXT,
   follower_count BIGINT DEFAULT 0,

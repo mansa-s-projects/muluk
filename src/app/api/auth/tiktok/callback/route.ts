@@ -22,8 +22,9 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   const savedState = req.cookies.get("tiktok_oauth_state")?.value;
+  const verifier = req.cookies.get("tiktok_oauth_verifier")?.value;
 
-  if (!code || !state || !savedState || state !== savedState) {
+  if (!code || !state || !savedState || state !== savedState || !verifier) {
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "tiktok",
       social_msg: "TikTok auth validation failed.",
@@ -51,8 +52,17 @@ export async function GET(req: NextRequest) {
         code,
         grant_type: "authorization_code",
         redirect_uri: callback,
+        code_verifier: verifier,
       }),
     });
+
+    if (!token?.access_token) {
+      console.error("TikTok token exchange missing access_token", token);
+      return NextResponse.redirect(dashboardUrl(req, {
+        social_error: "tiktok",
+        social_msg: "TikTok connection failed.",
+      }));
+    }
 
     const info = await jsonFetch<TikTokUser>("https://open.tiktokapis.com/v2/user/info/?fields=open_id,username,follower_count", {
       headers: { Authorization: `Bearer ${token.access_token}` },
@@ -89,6 +99,7 @@ export async function GET(req: NextRequest) {
 
     const res = NextResponse.redirect(dashboardUrl(req, { connected: "tiktok" }));
     res.cookies.delete("tiktok_oauth_state");
+    res.cookies.delete("tiktok_oauth_verifier");
     return res;
   } catch (err) {
     console.error("TikTok callback failed", err);

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const contentTitle = String(body.contentTitle ?? "").trim();
-  const shareText = String(body.shareText ?? "").trim() || `New exclusive content just dropped 🔒 cipher.co/@${user.email?.split("@")[0] ?? "creator"}`;
+  const shareText = String(body.shareText ?? "").trim() || "New exclusive content just dropped 🔒 cipher.co/@creator";
 
   const { data: rawConnections, error: connErr } = await supabase
     .from("social_connections")
@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
 
   for (const conn of connections) {
     if (conn.platform === "twitter" && conn.access_token) {
+      const controller = new AbortController();
+      const timeoutMs = 10_000;
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch("https://api.twitter.com/2/tweets", {
           method: "POST",
@@ -45,14 +48,20 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${conn.access_token}`,
           },
           body: JSON.stringify({ text: `${shareText}\n\n${contentTitle}`.trim() }),
+          signal: controller.signal,
         });
+        clearTimeout(timer);
         if (!res.ok) {
-          results.push({ platform: "twitter", ok: false, error: await res.text() });
+          console.error("Twitter auto-share failed", await res.text());
+          results.push({ platform: "twitter", ok: false, error: "external service error" });
         } else {
           results.push({ platform: "twitter", ok: true });
         }
       } catch (err) {
-        results.push({ platform: "twitter", ok: false, error: String(err) });
+        clearTimeout(timer);
+        const isTimeout = err instanceof Error && err.name === "AbortError";
+        console.error("Twitter auto-share error", err);
+        results.push({ platform: "twitter", ok: false, error: isTimeout ? "request timed out" : "external service error" });
       }
     }
 

@@ -76,7 +76,9 @@ export default async function DashboardPage() {
     totalFollowers: socialConnections.reduce((sum, c) => sum + c.follower_count, 0),
     byPlatform: ["twitter", "tiktok", "instagram", "youtube", "telegram"].map(platform => ({
       platform: platform as DashboardData["socialReach"]["byPlatform"][number]["platform"],
-      followers: socialConnections.find(c => c.platform === platform)?.follower_count ?? 0,
+      followers: socialConnections
+        .filter(c => c.platform === platform)
+        .reduce((sum, c) => sum + c.follower_count, 0),
     })),
   };
 

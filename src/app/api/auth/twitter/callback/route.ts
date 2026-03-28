@@ -53,9 +53,25 @@ export async function GET(req: NextRequest) {
       }),
     });
 
+    if (!token?.access_token) {
+      console.error("Twitter token exchange missing access_token", token);
+      return NextResponse.redirect(dashboardUrl(req, {
+        social_error: "twitter",
+        social_msg: "Twitter connection failed.",
+      }));
+    }
+
     const me = await jsonFetch<TwitterMe>("https://api.twitter.com/2/users/me?user.fields=username", {
       headers: { Authorization: `Bearer ${token.access_token}` },
     });
+
+    if (!me.data?.id) {
+      console.error("Twitter /me returned missing user data", me);
+      return NextResponse.redirect(dashboardUrl(req, {
+        social_error: "twitter",
+        social_msg: "Twitter connection failed: missing user data.",
+      }));
+    }
 
     const supabase = await createClient();
     const {
@@ -72,8 +88,8 @@ export async function GET(req: NextRequest) {
         {
           creator_id: user.id,
           platform: "twitter",
-          platform_username: me.data?.username ?? null,
-          platform_user_id: me.data?.id ?? null,
+          platform_username: me.data.username ?? null,
+          platform_user_id: me.data.id,
           access_token: token.access_token,
           refresh_token: token.refresh_token ?? null,
           connected_at: new Date().toISOString(),

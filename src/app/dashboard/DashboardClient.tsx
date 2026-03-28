@@ -571,14 +571,31 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       if (error) throw error;
 
       if (autoShareEnabled) {
-        await fetch("/api/social/auto-share", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contentTitle: contentTitle.trim(),
-            shareText: shareText.trim(),
-          }),
-        });
+        try {
+          const shareRes = await fetch("/api/social/auto-share", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contentTitle: contentTitle.trim(),
+              shareText: shareText.trim(),
+            }),
+          });
+          if (!shareRes.ok) {
+            console.error("Auto-share failed with status", shareRes.status);
+            setContentMsg("Content saved. Auto-share did not complete — check your social connections.");
+            setContentTitle("");
+            setContentDesc("");
+            setContentPrice("0");
+            return;
+          }
+        } catch (shareErr) {
+          console.error("Auto-share network error:", shareErr);
+          setContentMsg("Content saved. Auto-share failed due to a network error.");
+          setContentTitle("");
+          setContentDesc("");
+          setContentPrice("0");
+          return;
+        }
       }
 
       setContentMsg("Content item saved. Refresh to see latest.");

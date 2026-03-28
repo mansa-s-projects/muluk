@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   if (!clientId) {
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
-      social_msg: "Twitter OAuth is not configured yet. Add TWITTER_CLIENT_ID.",
+      social_msg: "Twitter OAuth is not configured.",
     }));
   }
 
