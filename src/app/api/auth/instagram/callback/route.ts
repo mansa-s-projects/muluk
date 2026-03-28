@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         url: sanitizedMeUrl,
         message: err instanceof Error ? err.message : "unknown error",
       });
-      throw err;
+      throw new Error("Instagram /me request failed");
     }
 
     const supabase = await createClient();

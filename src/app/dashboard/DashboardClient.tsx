@@ -802,7 +802,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             <div style={{ marginBottom: "10px" }}>
               <PhantomModeToggle userId={userId} initialPhantom={phantomMode} />
             </div>
-            <div style={{ marginBottom: "10px" }}>
+            <div style={{ marginBottom: "10px", width: "100%", minWidth: 0, overflow: "hidden" }}>
               <CipherRadio />
             </div>
             <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.2em", color: "var(--gold-dim)", marginBottom: "6px", textTransform: "uppercase" }}>Signed in as</div>

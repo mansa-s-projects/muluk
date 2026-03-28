@@ -235,6 +235,9 @@ export function DarkVault({ userId, hasPin }: { userId: string; hasPin: boolean 
   const [savingPin, setSavingPin] = useState(false);
   const [msg, setMsg] = useState("");
 
+  const isMissingTableError = (code?: string, message?: string) =>
+    code === "42P01" || /relation .* does not exist/i.test(message ?? "");
+
   const VAULT_NOTE = "Your darkest thoughts, manifested.";
 
   const handleDigit = (d: string) => {
@@ -248,22 +251,39 @@ export function DarkVault({ userId, hasPin }: { userId: string; hasPin: boolean 
 
   const handleFourDigits = async (entered: string) => {
     if (phase === "lock") {
-      // Verify against stored hash
+      // Verify against stored hash, preferring dedicated vault table.
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from("creator_applications")
-        .select("vault_pin_hash")
-        .eq("user_id", userId)
+      const { data: vaultPinRow, error: vaultPinErr } = await supabase
+        .from("creator_vault_pins")
+        .select("pin_hash")
+        .eq("creator_id", userId)
         .maybeSingle();
 
-      if (error) {
-        console.error("Vault PIN fetch failed:", error);
+      if (vaultPinErr && !isMissingTableError(vaultPinErr.code, vaultPinErr.message)) {
+        console.error("Vault PIN fetch failed:", vaultPinErr);
         setMsg("Vault verification failed. Try again.");
         setPin("");
         return;
       }
 
-      const storedRecord = data?.vault_pin_hash ?? "";
+      let storedRecord = vaultPinRow?.pin_hash ?? "";
+      if (!storedRecord) {
+        const { data: legacyRow, error: legacyErr } = await supabase
+          .from("creator_applications")
+          .select("vault_pin_hash")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (legacyErr && !isMissingTableError(legacyErr.code, legacyErr.message)) {
+          console.error("Legacy vault PIN fetch failed:", legacyErr);
+          setMsg("Vault verification failed. Try again.");
+          setPin("");
+          return;
+        }
+
+        storedRecord = legacyRow?.vault_pin_hash ?? "";
+      }
+
       if (!storedRecord) {
         setMsg("No vault PIN found. Set a new PIN.");
         setPhase("set");
@@ -291,14 +311,30 @@ export function DarkVault({ userId, hasPin }: { userId: string; hasPin: boolean 
         try {
           const pinRecord = await createPinRecord(entered);
           const supabase = createClient();
-          const { error } = await supabase
-            .from("creator_applications")
-            .upsert({ user_id: userId, vault_pin_hash: pinRecord }, { onConflict: "user_id" });
+          const { error: vaultSaveErr } = await supabase
+            .from("creator_vault_pins")
+            .upsert({ creator_id: userId, pin_hash: pinRecord, updated_at: new Date().toISOString() }, { onConflict: "creator_id" });
 
-          if (error) {
-            console.error("Vault PIN save failed:", error);
+          if (vaultSaveErr && !isMissingTableError(vaultSaveErr.code, vaultSaveErr.message)) {
+            console.error("Vault PIN save failed:", vaultSaveErr);
             setMsg("Could not save PIN. Please try again.");
             return;
+          }
+
+          if (vaultSaveErr && isMissingTableError(vaultSaveErr.code, vaultSaveErr.message)) {
+            // Backward-compatible fallback for environments where migration has not run yet.
+            const { data: legacyRows, error: legacySaveErr } = await supabase
+              .from("creator_applications")
+              .update({ vault_pin_hash: pinRecord })
+              .eq("user_id", userId)
+              .select("user_id")
+              .limit(1);
+
+            if (legacySaveErr || !legacyRows || legacyRows.length === 0) {
+              console.error("Legacy vault PIN save failed:", legacySaveErr);
+              setMsg("Could not save PIN. Please run the latest migration and try again.");
+              return;
+            }
           }
 
           setUnlocked(true);
@@ -420,7 +456,7 @@ export function CipherRadio() {
   }
 
   return (
-    <div style={{ position: "fixed", bottom: "24px", right: "24px", width: "320px", background: "#0d0d18", border: "1px solid rgba(200,169,110,0.35)", borderRadius: "14px", overflow: "hidden", zIndex: 8000, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+    <div style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", background: "#0d0d18", border: "1px solid rgba(200,169,110,0.35)", borderRadius: "14px", overflow: "hidden", boxShadow: "0 10px 30px rgba(0,0,0,0.35)" }}>
       <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           {[0,1,2,3].map(i => (

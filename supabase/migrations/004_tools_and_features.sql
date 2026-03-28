@@ -14,6 +14,22 @@ ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS phantom_mode BOOLEAN D
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS vault_pin_hash TEXT;
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS bio TEXT;
 
+-- Dedicated vault PIN storage to avoid coupling PIN writes to creator profile rows
+CREATE TABLE IF NOT EXISTS creator_vault_pins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  creator_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  pin_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE creator_vault_pins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "vault_pins_all" ON creator_vault_pins;
+CREATE POLICY "vault_pins_all" ON creator_vault_pins
+  FOR ALL
+  USING (auth.uid() = creator_id)
+  WITH CHECK (auth.uid() = creator_id);
+
 -- Fan Messages table (Fan Message Blast tool)
 CREATE TABLE IF NOT EXISTS fan_messages (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

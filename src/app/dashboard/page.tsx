@@ -52,7 +52,18 @@ export default async function DashboardPage() {
   }
 
   const phantomMode = Boolean(creatorProfile?.phantom_mode ?? false);
-  const hasVaultPin = Boolean(creatorProfile?.vault_pin_hash);
+
+  const { data: vaultPinRow, error: vaultPinErr } = await supabase
+    .from("creator_vault_pins")
+    .select("pin_hash")
+    .eq("creator_id", user.id)
+    .maybeSingle();
+
+  if (vaultPinErr && isMissingTable(vaultPinErr.code, vaultPinErr.message)) {
+    missingTables.add("creator_vault_pins");
+  }
+
+  const hasVaultPin = Boolean(vaultPinRow?.pin_hash ?? creatorProfile?.vault_pin_hash);
 
   const { data: socialRaw, error: socialErr } = await supabase
     .from("social_connections")
