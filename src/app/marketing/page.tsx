@@ -330,10 +330,10 @@ function SynthesisSection() {
       <div style={{ ...card, padding: "32px 28px" }}>
         <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", ...dim, marginBottom: "16px" }}>Strategic Synthesis</div>
         <h2 style={{ ...disp, fontSize: "32px", fontWeight: 300, lineHeight: 1.15, letterSpacing: "-0.01em", marginBottom: "16px" }}>
-          CIPHER's launch window is <em style={{ fontStyle: "italic", ...gold }}>now.</em>
+          CIPHER&apos;s launch window is <em style={{ fontStyle: "italic", ...gold }}>now.</em>
         </h2>
         <p style={{ fontSize: "14px", fontWeight: 300, ...muted, lineHeight: 1.85, maxWidth: "640px", marginBottom: "20px" }}>
-          The convergence of creator fee fatigue, OnlyFans regulatory pressure, and Gen Z's crypto-native identity creates a 90-day acquisition window that won't repeat. The anonymous fan code is a category-defining feature — no competitor can match it without a full rebuild. Priority: activate 50 seed creators before any paid spend. Organic creator-to-creator referral is the only sustainable CAC model at this stage.
+          The convergence of creator fee fatigue, OnlyFans regulatory pressure, and Gen Z&apos;s crypto-native identity creates a 90-day acquisition window that won&apos;t repeat. The anonymous fan code is a category-defining feature - no competitor can match it without a full rebuild. Priority: activate 50 seed creators before any paid spend. Organic creator-to-creator referral is the only sustainable CAC model at this stage.
         </p>
         <div style={{ display: "flex", gap: "24px" }}>
           {[

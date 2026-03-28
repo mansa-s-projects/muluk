@@ -17,16 +17,21 @@ type YouTubeResponse = {
 
 export { decryptToken };
 
+function clearOAuthCookies(res: NextResponse): NextResponse {
+  res.cookies.delete("youtube_oauth_state");
+  return res;
+}
+
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   const savedState = req.cookies.get("youtube_oauth_state")?.value;
 
   if (!code || !state || !savedState || state !== savedState) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "youtube",
       social_msg: "YouTube auth validation failed.",
-    }));
+    })));
   }
 
   const clientId = process.env.YOUTUBE_CLIENT_ID;
@@ -34,10 +39,10 @@ export async function GET(req: NextRequest) {
   const callback = `${appBaseUrl(req)}/api/auth/youtube/callback`;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "youtube",
       social_msg: "YouTube OAuth credentials missing.",
-    }));
+    })));
   }
 
   try {
@@ -62,10 +67,10 @@ export async function GET(req: NextRequest) {
 
     if (!channelInfo?.id || !channelInfo.snippet?.title) {
       console.error("YouTube channel data missing or empty", channel);
-      return NextResponse.redirect(dashboardUrl(req, {
+      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "youtube",
         social_msg: "YouTube connection failed: channel not found.",
-      }));
+      })));
     }
 
     const channelTitle = channelInfo.snippet.title;
@@ -78,7 +83,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(dashboardUrl(req, { social_error: "youtube", social_msg: "Sign in to connect YouTube." }));
+      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { social_error: "youtube", social_msg: "Sign in to connect YouTube." })));
     }
 
     const { error } = await supabase
@@ -99,14 +104,12 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const res = NextResponse.redirect(dashboardUrl(req, { connected: "youtube" }));
-    res.cookies.delete("youtube_oauth_state");
-    return res;
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { connected: "youtube" })));
   } catch (err) {
     console.error("YouTube callback failed", err);
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "youtube",
       social_msg: "YouTube connection failed.",
-    }));
+    })));
   }
 }

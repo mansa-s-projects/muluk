@@ -52,10 +52,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const telegramId = req.nextUrl.searchParams.get("id");
-    const username = req.nextUrl.searchParams.get("username");
+    const telegramId = req.nextUrl.searchParams.get("id")?.trim() ?? "";
+    const username = req.nextUrl.searchParams.get("username")?.trim() || null;
 
     if (!telegramId) {
+      console.error("Telegram callback missing required user id after verification");
       return NextResponse.redirect(dashboardUrl(req, {
         social_error: "telegram",
         social_msg: "Telegram verification failed: missing user ID.",
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
         {
           creator_id: user.id,
           platform: "telegram",
-          platform_username: username ?? null,
+          platform_username: username,
           platform_user_id: telegramId,
           connected_at: new Date().toISOString(),
         },

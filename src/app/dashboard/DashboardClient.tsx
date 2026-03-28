@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/client";
 import {
   BioGeneratorModal,
@@ -31,6 +33,10 @@ export type FanCodeRow = {
   code: string;
   status: string;
   created_at: string;
+  custom_name: string | null;
+  creator_notes: string | null;
+  tags: string[];
+  is_vip: boolean;
 };
 
 export type TransactionRow = {
@@ -62,6 +68,15 @@ export type ContentItem = {
   burn_mode: boolean;
   expires_at: string | null;
   status: string;
+  created_at: string;
+};
+
+export type CreatorProfileSummary = {
+  displayName: string;
+  handle: string;
+  bio: string;
+  category: string;
+  createdAt: string;
 };
 
 export type WithdrawalRow = {
@@ -129,6 +144,7 @@ export type DashboardData = {
   userId: string;
   phantomMode: boolean;
   hasVaultPin: boolean;
+  creatorProfile: CreatorProfileSummary;
   socialConnections: SocialConnection[];
   socialReach: SocialReach;
   oauthAvailable: {
@@ -214,6 +230,97 @@ function daysLeft(expiresAt: string | null) {
   return Math.max(Math.ceil(ms / (1000 * 60 * 60 * 24)), 0);
 }
 
+function formatDateTime(val: string) {
+  if (!val) return "-";
+  const d = new Date(val);
+  if (Number.isNaN(d.getTime())) return val;
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function normalizeTagsInput(input: string): string[] {
+  return Array.from(new Set(input.split(",").map(tag => tag.trim()).filter(Boolean))).slice(0, 12);
+}
+
+function tagColor(tag: string) {
+  const tones = ["#c8a96e", "#8dcfff", "#ff8fb1", "#6dd6a6", "#d9b3ff"];
+  const hash = Array.from(tag).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  return tones[hash % tones.length];
+}
+
+function escapeCsv(value: unknown) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function toCsv<T extends Record<string, unknown>>(rows: T[]) {
+  if (rows.length === 0) return "";
+  const headers = Object.keys(rows[0]);
+  return [
+    headers.join(","),
+    ...rows.map(row => headers.map(header => escapeCsv(row[header])).join(",")),
+  ].join("\n");
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(href);
+}
+
+function estimateFileSizeLabel(content: string) {
+  const sizeKb = new Blob([content]).size / 1024;
+  return `~${Math.max(sizeKb, 1).toFixed(sizeKb >= 10 ? 0 : 1)}KB CSV`;
+}
+
+type FanInsightRow = FanCodeRow & {
+  totalSpent: number;
+  transactionCount: number;
+  firstSeen: string;
+  lastActive: string;
+  statusLabel: "active" | "inactive";
+  // Estimated content preview: placeholder derived from contentTitles + transaction count;
+  // does NOT reflect actual purchased items as no content-to-fan linkage exists yet.
+  estimatedContentPreview: string[];
+  transactions: TransactionRow[];
+};
+
+function DashboardModal({ title, subtitle, onClose, children }: { title: string; subtitle?: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      style={{ position: "fixed", inset: 0, zIndex: 9100, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}
+    >
+      <div style={{ width: "100%", maxWidth: "900px", maxHeight: "84vh", overflowY: "auto", background: "#0d0d18", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "16px", padding: "26px", position: "relative", boxShadow: "0 28px 80px rgba(0,0,0,0.5)" }}>
+        <button type="button" aria-label="Close" onClick={onClose} style={{ position: "absolute", top: "14px", right: "14px", border: "none", background: "transparent", color: "var(--dim)", fontSize: "22px", cursor: "pointer" }}>×</button>
+        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "6px" }}>PRIVATE CREATOR CRM</div>
+        <div style={{ ...disp, fontSize: "32px", color: "var(--gold)", marginBottom: subtitle ? "6px" : "18px" }}>{title}</div>
+        {subtitle && <div style={{ fontSize: "13px", color: "var(--dim)", marginBottom: "18px" }}>{subtitle}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function Cursor() {
   useEffect(() => {
     const dot = document.getElementById("db-cursor");
@@ -288,11 +395,12 @@ function DonutChart({ data }: { data: Array<{ label: string; value: number }> })
     );
   }
 
-  let cumulativeStart = 0;
-  const slices = data.map(slice => {
+  const slices = data.map((slice, index) => {
     const dashLen = (slice.value / total) * circumference;
+    const cumulativeStart = data
+      .slice(0, index)
+      .reduce((sum, previousSlice) => sum + (previousSlice.value / total) * circumference, 0);
     const offset = circumference - cumulativeStart;
-    cumulativeStart += dashLen;
     return { ...slice, dashLen, offset };
   });
 
@@ -328,7 +436,6 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     fanCodeCount,
     transactions,
     chartData,
-    heatMap,
     contentItems,
     withdrawals,
     notifications,
@@ -341,6 +448,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     userId,
     phantomMode,
     hasVaultPin,
+    creatorProfile,
     socialConnections,
     socialReach,
     oauthAvailable,
@@ -371,13 +479,24 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [withdrawSaving, setWithdrawSaving] = useState(false);
   const [withdrawMsg, setWithdrawMsg] = useState("");
 
-  const [settingsName, setSettingsName] = useState("");
-  const [settingsHandle, setSettingsHandle] = useState("");
-  const [settingsBio, setSettingsBio] = useState("");
-  const [settingsCategory, setSettingsCategory] = useState("luxury");
+  const [settingsName, setSettingsName] = useState(creatorProfile.displayName || "");
+  const [settingsHandle, setSettingsHandle] = useState(creatorProfile.handle || "");
+  const [settingsBio, setSettingsBio] = useState(creatorProfile.bio || "");
+  const [settingsCategory, setSettingsCategory] = useState(creatorProfile.category || "luxury");
   const [settings2fa, setSettings2fa] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState("");
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [fansState, setFansState] = useState<FanCodeRow[]>(fanCodes);
+  const [fanSearch, setFanSearch] = useState("");
+  const [fanFilter, setFanFilter] = useState<"all" | "vip" | "active" | "inactive">("all");
+  const [fanSort, setFanSort] = useState<"spent" | "recent" | "name">("spent");
+  const [fanDrafts, setFanDrafts] = useState<Record<string, { customName: string; creatorNotes: string; tags: string; isVip: boolean }>>({});
+  const [fanSavingId, setFanSavingId] = useState<string | null>(null);
+  const [fanSaveMsg, setFanSaveMsg] = useState("");
+  const [selectedFanCode, setSelectedFanCode] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportMsg, setExportMsg] = useState("");
 
   const [animatedRefStats, setAnimatedRefStats] = useState({
     totalCreators: 0,
@@ -402,6 +521,63 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     const daily = totalWeek / 7;
     return daily * 30;
   }, [chartData]);
+
+  const contentTitles = useMemo(() => contentItems.map(item => item.title).slice(0, 8), [contentItems]);
+
+  const fanInsights = useMemo<FanInsightRow[]>(() => {
+    return fansState.map(fan => {
+      const relatedTransactions = transactions
+        .filter(tx => tx.fan_code === fan.code)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const totalSpent = relatedTransactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+      const firstSeen = relatedTransactions.at(-1)?.created_at ?? fan.created_at;
+      const lastActive = relatedTransactions[0]?.created_at ?? fan.created_at;
+      const daysSinceActive = (Date.now() - new Date(lastActive).getTime()) / (1000 * 60 * 60 * 24);
+      return {
+        ...fan,
+        totalSpent,
+        transactionCount: relatedTransactions.length,
+        firstSeen,
+        lastActive,
+        statusLabel: daysSinceActive <= 30 ? "active" : "inactive",
+        // Estimate only: slices contentTitles by transaction count as a placeholder;
+        // actual purchased items are unavailable without a content_id FK on transactions.
+        estimatedContentPreview: contentTitles.slice(0, Math.max(1, Math.min(3, relatedTransactions.length || 1))),
+        transactions: relatedTransactions,
+      };
+    });
+  }, [contentTitles, fansState, transactions]);
+
+  const filteredFans = useMemo(() => {
+    const term = fanSearch.trim().toLowerCase();
+    const filtered = fanInsights.filter(fan => {
+      const matchesSearch = !term || [fan.code, fan.custom_name ?? "", fan.creator_notes ?? "", fan.tags.join(" ")].join(" ").toLowerCase().includes(term);
+      const matchesFilter = fanFilter === "all"
+        || (fanFilter === "vip" && fan.is_vip)
+        || (fanFilter === "active" && fan.statusLabel === "active")
+        || (fanFilter === "inactive" && fan.statusLabel === "inactive");
+      return matchesSearch && matchesFilter;
+    });
+
+    return filtered.sort((left, right) => {
+      if (fanSort === "name") {
+        return (left.custom_name || left.code).localeCompare(right.custom_name || right.code);
+      }
+      if (fanSort === "recent") {
+        return new Date(right.lastActive).getTime() - new Date(left.lastActive).getTime();
+      }
+      return right.totalSpent - left.totalSpent;
+    });
+  }, [fanFilter, fanInsights, fanSearch, fanSort]);
+
+  const selectedFan = useMemo(
+    () => fanInsights.find(fan => fan.code === selectedFanCode) ?? null,
+    [fanInsights, selectedFanCode],
+  );
+
+  const vipCount = fanInsights.filter(fan => fan.is_vip).length;
+  const activeFanCount = fanInsights.filter(fan => fan.statusLabel === "active").length;
+  const crmCoverage = fanInsights.filter(fan => fan.custom_name || fan.creator_notes || fan.tags.length > 0 || fan.is_vip).length;
 
   const cipherScoreData: CipherScoreData = {
     totalEarnings: wallet.total_earnings,
@@ -428,6 +604,17 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   useEffect(() => {
     setShareText(`New exclusive content just dropped 🔒 cipher.co/@${handle}`);
   }, [handle]);
+
+  useEffect(() => {
+    setFansState(fanCodes);
+  }, [fanCodes]);
+
+  useEffect(() => {
+    setSettingsName(creatorProfile.displayName || "");
+    setSettingsHandle(creatorProfile.handle || "");
+    setSettingsBio(creatorProfile.bio || "");
+    setSettingsCategory(creatorProfile.category || "luxury");
+  }, [creatorProfile]);
 
   useEffect(() => {
     const duration = 800;
@@ -461,7 +648,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     return () => clearInterval(interval);
   }, []);
 
-  const refreshConnections = async () => {
+  const refreshConnections = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -474,7 +661,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     } catch (err) {
       console.error("Refresh social connections failed:", err);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -495,7 +682,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       url.searchParams.delete("social_msg");
       window.history.replaceState({}, "", url.toString());
     }
-  }, []);
+  }, [refreshConnections]);
 
   const connectPlatform = async (platform: SocialPlatform) => {
     if (!oauthAvailable[platform]) {
@@ -734,6 +921,167 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
     }
   };
 
+  const getFanDraft = (fan: FanCodeRow) => {
+    return fanDrafts[fan.id] ?? {
+      customName: fan.custom_name ?? "",
+      creatorNotes: fan.creator_notes ?? "",
+      tags: fan.tags.join(", "),
+      isVip: fan.is_vip,
+    };
+  };
+
+  const patchFanDraft = (fanId: string, next: Partial<{ customName: string; creatorNotes: string; tags: string; isVip: boolean }>, source?: FanCodeRow) => {
+    setFanDrafts(prev => {
+      const base = source
+        ? getFanDraft(source)
+        : prev[fanId] ?? { customName: "", creatorNotes: "", tags: "", isVip: false };
+      return {
+        ...prev,
+        [fanId]: { ...base, ...next },
+      };
+    });
+  };
+
+  const saveFanRecord = async (fan: FanCodeRow) => {
+    const draft = getFanDraft(fan);
+    setFanSavingId(fan.id);
+    setFanSaveMsg("");
+    try {
+      const res = await fetch(`/api/fans/${encodeURIComponent(fan.code)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customName: draft.customName,
+          creatorNotes: draft.creatorNotes,
+          tags: normalizeTagsInput(draft.tags),
+          isVip: draft.isVip,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof json.error === "string" ? json.error : "Could not save fan profile.");
+      }
+
+      setFansState(prev => prev.map(item => (
+        item.id === fan.id
+          ? {
+              ...item,
+              custom_name: json.fan?.custom_name ?? draft.customName,
+              creator_notes: json.fan?.creator_notes ?? draft.creatorNotes,
+              tags: Array.isArray(json.fan?.tags) ? json.fan.tags : normalizeTagsInput(draft.tags),
+              is_vip: Boolean(json.fan?.is_vip ?? draft.isVip),
+            }
+          : item
+      )));
+      setFanDrafts(prev => {
+        const next = { ...prev };
+        delete next[fan.id];
+        return next;
+      });
+      setFanSaveMsg(`Saved ${draft.customName || fan.code}.`);
+    } catch (err) {
+      console.error("Save fan record failed:", err);
+      setFanSaveMsg(err instanceof Error ? err.message : "Could not save fan profile.");
+    } finally {
+      setFanSavingId(null);
+    }
+  };
+
+  const exportDataBundle = async () => {
+    setExportBusy(true);
+    setExportMsg("");
+    try {
+      const fanRows = fanInsights.map(fan => ({
+        code: fan.code,
+        custom_name: fan.custom_name ?? "",
+        vip: fan.is_vip ? "yes" : "no",
+        tags: fan.tags.join(" | "),
+        notes: fan.creator_notes ?? "",
+        total_spent_usd: fan.totalSpent,
+        transaction_count: fan.transactionCount,
+        first_seen: formatDateTime(fan.firstSeen),
+        last_active: formatDateTime(fan.lastActive),
+        crm_status: fan.statusLabel,
+      }));
+      const earningsRows = transactions.map(tx => ({
+        transaction_id: tx.id,
+        fan_code: tx.fan_code ?? "anonymous",
+        amount_usd: tx.amount,
+        type: tx.type ?? "subscription",
+        status: tx.status,
+        created_at: formatDateTime(tx.created_at),
+      }));
+      const contentRows = contentItems.map(item => {
+        return {
+          title: item.title,
+          status: item.status,
+          created_at: formatDateTime(item.created_at),
+          price_usd: item.price,
+          burn_mode: item.burn_mode ? "yes" : "no",
+          expiry: item.expires_at ? formatDateTime(item.expires_at) : "persistent",
+          // estimated_sales and estimated_revenue_usd are omitted: TransactionRow has no
+          // content_id FK so any time-based aggregation would double-count transactions.
+          estimated_sales: null,
+          estimated_revenue_usd: null,
+        };
+      });
+      const summary = {
+        exportedAt: new Date().toISOString(),
+        creator: {
+          displayName: settingsName || creatorProfile.displayName || "",
+          handle: settingsHandle || creatorProfile.handle || "",
+          email: userEmail,
+          category: settingsCategory || creatorProfile.category || "",
+        },
+        totals: {
+          fans: fanInsights.length,
+          vipFans: vipCount,
+          activeFans: activeFanCount,
+          transactions: transactions.length,
+          contentItems: contentItems.length,
+          totalRevenue: wallet.total_earnings,
+        },
+        privacy: {
+          note: "Exports are generated locally in your browser. No extra fan data is sent to third-party services.",
+          anonymousSafe: true,
+        },
+      };
+
+      const fanCsv = toCsv(fanRows);
+      const earningsCsv = toCsv(earningsRows);
+      const contentCsv = toCsv(contentRows);
+      const summaryJson = JSON.stringify(summary, null, 2);
+
+      const zip = new JSZip();
+      zip.file("fans.csv", fanCsv);
+      zip.file("earnings.csv", earningsCsv);
+      zip.file("content-performance.csv", contentCsv);
+      zip.file("summary.json", summaryJson);
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(`cipher-export-${stamp}.zip`, blob);
+      setExportMsg("Export bundle downloaded.");
+    } catch (err) {
+      console.error("Export failed:", err);
+      setExportMsg("Could not generate export bundle.");
+    } finally {
+      setExportBusy(false);
+    }
+  };
+
+  const exportFanCsv = () => {
+    const csv = toCsv(filteredFans.map(fan => ({
+      code: fan.code,
+      custom_name: fan.custom_name ?? "",
+      vip: fan.is_vip ? "yes" : "no",
+      total_spent_usd: fan.totalSpent,
+      last_active: formatDateTime(fan.lastActive),
+      tags: fan.tags.join(" | "),
+    })));
+    downloadBlob("cipher-fans.csv", new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  };
+
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -760,7 +1108,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       <div style={{ display: "flex", minHeight: "100vh", background: "#020203", backgroundImage: "radial-gradient(circle at 10% 5%, rgba(200,169,110,0.09), transparent 40%)" }}>
         <aside className="db-sidebar" style={{ width: "220px", position: "fixed", top: 0, left: 0, bottom: 0, background: "rgba(8,8,15,0.98)", borderRight: "1px solid rgba(255,255,255,0.055)", display: "flex", flexDirection: "column", zIndex: 100, backdropFilter: "blur(12px)" }}>
           <div style={{ padding: "24px 20px", borderBottom: "1px solid rgba(255,255,255,0.055)" }}>
-            <a href="/" style={{ ...mono, fontSize: "13px", fontWeight: 500, letterSpacing: "0.3em", color: "var(--gold)", textDecoration: "none", display: "block", marginBottom: "3px" }}>CIPHER</a>
+            <Link href="/" style={{ ...mono, fontSize: "13px", fontWeight: 500, letterSpacing: "0.3em", color: "var(--gold)", textDecoration: "none", display: "block", marginBottom: "3px" }}>CIPHER</Link>
             <div style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.12em" }}>Creator Console</div>
           </div>
 
@@ -1050,35 +1398,92 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             )}
 
             {activeSection === "fans" && (
-              <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
-                <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>FAN HEAT MAP</div>
-                <div style={{ fontSize: "14px", color: "var(--white)", marginBottom: "12px" }}>Top fans by spending, sorted descending</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "10px" }}>
-                  {heatMap.length === 0 && <div style={{ color: "var(--muted)" }}>No fan spend data yet.</div>}
-                  {heatMap.map((row, idx) => {
-                    const tier = idx === 0 ? "gold" : idx < Math.ceil(heatMap.length / 2) ? "silver" : "dim";
-                    const borderColor = tier === "gold" ? "#c8a96e" : tier === "silver" ? "#a7adb8" : "rgba(255,255,255,0.12)";
-                    return (
-                      <div key={row.fan_code} style={{ border: `1px solid ${borderColor}`, borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
-                        <div style={{ ...mono, fontSize: "11px", color: "var(--gold)", letterSpacing: "0.1em" }}>{row.fan_code}</div>
-                        <div style={{ ...disp, fontSize: "30px", color: "var(--white)", marginTop: "6px" }}>{money.format(row.total)}</div>
-                        <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>Last active: {formatDate(row.last_active)}</div>
-                        <div style={{ ...mono, fontSize: "10px", color: "var(--muted)", marginTop: "6px" }}>{row.subscription_status}</div>
-                      </div>
-                    );
-                  })}
+              <div style={{ display: "grid", gap: "12px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "10px" }}>
+                  {[
+                    { label: "Tracked fans", value: String(fanInsights.length), hint: `${crmCoverage} enriched with CRM notes` },
+                    { label: "VIP fans", value: String(vipCount), hint: `${fanInsights.length ? Math.round((vipCount / fanInsights.length) * 100) : 0}% of total base` },
+                    { label: "Active last 30d", value: String(activeFanCount), hint: "Recent spenders and returning buyers" },
+                    { label: "Lifetime fan value", value: money.format(fanInsights.reduce((sum, fan) => sum + fan.totalSpent, 0)), hint: "Based on linked transactions" },
+                  ].map(stat => (
+                    <div key={stat.label} style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "14px" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>{stat.label}</div>
+                      <div style={{ ...disp, fontSize: "30px", color: "var(--gold)", marginTop: "6px" }}>{stat.value}</div>
+                      <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "6px" }}>{stat.hint}</div>
+                    </div>
+                  ))}
                 </div>
 
-                <div style={{ marginTop: "14px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "12px" }}>
-                  <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>FAN CODES</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "8px" }}>
-                    {fanCodes.map(fc => (
-                      <div key={fc.id} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "7px", padding: "8px", background: "rgba(255,255,255,0.02)" }}>
-                        <div style={{ ...mono, color: "var(--gold)", fontSize: "11px" }}>{fc.code}</div>
-                        <div style={{ fontSize: "11px", color: "var(--dim)" }}>{formatDate(fc.created_at)}</div>
-                        <div style={{ ...mono, fontSize: "10px", color: "var(--muted)", marginTop: "4px" }}>{fc.status}</div>
-                      </div>
-                    ))}
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                    <div>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>PRIVATE FAN CRM</div>
+                      <div style={{ fontSize: "14px", color: "var(--white)", marginTop: "4px" }}>Track custom names, notes, tags, VIP status, and spend signals without exposing data publicly.</div>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <input value={fanSearch} onChange={e => setFanSearch(e.target.value)} placeholder="Search code, notes, tags" style={{ minWidth: "220px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                      <select value={fanFilter} onChange={e => setFanFilter(e.target.value as typeof fanFilter)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
+                        <option value="all">All fans</option>
+                        <option value="vip">VIP only</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                      <select value={fanSort} onChange={e => setFanSort(e.target.value as typeof fanSort)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
+                        <option value="spent">Sort by spend</option>
+                        <option value="recent">Sort by recent activity</option>
+                        <option value="name">Sort by name</option>
+                      </select>
+                      <button type="button" onClick={exportFanCsv} style={{ border: "1px solid rgba(200,169,110,0.4)", borderRadius: "6px", padding: "10px 12px", background: "rgba(200,169,110,0.08)", color: "var(--gold)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>EXPORT CSV</button>
+                    </div>
+                  </div>
+
+                  {fanSaveMsg && <div style={{ marginTop: "10px", color: fanSaveMsg.startsWith("Saved") ? "#39c56f" : "#ff8a8a", fontSize: "12px" }}>{fanSaveMsg}</div>}
+
+                  <div style={{ marginTop: "14px", display: "grid", gap: "10px" }}>
+                    {filteredFans.length === 0 && <div style={{ color: "var(--muted)" }}>No fans match the current filters yet.</div>}
+                    {filteredFans.map(fan => {
+                      const draft = getFanDraft(fan);
+                      return (
+                        <div key={fan.id} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 1fr 1fr auto", gap: "10px", alignItems: "start" }}>
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                <div style={{ ...mono, fontSize: "11px", color: "var(--gold)", letterSpacing: "0.1em" }}>{fan.code}</div>
+                                <div style={{ ...mono, fontSize: "9px", color: fan.statusLabel === "active" ? "#39c56f" : "var(--dim)", letterSpacing: "0.1em" }}>{fan.statusLabel.toUpperCase()}</div>
+                                {fan.is_vip && <div style={{ ...mono, fontSize: "9px", color: "#ff9ec2", letterSpacing: "0.1em" }}>VIP</div>}
+                              </div>
+                              <input value={draft.customName} onChange={e => patchFanDraft(fan.id, { customName: e.target.value }, fan)} placeholder="Custom name" style={{ width: "100%", marginTop: "8px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                              <textarea value={draft.creatorNotes} onChange={e => patchFanDraft(fan.id, { creatorNotes: e.target.value }, fan)} placeholder="Private notes" style={{ width: "100%", minHeight: "74px", marginTop: "8px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                            </div>
+
+                            <div>
+                              <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "6px" }}>SEGMENTS</div>
+                              <input value={draft.tags} onChange={e => patchFanDraft(fan.id, { tags: e.target.value }, fan)} placeholder="vip, whale, comeback" style={{ width: "100%", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "10px" }}>
+                                {normalizeTagsInput(draft.tags).length === 0 && <div style={{ fontSize: "12px", color: "var(--muted)" }}>No tags yet.</div>}
+                                {normalizeTagsInput(draft.tags).map(tag => (
+                                  <span key={tag} style={{ border: `1px solid ${tagColor(tag)}55`, background: `${tagColor(tag)}1a`, color: tagColor(tag), borderRadius: "999px", padding: "4px 8px", fontSize: "11px" }}>{tag}</span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "6px" }}>SIGNALS</div>
+                              <div style={{ ...disp, fontSize: "26px", color: "var(--gold)" }}>{money.format(fan.totalSpent)}</div>
+                              <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>{fan.transactionCount} purchases</div>
+                              <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "6px" }}>Last active {formatDate(fan.lastActive)}</div>
+                              <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "2px" }}>Joined {formatDate(fan.firstSeen)}</div>
+                              <button type="button" onClick={() => patchFanDraft(fan.id, { isVip: !draft.isVip }, fan)} style={{ marginTop: "10px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "999px", padding: "8px 12px", background: draft.isVip ? "rgba(255,143,177,0.15)" : "transparent", color: draft.isVip ? "#ff9ec2" : "var(--dim)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>{draft.isVip ? "VIP ENABLED" : "MARK VIP"}</button>
+                            </div>
+
+                            <div style={{ display: "grid", gap: "8px", minWidth: "130px" }}>
+                              <button type="button" onClick={() => setSelectedFanCode(fan.code)} style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "6px", padding: "10px 12px", background: "transparent", color: "var(--white)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>OPEN PROFILE</button>
+                              <button type="button" onClick={() => void saveFanRecord(fan)} disabled={fanSavingId === fan.id} style={{ border: "none", borderRadius: "6px", padding: "10px 12px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>{fanSavingId === fan.id ? "SAVING" : "SAVE CRM"}</button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1293,9 +1698,26 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                       <option value="education">Education</option>
                     </select>
                     <button type="button" onClick={() => setSettings2fa(v => !v)} style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "6px", padding: "10px", background: settings2fa ? "rgba(200,169,110,0.18)" : "transparent", color: settings2fa ? "var(--gold)" : "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>{settings2fa ? "2FA ENABLED" : "2FA DISABLED"}</button>
+                    <button type="button" onClick={() => setExportOpen(true)} style={{ border: "1px solid rgba(200,169,110,0.35)", borderRadius: "6px", padding: "10px 12px", background: "rgba(200,169,110,0.08)", color: "var(--gold)", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>EXPORT DATA</button>
                     <button type="button" onClick={saveSettings} disabled={settingsSaving} style={{ border: "none", borderRadius: "6px", padding: "10px 14px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>{settingsSaving ? "SAVING" : "SAVE"}</button>
                   </div>
                   {settingsMsg && <div style={{ marginTop: "8px", color: settingsMsg.includes("saved") ? "var(--gold)" : "#ff6a6a", fontSize: "12px" }}>{settingsMsg}</div>}
+                </div>
+
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
+                  <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>EXPORT CENTER</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: "12px" }}>
+                    <div>
+                      <div style={{ fontSize: "14px", color: "var(--white)" }}>Generate creator-safe exports directly in the browser.</div>
+                      <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "8px", lineHeight: 1.7 }}>ZIP exports include fan CRM, earnings history, content performance, and a machine-readable summary. No extra fan data leaves the device during export.</div>
+                    </div>
+                    <div style={{ border: "1px solid rgba(200,169,110,0.18)", borderRadius: "8px", padding: "12px", background: "rgba(200,169,110,0.04)" }}>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between" }}><span>Fans file</span><span>{estimateFileSizeLabel(toCsv(fanInsights.map(fan => ({ code: fan.code, total: fan.totalSpent }))))}</span></div>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between", marginTop: "6px" }}><span>Earnings rows</span><span>{transactions.length}</span></div>
+                      <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between", marginTop: "6px" }}><span>Content items</span><span>{contentItems.length}</span></div>
+                      <div style={{ fontSize: "12px", color: "#8dcfff", marginTop: "10px" }}>Privacy note: exports are local downloads. Use the GDPR contact action for deletion or subject-access requests.</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
@@ -1386,6 +1808,116 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                   <button type="button" onClick={() => window.confirm("Delete account? This is a UI-only action right now.")} style={{ marginTop: "8px", border: "1px solid rgba(255,82,82,0.5)", borderRadius: "6px", padding: "8px 12px", background: "transparent", color: "#ff9b9b", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>DELETE ACCOUNT</button>
                 </div>
               </div>
+            )}
+
+            {selectedFan && (
+              <DashboardModal
+                title={selectedFan.custom_name || selectedFan.code}
+                subtitle="Private fan profile with transaction history and creator-only notes."
+                onClose={() => setSelectedFanCode(null)}
+              >
+                <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "16px" }}>
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>PROFILE</div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "8px" }}>Fan code: <span style={{ color: "var(--white)" }}>{selectedFan.code}</span></div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "4px" }}>First interaction: <span style={{ color: "var(--white)" }}>{formatDateTime(selectedFan.firstSeen)}</span></div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "4px" }}>Last active: <span style={{ color: "var(--white)" }}>{formatDateTime(selectedFan.lastActive)}</span></div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "4px" }}>Status: <span style={{ color: selectedFan.statusLabel === "active" ? "#39c56f" : "var(--white)" }}>{selectedFan.statusLabel}</span></div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "10px" }}>
+                        {selectedFan.tags.length === 0 && <span style={{ fontSize: "12px", color: "var(--muted)" }}>No tags saved.</span>}
+                        {selectedFan.tags.map(tag => <span key={tag} style={{ border: `1px solid ${tagColor(tag)}55`, background: `${tagColor(tag)}1a`, color: tagColor(tag), borderRadius: "999px", padding: "4px 8px", fontSize: "11px" }}>{tag}</span>)}
+                      </div>
+                      {selectedFan.creator_notes && <div style={{ marginTop: "10px", fontSize: "13px", color: "var(--white)", lineHeight: 1.7 }}>{selectedFan.creator_notes}</div>}
+                    </div>
+
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>TRANSACTION HISTORY</div>
+                      <div style={{ display: "grid", gap: "8px" }}>
+                        {selectedFan.transactions.length === 0 && <div style={{ fontSize: "12px", color: "var(--muted)" }}>No linked transactions yet.</div>}
+                        {selectedFan.transactions.slice(0, 8).map(tx => (
+                          <div key={tx.id} style={{ display: "grid", gridTemplateColumns: "0.8fr 1fr 1fr", gap: "8px", padding: "10px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px" }}>
+                            <div style={{ ...disp, fontSize: "22px", color: "var(--gold)" }}>{money.format(tx.amount)}</div>
+                            <div style={{ fontSize: "12px", color: "var(--muted)", textTransform: "capitalize" }}>{tx.type ?? "subscription"}</div>
+                            <div style={{ fontSize: "12px", color: "var(--dim)", textAlign: "right" }}>{formatDateTime(tx.created_at)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>VALUE SIGNALS</div>
+                      <div style={{ ...disp, fontSize: "32px", color: "var(--gold)", marginTop: "8px" }}>{money.format(selectedFan.totalSpent)}</div>
+                      <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "6px" }}>{selectedFan.transactionCount} transactions linked</div>
+                      <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>{selectedFan.is_vip ? "High-touch VIP experience enabled." : "Not marked as VIP yet."}</div>
+                    </div>
+
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>CONTENT ACCESSED <span style={{ fontSize: "9px", opacity: 0.5 }}>(estimate)</span></div>
+                      <div style={{ display: "grid", gap: "8px", marginTop: "10px" }}>
+                        {selectedFan.estimatedContentPreview.map(item => (
+                          <div key={item} style={{ fontSize: "13px", color: "var(--white)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px", padding: "10px" }}>{item}</div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>NEXT ACTION</div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "8px", lineHeight: 1.7 }}>Use this record to prep a private perk, comeback offer, or early-access drop. Messaging itself stays manual.</div>
+                      <button type="button" onClick={() => window.alert("Special offer composer is a UI stub for now.")} style={{ marginTop: "12px", border: "none", borderRadius: "6px", padding: "10px 12px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer" }}>SEND SPECIAL OFFER</button>
+                    </div>
+                  </div>
+                </div>
+              </DashboardModal>
+            )}
+
+            {exportOpen && (
+              <DashboardModal
+                title="Export Creator Data"
+                subtitle="Client-side ZIP export with privacy-safe messaging and no extra server processing."
+                onClose={() => setExportOpen(false)}
+              >
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "16px" }}>
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>INCLUDED FILES</div>
+                      <div style={{ display: "grid", gap: "8px", marginTop: "10px" }}>
+                        <div style={{ fontSize: "13px", color: "var(--white)" }}>fans.csv</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)" }}>Private CRM fields, VIP labels, tag segments, and lifetime value.</div>
+                        <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "6px" }}>earnings.csv</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)" }}>Transaction-level exports for bookkeeping and reconciliation.</div>
+                        <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "6px" }}>content-performance.csv</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)" }}>Content pricing, burn mode, and estimated performance based on available dashboard records.</div>
+                        <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "6px" }}>summary.json</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)" }}>Portable metadata, totals, and export timestamp.</div>
+                      </div>
+                    </div>
+
+                    <div style={{ border: "1px solid rgba(29,161,242,0.24)", borderRadius: "10px", padding: "14px", background: "rgba(29,161,242,0.06)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "#8dcfff", letterSpacing: "0.12em" }}>PRIVACY</div>
+                      <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "8px", lineHeight: 1.7 }}>These exports are assembled in-browser and downloaded immediately. CIPHER does not upload a second copy during export generation. For deletion requests or subject-access workflows, contact privacy directly.</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>EXPORT SNAPSHOT</div>
+                      <div style={{ display: "grid", gap: "6px", marginTop: "10px" }}>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between" }}><span>Fan records</span><span>{fanInsights.length}</span></div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between" }}><span>Transactions</span><span>{transactions.length}</span></div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between" }}><span>Content rows</span><span>{contentItems.length}</span></div>
+                        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", justifyContent: "space-between" }}><span>Estimated fan CSV size</span><span>{estimateFileSizeLabel(toCsv(fanInsights.map(fan => ({ code: fan.code, spent: fan.totalSpent, notes: fan.creator_notes ?? "" }))))}</span></div>
+                      </div>
+                    </div>
+
+                    <button type="button" onClick={() => void exportDataBundle()} disabled={exportBusy} style={{ border: "none", borderRadius: "8px", padding: "12px 14px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>{exportBusy ? "BUILDING ZIP" : "DOWNLOAD ZIP EXPORT"}</button>
+                    <a href="mailto:privacy@cipher.so?subject=GDPR%20data%20request" style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", padding: "12px 14px", color: "var(--white)", textDecoration: "none", ...mono, fontSize: "11px", letterSpacing: "0.1em", textAlign: "center" }}>CONTACT PRIVACY / GDPR</a>
+                    {exportMsg && <div style={{ fontSize: "12px", color: exportMsg.includes("downloaded") ? "#39c56f" : "#ff8a8a" }}>{exportMsg}</div>}
+                  </div>
+                </div>
+              </DashboardModal>
             )}
           </main>
         </div>

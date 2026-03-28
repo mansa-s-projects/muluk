@@ -14,6 +14,12 @@ type TwitterMe = {
   };
 };
 
+function clearOAuthCookies(res: NextResponse): NextResponse {
+  res.cookies.delete("twitter_oauth_state");
+  res.cookies.delete("twitter_oauth_verifier");
+  return res;
+}
+
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
@@ -21,10 +27,10 @@ export async function GET(req: NextRequest) {
   const verifier = req.cookies.get("twitter_oauth_verifier")?.value;
 
   if (!code || !state || !savedState || state !== savedState || !verifier) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter auth validation failed.",
-    }));
+    })));
   }
 
   const clientId = process.env.TWITTER_CLIENT_ID;
@@ -32,10 +38,10 @@ export async function GET(req: NextRequest) {
   const callback = process.env.TWITTER_CALLBACK_URL || `${appBaseUrl(req)}/api/auth/twitter/callback`;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter OAuth credentials missing.",
-    }));
+    })));
   }
 
   try {
@@ -55,10 +61,10 @@ export async function GET(req: NextRequest) {
 
     if (!token?.access_token) {
       console.error("Twitter token exchange missing access_token");
-      return NextResponse.redirect(dashboardUrl(req, {
+      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed.",
-      }));
+      })));
     }
 
     const me = await jsonFetch<TwitterMe>("https://api.twitter.com/2/users/me?user.fields=username", {
@@ -67,10 +73,10 @@ export async function GET(req: NextRequest) {
 
     if (!me.data?.id) {
       console.error("Twitter /me returned missing user data for callback");
-      return NextResponse.redirect(dashboardUrl(req, {
+      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed: missing user data.",
-      }));
+      })));
     }
 
     const supabase = await createClient();
@@ -79,7 +85,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(dashboardUrl(req, { social_error: "twitter", social_msg: "Sign in to connect Twitter." }));
+      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { social_error: "twitter", social_msg: "Sign in to connect Twitter." })));
     }
 
     const { error } = await supabase
@@ -99,15 +105,12 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    const res = NextResponse.redirect(dashboardUrl(req, { connected: "twitter" }));
-    res.cookies.delete("twitter_oauth_state");
-    res.cookies.delete("twitter_oauth_verifier");
-    return res;
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { connected: "twitter" })));
   } catch (err) {
     console.error("Twitter callback failed", err);
-    return NextResponse.redirect(dashboardUrl(req, {
+    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter connection failed.",
-    }));
+    })));
   }
 }

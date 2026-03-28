@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -341,7 +342,7 @@ export default function Apply() {
         <div className="apply-left" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)", padding: "56px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "sticky", top: 0, height: "100vh" }}>
 
           {/* logo */}
-          <a href="/" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>CIPHER</a>
+          <Link href="/" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>CIPHER</Link>
 
           {/* center content */}
           <div>
@@ -354,7 +355,7 @@ export default function Apply() {
               {step === 1 && <>Where do you<br /><em style={{ ...gold, fontStyle: "italic" }}>get paid?</em></>}
               {step === 2 && <>What do you<br /><em style={{ ...gold, fontStyle: "italic" }}>create?</em></>}
               {step === 3 && <>Almost<br /><em style={{ ...gold, fontStyle: "italic" }}>there.</em></>}
-              {step === 4 && <>You're<br /><em style={{ ...gold, fontStyle: "italic" }}>in.</em></>}
+              {step === 4 && <>You&apos;re<br /><em style={{ ...gold, fontStyle: "italic" }}>in.</em></>}
             </h1>
             <p style={{ fontSize: "14px", fontWeight: 300, lineHeight: 1.8, ...muted, maxWidth: "320px" }}>
               {step === 0 && "Tell us about yourself. Your handle is your identity on CIPHER."}
@@ -386,7 +387,7 @@ export default function Apply() {
 
           {/* bottom quote */}
           <div style={{ ...disp, fontSize: "13px", fontStyle: "italic", color: "var(--dim)", lineHeight: 1.7 }}>
-            "The first 500 creators get fees locked<br />in for life. You're early."
+            &quot;The first 500 creators get fees locked<br />in for life. You&apos;re early.&quot;
           </div>
         </div>
 
@@ -461,7 +462,7 @@ export default function Apply() {
                 ))}
               </div>
               <div style={{ background: "var(--gold-glow)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "3px", padding: "16px 20px", ...mono, fontSize: "12px", ...gold, lineHeight: 1.6 }}>
-                By applying you agree to CIPHER's creator terms. We'll review your application and reach out within 48 hours.
+                By applying you agree to CIPHER&apos;s creator terms. We&apos;ll review your application and reach out within 48 hours.
               </div>
             </div>
           )}
@@ -474,7 +475,7 @@ export default function Apply() {
               </div>
               <h2 style={{ ...disp, fontSize: "48px", fontWeight: 300, fontStyle: "italic", ...gold, marginBottom: "16px", lineHeight: 1 }}>Application sent.</h2>
               <p style={{ fontSize: "15px", fontWeight: 300, ...muted, lineHeight: 1.8, maxWidth: "380px", margin: "0 auto 40px" }}>
-                We'll review <strong style={{ color: "rgba(255,255,255,0.7)", fontWeight: 400 }}>{form.email}</strong> and get back to you within 48 hours. Check your inbox for a confirmation.
+                We&apos;ll review <strong style={{ color: "rgba(255,255,255,0.7)", fontWeight: 400 }}>{form.email}</strong> and get back to you within 48 hours. Check your inbox for a confirmation.
               </p>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                 {["Founding creator badge", "Fees locked for life", "Personal onboarding"].map(perk => (
@@ -506,7 +507,7 @@ export default function Apply() {
                     onMouseEnter={e => (e.currentTarget.style.color = "var(--muted)")}
                     onMouseLeave={e => (e.currentTarget.style.color = "var(--dim)")}
                   >← Back</button>
-                : <a href="/" style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", textDecoration: "none" }}>← cipher.so</a>
+                : <Link href="/" style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", textDecoration: "none" }}>← cipher.so</Link>
               }
               <button
                 onClick={next}

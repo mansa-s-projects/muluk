@@ -14,6 +14,12 @@ ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS phantom_mode BOOLEAN D
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS vault_pin_hash TEXT;
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS bio TEXT;
 
+-- Private fan CRM labels (creator-visible only)
+ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS custom_name TEXT;
+ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS creator_notes TEXT;
+ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT false;
+
 -- Dedicated vault PIN storage to avoid coupling PIN writes to creator profile rows
 CREATE TABLE IF NOT EXISTS creator_vault_pins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

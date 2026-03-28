@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   // Fetch creator profile for phantom mode + vault pin
   const { data: creatorProfile, error: creatorProfileErr } = await supabase
     .from("creator_applications")
-    .select("phantom_mode, vault_pin_hash")
+    .select("phantom_mode, vault_pin_hash, display_name, handle, bio, category, created_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -94,19 +94,18 @@ export default async function DashboardPage() {
   };
 
   const oauthAvailable: DashboardData["oauthAvailable"] = {
-    twitter: Boolean(process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CALLBACK_URL),
-    tiktok: Boolean(process.env.TIKTOK_CLIENT_KEY),
-    instagram: Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CALLBACK_URL),
-    youtube: Boolean(process.env.YOUTUBE_CLIENT_ID),
-    telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_USERNAME),
+    twitter: Boolean(process.env.TWITTER_CLIENT_ID && process.env.TWITTER_CLIENT_SECRET),
+    tiktok: Boolean(process.env.TIKTOK_CLIENT_KEY && process.env.TIKTOK_CLIENT_SECRET),
+    instagram: Boolean(process.env.INSTAGRAM_CLIENT_ID && process.env.INSTAGRAM_CLIENT_SECRET),
+    youtube: Boolean(process.env.YOUTUBE_CLIENT_ID && process.env.YOUTUBE_CLIENT_SECRET),
+    telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN),
   };
 
   const { data: fanCodesRaw, count: fanCodeCount, error: fanErr } = await supabase
     .from("fan_codes")
-    .select("id, code, status, created_at", { count: "exact" })
+    .select("id, code, status, created_at, custom_name, creator_notes, tags, is_vip", { count: "exact" })
     .eq("creator_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+    .order("created_at", { ascending: false });
 
   if (fanErr && isMissingTable(fanErr.code, fanErr.message)) {
     missingTables.add("fan_codes");
@@ -117,14 +116,17 @@ export default async function DashboardPage() {
     code: String(row.code),
     status: String(row.status ?? "active"),
     created_at: String(row.created_at ?? ""),
+    custom_name: row.custom_name ? String(row.custom_name) : null,
+    creator_notes: row.creator_notes ? String(row.creator_notes) : null,
+    tags: Array.isArray(row.tags) ? row.tags.map(tag => String(tag)) : [],
+    is_vip: Boolean(row.is_vip),
   }));
 
   const { data: txRaw, error: txErr } = await supabase
     .from("transactions")
     .select("id, fan_code, amount, type, status, created_at")
     .eq("creator_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(30);
+    .order("created_at", { ascending: false });
 
   if (txErr && isMissingTable(txErr.code, txErr.message)) {
     missingTables.add("transactions");
@@ -188,10 +190,9 @@ export default async function DashboardPage() {
 
   const { data: contentRaw, error: contentErr } = await supabase
     .from("content_items")
-    .select("id, title, description, price, burn_mode, expires_at, status")
+    .select("id, title, description, price, burn_mode, expires_at, status, created_at")
     .eq("creator_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+    .order("created_at", { ascending: false });
 
   if (contentErr && isMissingTable(contentErr.code, contentErr.message)) {
     missingTables.add("content_items");
@@ -205,6 +206,7 @@ export default async function DashboardPage() {
     burn_mode: Boolean(row.burn_mode),
     expires_at: row.expires_at ? String(row.expires_at) : null,
     status: String(row.status ?? "active"),
+    created_at: String(row.created_at ?? ""),
   }));
 
   const { data: withdrawalRaw, error: withdrawalErr } = await supabase
@@ -240,7 +242,6 @@ export default async function DashboardPage() {
       .reduce((sum, t) => sum + safeNum(t.amount), 0),
   }));
 
-  const totalRevenue = byType.reduce((sum, t) => sum + t.value, 0);
   const bestDayObj = [...chartData].sort((a, b) => b.amount - a.amount)[0];
   const paidFans = new Set((chartTxRaw ?? []).filter(t => String(t.status ?? "") === "completed").map(t => String(t.fan_code ?? ""))).size;
   const viewedFans = Math.max(fanCodeCount ?? fanCodes.length, 1);
@@ -304,6 +305,13 @@ export default async function DashboardPage() {
     userId: user.id,
     phantomMode,
     hasVaultPin,
+    creatorProfile: {
+      displayName: creatorProfile?.display_name ? String(creatorProfile.display_name) : "",
+      handle: creatorProfile?.handle ? String(creatorProfile.handle) : "",
+      bio: creatorProfile?.bio ? String(creatorProfile.bio) : "",
+      category: creatorProfile?.category ? String(creatorProfile.category) : "luxury",
+      createdAt: creatorProfile?.created_at ? String(creatorProfile.created_at) : "",
+    },
     socialConnections,
     socialReach,
     oauthAvailable,

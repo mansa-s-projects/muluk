@@ -73,6 +73,7 @@ export function decryptToken(hex: string): string {
   if (hex.length % 2 !== 0) {
     throw new Error("Encrypted token payload must have an even hex length");
   }
+  // 12-byte IV + 16-byte auth tag + minimum 1-byte ciphertext = 29 bytes = 58 hex chars.
   if (hex.length < 58) {
     throw new Error("Encrypted token payload is too short");
   }

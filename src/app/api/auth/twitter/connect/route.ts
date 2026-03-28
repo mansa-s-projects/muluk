@@ -4,6 +4,7 @@ import { appBaseUrl, dashboardUrl, randomToken, sha256Base64Url } from "@/app/ap
 export async function GET(req: NextRequest) {
   const clientId = process.env.TWITTER_CLIENT_ID;
   const callback = process.env.TWITTER_CALLBACK_URL || `${appBaseUrl(req)}/api/auth/twitter/callback`;
+  const isSecure = process.env.NODE_ENV !== "development";
 
   if (!clientId) {
     return NextResponse.redirect(dashboardUrl(req, {
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
   authUrl.searchParams.set("code_challenge_method", "S256");
 
   const res = NextResponse.redirect(authUrl);
-  res.cookies.set("twitter_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
-  res.cookies.set("twitter_oauth_verifier", verifier, { httpOnly: true, sameSite: "lax", secure: true, path: "/", maxAge: 600 });
+  res.cookies.set("twitter_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
+  res.cookies.set("twitter_oauth_verifier", verifier, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
   return res;
 }

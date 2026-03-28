@@ -116,7 +116,6 @@ export function PhantomModeToggle({ userId, initialPhantom }: { userId: string; 
       setActive(v => !v);
     } catch (err) {
       console.error("Phantom mode toggle failed:", err);
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -318,6 +317,9 @@ export function DarkVault({ userId, hasPin }: { userId: string; hasPin: boolean 
           if (vaultSaveErr && !isMissingTableError(vaultSaveErr.code, vaultSaveErr.message)) {
             console.error("Vault PIN save failed:", vaultSaveErr);
             setMsg("Could not save PIN. Please try again.");
+            setPin("");
+            setConfirmPin("");
+            setPhase("set");
             return;
           }
 
@@ -333,6 +335,9 @@ export function DarkVault({ userId, hasPin }: { userId: string; hasPin: boolean 
             if (legacySaveErr || !legacyRows || legacyRows.length === 0) {
               console.error("Legacy vault PIN save failed:", legacySaveErr);
               setMsg("Could not save PIN. Please run the latest migration and try again.");
+              setPin("");
+              setConfirmPin("");
+              setPhase("set");
               return;
             }
           }
@@ -739,6 +744,10 @@ export function FanPredictionEngine({ totalEarnings, fanCount, retentionRate, ch
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPrice: 25, contentType: "subscription" }),
       });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => String(res.status));
+        throw new Error(`Prediction API error (${res.status}): ${errText}`);
+      }
       const json = await res.json();
 
       // Build prediction cards from response + computed data
@@ -810,7 +819,7 @@ export function FanPredictionEngine({ totalEarnings, fanCount, retentionRate, ch
 
       {predictions.length === 0 && !loading && (
         <div style={{ fontSize: "13px", color: "var(--dim)", textAlign: "center", padding: "20px" }}>
-          Hit "RUN PREDICTION" to analyze your trajectory.
+          Hit &quot;RUN PREDICTION&quot; to analyze your trajectory.
         </div>
       )}
 

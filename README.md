@@ -6,12 +6,14 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+
+`npm run dev` uses a small wrapper that replaces any existing repo-local Next.js dev server before starting a fresh one. This avoids the repeated Windows startup failure where `next dev` exits with `Another next dev server is already running.`
+
+If you want the original Next.js behavior without that wrapper, use:
+
+```bash
+npm run dev:raw
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

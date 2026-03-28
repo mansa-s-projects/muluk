@@ -436,7 +436,7 @@ export default function Home() {
           Be first.<br /><em style={{ fontStyle: "italic", ...gold }}>Build more.</em>
         </h2>
         <p className="reveal reveal-delay-2" style={{ fontSize: "15px", fontWeight: 300, ...muted, marginBottom: "56px", maxWidth: "440px", margin: "0 auto 56px", lineHeight: 1.8 }}>
-          We're onboarding the first 500 creators personally. Lower fees locked in for life, and a founding creator badge.
+          We&apos;re onboarding the first 500 creators personally. Lower fees locked in for life, and a founding creator badge.
         </p>
         <div className="reveal reveal-delay-3" style={{ maxWidth: "460px", margin: "0 auto" }}>
           <WaitlistForm id="bottom" />
