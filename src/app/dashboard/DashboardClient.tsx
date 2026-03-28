@@ -266,6 +266,61 @@ const SECTIONS = [
 
 type SectionKey = (typeof SECTIONS)[number]["key"];
 
+const SLICE_COLORS: Record<string, string> = {
+  subscription: "#c8a96e",
+  tip: "#987a4c",
+};
+const SLICE_DEFAULT_COLOR = "#5f5137";
+
+function DonutChart({ data }: { data: Array<{ label: string; value: number }> }) {
+  const size = 140;
+  const r = 52;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const total = data.reduce((s, v) => s + v.value, 0) || 1;
+
+  if (data.every(d => d.value === 0)) {
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={22} />
+      </svg>
+    );
+  }
+
+  let cumulativeStart = 0;
+  const slices = data.map(slice => {
+    const dashLen = (slice.value / total) * circumference;
+    const offset = circumference - cumulativeStart;
+    cumulativeStart += dashLen;
+    return { ...slice, dashLen, offset };
+  });
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ transform: "rotate(-90deg)" }}
+      aria-hidden="true"
+    >
+      {slices.map(slice => (
+        <circle
+          key={slice.label}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={SLICE_COLORS[slice.label] ?? SLICE_DEFAULT_COLOR}
+          strokeWidth={22}
+          strokeDasharray={`${slice.dashLen} ${circumference - slice.dashLen}`}
+          strokeDashoffset={slice.offset}
+        />
+      ))}
+    </svg>
+  );
+}
+
 export default function DashboardClient({ data }: { data: DashboardData }) {
   const {
     wallet,
@@ -555,12 +610,18 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
     setContentSaving(true);
     try {
+      const priceVal = Number(contentPrice);
+      if (!Number.isFinite(priceVal) || priceVal < 0) {
+        setContentMsg("Please enter a valid price.");
+        setContentSaving(false);
+        return;
+      }
       const supabase = createClient();
       const { error } = await supabase.from("content_items").insert({
         creator_id: userId,
         title: contentTitle.trim(),
         description: contentDesc.trim(),
-        price: Number(contentPrice || 0),
+        price: priceVal,
         burn_mode: burnMode,
         expires_at: burnMode ? expiresAt.toISOString() : null,
         status: "active",
@@ -613,6 +674,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const requestWithdrawal = async () => {
     setWithdrawMsg("");
     const amt = Number(withdrawAmount || 0);
+    if (!Number.isFinite(amt)) {
+      setWithdrawMsg("Invalid amount.");
+      return;
+    }
     if (amt < 20) {
       setWithdrawMsg("Minimum withdrawal is $20.");
       return;
@@ -759,7 +824,8 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 type="button"
                 onClick={() => {
                   setNotifOpen(v => !v);
-                  setUnreadCount(0);
+                  // Note: unreadCount is managed exclusively by the backend poll
+                  // (every 30 s) to avoid flicker from optimistic local clears.
                 }}
                 style={{ position: "relative", width: "34px", height: "34px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)", color: "var(--gold)", cursor: "pointer" }}
               >
@@ -1129,13 +1195,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "14px" }}>
                     <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>REVENUE BY CONTENT TYPE</div>
-                    <div style={{ display: "flex", width: "140px", height: "140px", borderRadius: "50%", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      {analytics.byType.map(slice => {
-                        const total = analytics.byType.reduce((s, v) => s + v.value, 0) || 1;
-                        const width = `${(slice.value / total) * 100}%`;
-                        return <div key={slice.label} style={{ width, background: slice.label === "subscription" ? "#c8a96e" : slice.label === "tip" ? "#987a4c" : "#5f5137" }} />;
-                      })}
-                    </div>
+                    <DonutChart data={analytics.byType} />
                     <div style={{ marginTop: "8px", display: "grid", gap: "4px" }}>
                       {analytics.byType.map(s => (
                         <div key={s.label} style={{ fontSize: "12px", color: "var(--muted)", textTransform: "capitalize" }}>{s.label}: {money.format(s.value)}</div>

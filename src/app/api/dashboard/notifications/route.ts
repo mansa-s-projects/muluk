@@ -29,7 +29,8 @@ export async function GET() {
       .limit(8);
 
     if (error) {
-      return NextResponse.json({ items: [], unreadCount: 0 });
+      console.error("Notifications: database query failed", error);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 
     const items = (data ?? []).map((row, idx) => ({
@@ -40,6 +41,8 @@ export async function GET() {
         maximumFractionDigits: 0,
       }).format(safeNum(row.amount))} from ${String(row.fan_code ?? "FAN-UNKNOWN")}`,
       created_at: String(row.created_at ?? ""),
+      // TODO: derive from persisted read state (e.g. !row.read_at) once a
+      // `read_at` column or `notification_reads` join table exists in the schema.
       unread: idx < 3,
     }));
 
