@@ -64,8 +64,24 @@ export function decryptToken(hex: string): string {
     throw new Error("TOKEN_ENCRYPTION_KEY missing or invalid - expected a 64-char hex string");
   }
 
+  if (typeof hex !== "string" || !hex) {
+    throw new Error("Encrypted token payload must be a non-empty hex string");
+  }
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error("Encrypted token payload contains non-hex characters");
+  }
+  if (hex.length % 2 !== 0) {
+    throw new Error("Encrypted token payload must have an even hex length");
+  }
+  if (hex.length < 58) {
+    throw new Error("Encrypted token payload is too short");
+  }
+
   const keyBuf = Buffer.from(hexKey, "hex");
   const buf = Buffer.from(hex, "hex");
+  if (buf.length < 29) {
+    throw new Error("Encrypted token payload is too short after decode");
+  }
   const iv = buf.subarray(0, 12);
   const tag = buf.subarray(12, 28);
   const enc = buf.subarray(28);

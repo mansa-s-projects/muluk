@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!token?.access_token) {
-      console.error("Twitter token exchange missing access_token", token);
+      console.error("Twitter token exchange missing access_token");
       return NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed.",
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!me.data?.id) {
-      console.error("Twitter /me returned missing user data", me);
+      console.error("Twitter /me returned missing user data for callback");
       return NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed: missing user data.",

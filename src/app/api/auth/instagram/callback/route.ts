@@ -62,7 +62,18 @@ export async function GET(req: NextRequest) {
       }));
     }
 
-    const me = await jsonFetch<InstagramMe>(`https://graph.instagram.com/me?fields=id,username&access_token=${token.access_token}`);
+    const meUrl = `https://graph.instagram.com/me?fields=id,username&access_token=${token.access_token}`;
+    const sanitizedMeUrl = "https://graph.instagram.com/me?fields=id,username&access_token=[REDACTED]";
+    let me: InstagramMe;
+    try {
+      me = await jsonFetch<InstagramMe>(meUrl);
+    } catch (err) {
+      console.error("Instagram /me request failed", {
+        url: sanitizedMeUrl,
+        message: err instanceof Error ? err.message : "unknown error",
+      });
+      throw err;
+    }
 
     const supabase = await createClient();
     const {

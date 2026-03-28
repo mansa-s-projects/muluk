@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!token?.access_token) {
-      console.error("TikTok token exchange missing access_token", token);
+      console.error("TikTok token exchange missing access_token");
       return NextResponse.redirect(dashboardUrl(req, {
         social_error: "tiktok",
         social_msg: "TikTok connection failed.",
