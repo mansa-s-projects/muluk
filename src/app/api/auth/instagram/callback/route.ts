@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { appBaseUrl, dashboardUrl, jsonFetch } from "@/app/api/auth/_utils";
+import { appBaseUrl, dashboardUrl, encryptToken, jsonFetch } from "@/app/api/auth/_utils";
 
 type InstagramToken = {
   access_token: string;
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
           platform: "instagram",
           platform_username: me.username ?? null,
           platform_user_id: me.id ?? token.user_id,
-          access_token: token.access_token,
+          access_token: encryptToken(token.access_token),
           connected_at: new Date().toISOString(),
         },
         { onConflict: "creator_id,platform" }

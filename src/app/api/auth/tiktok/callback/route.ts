@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { appBaseUrl, dashboardUrl, jsonFetch } from "@/app/api/auth/_utils";
+import { appBaseUrl, dashboardUrl, encryptToken, jsonFetch } from "@/app/api/auth/_utils";
 
 type TikTokToken = {
   access_token: string;
@@ -87,8 +87,8 @@ export async function GET(req: NextRequest) {
           platform: "tiktok",
           platform_username: userInfo?.username ?? null,
           platform_user_id: userInfo?.open_id ?? token.open_id ?? null,
-          access_token: token.access_token,
-          refresh_token: token.refresh_token ?? null,
+          access_token: encryptToken(token.access_token),
+          refresh_token: token.refresh_token ? encryptToken(token.refresh_token) : null,
           follower_count: Number(userInfo?.follower_count ?? 0),
           connected_at: new Date().toISOString(),
         },
