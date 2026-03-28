@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvx --version)",
+      "Bash(uv --version)",
+      "Bash(npm run:*)",
+      "Bash(cd:*)"
+    ]
+  }
+}
