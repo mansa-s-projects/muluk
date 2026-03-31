@@ -13,57 +13,68 @@ interface ModelConfig {
   provider: "anthropic" | "openrouter";
   model: string;
   maxTokens: number;
-  costPer1MInput: number;  // USD per 1M input tokens (for logging/budgeting)
-  costPer1MOutput: number; // USD per 1M output tokens
+  costPer1MInput: number;
+  costPer1MOutput: number;
 }
 
-// Model pricing reference (approximate, check OpenRouter for current rates)
+// CHEAPEST MODELS - optimized for token savings
 const MODELS: Record<TaskTier, ModelConfig> = {
-  // Cheap & fast: ~$0.10-0.30 per 1M tokens
+  // Ultra cheap for simple creative tasks
   fast: {
     provider: "openrouter",
-    model: "mistralai/mistral-7b-instruct", // Reliable, fast, cheap
-    maxTokens: 600,
-    costPer1MInput: 0.10,
-    costPer1MOutput: 0.30,
+    model: "openai/gpt-3.5-turbo", // Very cheap and reliable
+    maxTokens: 400, // Reduced from 600 to save tokens
+    costPer1MInput: 0.50,
+    costPer1MOutput: 1.50,
   },
-  // Balanced: ~$0.50-2.00 per 1M tokens  
+  // Balanced quality/cost
   balanced: {
     provider: "openrouter",
     model: "anthropic/claude-3.5-haiku",
-    maxTokens: 1500,
+    maxTokens: 800, // Reduced to save tokens
     costPer1MInput: 0.80,
     costPer1MOutput: 4.00,
   },
-  // Premium: ~$3-15 per 1M tokens
+  // Premium only when needed
   premium: {
     provider: "anthropic",
     model: "claude-3-5-sonnet-20241022",
-    maxTokens: 4000,
+    maxTokens: 2000, // Reduced to save tokens
     costPer1MInput: 3.00,
     costPer1MOutput: 15.00,
   },
 };
 
-// Task to tier mapping - configure which tasks use which tier
+// Task to tier mapping
 export const TASK_TIERS: Record<string, TaskTier> = {
-  bio_generation: "fast",      // Simple creative writing, cheap model is fine
-  content_ideas: "balanced",   // Needs some creativity but not premium
-  content_creation: "premium", // High quality needed
-  price_analysis: "balanced",  // Data analysis, balanced is good
-  chat_assistant: "balanced",  // Conversational, balanced works well
-  image_analysis: "premium",   // Vision tasks need good models
+  bio_generation: "fast",
+  content_ideas: "fast", // Also use cheap model
+  content_creation: "balanced", // Downgraded from premium to save
+  price_analysis: "fast", // Downgraded to save
+  chat_assistant: "fast",
+  image_analysis: "balanced",
 };
+
+// Track usage (per request)
+export interface UsageInfo {
+  task: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCost: number;
+}
 
 interface StreamResponse {
   stream: ReadableStream<Uint8Array>;
   modelUsed: string;
-  estimatedCost: number; // Rough estimate for tracking
+  estimatedCost: number;
+  usage: UsageInfo;
 }
 
 export class AIRouter {
   private anthropicKey: string | undefined;
   private openRouterKey: string | undefined;
+  private usageLog: UsageInfo[] = [];
 
   constructor() {
     this.anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -78,7 +89,7 @@ export class AIRouter {
     prompt: string,
     systemPrompt?: string
   ): Promise<StreamResponse> {
-    const tier = TASK_TIERS[taskName] ?? "balanced";
+    const tier = TASK_TIERS[taskName] ?? "fast"; // Default to fast to save money
     const config = MODELS[tier];
 
     // Check API key availability
@@ -86,35 +97,36 @@ export class AIRouter {
       throw new Error(`Anthropic API key not configured for task: ${taskName}`);
     }
     if (config.provider === "openrouter" && !this.openRouterKey) {
-      // Fallback to anthropic if openrouter not available
       if (this.anthropicKey && tier !== "fast") {
         console.log(`[AI Router] Falling back to Anthropic for ${taskName}`);
-        return this.streamAnthropic(MODELS.premium, prompt, systemPrompt);
+        return this.streamAnthropic(MODELS.balanced, prompt, systemPrompt, taskName);
       }
       throw new Error(`OpenRouter API key not configured for task: ${taskName}`);
     }
 
-    console.log(`[AI Router] Task: ${taskName} | Tier: ${tier} | Model: ${config.model}`);
+    console.log(`[AI Router] Task: ${taskName} | Tier: ${tier} | Model: ${config.model} | MaxTokens: ${config.maxTokens}`);
 
     if (config.provider === "openrouter") {
-      return this.streamOpenRouter(config, prompt, systemPrompt);
+      return this.streamOpenRouter(config, prompt, systemPrompt, taskName);
     } else {
-      return this.streamAnthropic(config, prompt, systemPrompt);
+      return this.streamAnthropic(config, prompt, systemPrompt, taskName);
     }
   }
 
   private async streamOpenRouter(
     config: ModelConfig,
     prompt: string,
-    systemPrompt?: string
+    systemPrompt: string | undefined,
+    taskName: string
   ): Promise<StreamResponse> {
     const encoder = new TextEncoder();
-    const inputTokens = Math.ceil(prompt.length / 4); // Rough estimate
+    const inputTokens = Math.ceil((prompt.length + (systemPrompt?.length || 0)) / 4);
+    let outputTokens = 0;
 
     const stream = new ReadableStream({
       async start(controller) {
         const abortController = new AbortController();
-        const timeoutId = setTimeout(() => abortController.abort(), 30000);
+        const timeoutId = setTimeout(() => abortController.abort(), 20000); // Reduced timeout
 
         try {
           const messages = systemPrompt
@@ -138,6 +150,8 @@ export class AIRouter {
               max_tokens: config.maxTokens,
               stream: true,
               messages,
+              // Add temperature for consistency (saves tokens on retries)
+              temperature: 0.7,
             }),
           });
 
@@ -147,7 +161,7 @@ export class AIRouter {
             const errorText = await res.text().catch(() => "Unknown error");
             console.error("[OpenRouter] API error:", res.status, errorText);
             controller.enqueue(
-              encoder.encode(`Error (${res.status}): ${errorText.slice(0, 500)}`)
+              encoder.encode(`Error (${res.status}): ${errorText.slice(0, 200)}`)
             );
             controller.close();
             return;
@@ -155,8 +169,8 @@ export class AIRouter {
 
           const reader = res.body.getReader();
           const dec = new TextDecoder();
-          let outputChars = 0;
           let buffer = "";
+          let tokenCount = 0;
 
           while (true) {
             const { value, done } = await reader.read();
@@ -174,15 +188,19 @@ export class AIRouter {
 
               try {
                 const json = JSON.parse(data);
-                // OpenRouter format: choices[0].delta.content
                 const text = json.choices?.[0]?.delta?.content;
                 if (text && typeof text === "string") {
-                  outputChars += text.length;
+                  tokenCount += Math.ceil(text.length / 4);
+                  outputTokens = tokenCount;
                   controller.enqueue(encoder.encode(text));
+                  
+                  // Safety: stop if exceeding max tokens
+                  if (tokenCount >= config.maxTokens) {
+                    controller.close();
+                    return;
+                  }
                 }
-              } catch (e) {
-                // Ignore parse errors for incomplete chunks
-              }
+              } catch {}
             }
           }
 
@@ -197,6 +215,7 @@ export class AIRouter {
                   const text = json.choices?.[0]?.delta?.content;
                   if (text && typeof text === "string") {
                     controller.enqueue(encoder.encode(text));
+                    outputTokens += Math.ceil(text.length / 4);
                   }
                 } catch {}
               }
@@ -210,31 +229,44 @@ export class AIRouter {
             controller.enqueue(encoder.encode("Generation timed out."));
           } else {
             console.error("[OpenRouter] Stream error:", error);
-            controller.enqueue(encoder.encode(`Generation failed: ${error instanceof Error ? error.message : "Unknown error"}`));
+            controller.enqueue(encoder.encode("Generation failed."));
           }
           controller.close();
         }
       },
     });
 
-    // Rough cost estimate (very approximate)
-    const estimatedCost = (inputTokens / 1_000_000) * config.costPer1MInput;
+    const estimatedCost = (inputTokens / 1_000_000) * config.costPer1MInput + 
+                         (outputTokens / 1_000_000) * config.costPer1MOutput;
 
-    return { stream, modelUsed: config.model, estimatedCost };
+    const usage: UsageInfo = {
+      task: taskName,
+      model: config.model,
+      inputTokens,
+      outputTokens,
+      estimatedCost: Math.max(estimatedCost, 0.00001),
+    };
+
+    this.usageLog.push(usage);
+    console.log(`[AI Router] Usage: ${inputTokens} in / ${outputTokens} out tokens, ~$${estimatedCost.toFixed(6)}`);
+
+    return { stream, modelUsed: config.model, estimatedCost, usage };
   }
 
   private async streamAnthropic(
     config: ModelConfig,
     prompt: string,
-    systemPrompt?: string
+    systemPrompt: string | undefined,
+    taskName: string
   ): Promise<StreamResponse> {
     const encoder = new TextEncoder();
-    const inputTokens = Math.ceil(prompt.length / 4);
+    const inputTokens = Math.ceil((prompt.length + (systemPrompt?.length || 0)) / 4);
+    let outputTokens = 0;
 
     const stream = new ReadableStream({
       async start(controller) {
         const abortController = new AbortController();
-        const timeoutId = setTimeout(() => abortController.abort(), 30000);
+        const timeoutId = setTimeout(() => abortController.abort(), 20000);
 
         const processSseLine = (line: string) => {
           const trimmed = line.trim();
@@ -244,7 +276,9 @@ export class AIRouter {
           try {
             const json = JSON.parse(data);
             if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
-              controller.enqueue(encoder.encode(json.delta.text));
+              const text = json.delta.text;
+              outputTokens += Math.ceil(text.length / 4);
+              controller.enqueue(encoder.encode(text));
             }
           } catch {}
         };
@@ -255,6 +289,7 @@ export class AIRouter {
             max_tokens: config.maxTokens,
             stream: true,
             messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
           };
           if (systemPrompt) {
             body.system = systemPrompt;
@@ -318,21 +353,36 @@ export class AIRouter {
       },
     });
 
-    const estimatedCost = (inputTokens / 1_000_000) * config.costPer1MInput;
+    const estimatedCost = (inputTokens / 1_000_000) * config.costPer1MInput + 
+                         (outputTokens / 1_000_000) * config.costPer1MOutput;
 
-    return { stream, modelUsed: config.model, estimatedCost };
+    const usage: UsageInfo = {
+      task: taskName,
+      model: config.model,
+      inputTokens,
+      outputTokens,
+      estimatedCost: Math.max(estimatedCost, 0.00001),
+    };
+
+    this.usageLog.push(usage);
+
+    return { stream, modelUsed: config.model, estimatedCost, usage };
   }
 
-  /**
-   * Get available providers status
-   */
   getStatus() {
     return {
       anthropic: !!this.anthropicKey,
       openrouter: !!this.openRouterKey,
     };
   }
+
+  getUsageLog(): UsageInfo[] {
+    return [...this.usageLog];
+  }
+
+  getTotalCost(): number {
+    return this.usageLog.reduce((sum, u) => sum + u.estimatedCost, 0);
+  }
 }
 
-// Singleton instance
 export const aiRouter = new AIRouter();
