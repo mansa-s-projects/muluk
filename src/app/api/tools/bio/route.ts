@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
 
   // Check AI providers are configured
   const status = aiRouter.getStatus();
+  console.log("[Bio API] AI Status:", status);
+  
   if (!status.anthropic && !status.openrouter) {
     return NextResponse.json({ error: "AI not configured" }, { status: 500 });
   }
@@ -36,7 +38,9 @@ BIO_3: [bio here]`;
 
   try {
     // Use "fast" tier for bio generation (cheap model via OpenRouter)
-    const { stream } = await aiRouter.streamCompletion("bio_generation", prompt);
+    console.log("[Bio API] Starting bio generation for keywords:", keywords);
+    const { stream, modelUsed } = await aiRouter.streamCompletion("bio_generation", prompt);
+    console.log("[Bio API] Using model:", modelUsed);
 
     return new Response(stream, {
       headers: { 

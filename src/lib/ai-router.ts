@@ -22,9 +22,9 @@ const MODELS: Record<TaskTier, ModelConfig> = {
   // Cheap & fast: ~$0.10-0.30 per 1M tokens
   fast: {
     provider: "openrouter",
-    model: "google/gemini-flash-1.5", // or "mistralai/mistral-7b-instruct"
+    model: "mistralai/mistral-7b-instruct", // Reliable, fast, cheap
     maxTokens: 600,
-    costPer1MInput: 0.075,
+    costPer1MInput: 0.10,
     costPer1MOutput: 0.30,
   },
   // Balanced: ~$0.50-2.00 per 1M tokens  
@@ -147,7 +147,7 @@ export class AIRouter {
             const errorText = await res.text().catch(() => "Unknown error");
             console.error("[OpenRouter] API error:", res.status, errorText);
             controller.enqueue(
-              encoder.encode(`Error (${res.status}): ${errorText.slice(0, 200)}`)
+              encoder.encode(`Error (${res.status}): ${errorText.slice(0, 500)}`)
             );
             controller.close();
             return;
@@ -156,13 +156,15 @@ export class AIRouter {
           const reader = res.body.getReader();
           const dec = new TextDecoder();
           let outputChars = 0;
+          let buffer = "";
 
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
 
-            const chunk = dec.decode(value, { stream: true });
-            const lines = chunk.split("\n");
+            buffer += dec.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
             for (const line of lines) {
               const trimmed = line.trim();
@@ -172,13 +174,31 @@ export class AIRouter {
 
               try {
                 const json = JSON.parse(data);
+                // OpenRouter format: choices[0].delta.content
                 const text = json.choices?.[0]?.delta?.content;
-                if (text) {
+                if (text && typeof text === "string") {
                   outputChars += text.length;
                   controller.enqueue(encoder.encode(text));
                 }
-              } catch {
+              } catch (e) {
                 // Ignore parse errors for incomplete chunks
+              }
+            }
+          }
+
+          // Process remaining buffer
+          if (buffer.trim()) {
+            const trimmed = buffer.trim();
+            if (trimmed.startsWith("data: ")) {
+              const data = trimmed.slice(6);
+              if (data !== "[DONE]") {
+                try {
+                  const json = JSON.parse(data);
+                  const text = json.choices?.[0]?.delta?.content;
+                  if (text && typeof text === "string") {
+                    controller.enqueue(encoder.encode(text));
+                  }
+                } catch {}
               }
             }
           }
@@ -189,7 +209,8 @@ export class AIRouter {
           if (error instanceof Error && error.name === "AbortError") {
             controller.enqueue(encoder.encode("Generation timed out."));
           } else {
-            controller.enqueue(encoder.encode("Generation failed."));
+            console.error("[OpenRouter] Stream error:", error);
+            controller.enqueue(encoder.encode(`Generation failed: ${error instanceof Error ? error.message : "Unknown error"}`));
           }
           controller.close();
         }
