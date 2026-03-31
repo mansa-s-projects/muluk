@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 
 function createResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -28,6 +29,11 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = createSupabaseClient();
     const resend = createResendClient();
+
+    // Link to auth user if logged in
+    const serverClient = await createClient();
+    const { data: { user: authUser } } = await serverClient.auth.getUser();
+    const userId = authUser?.id ?? null;
 
     let body: Record<string, unknown>;
     try {
@@ -72,6 +78,7 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase().trim(),
       country,
       payout_method: payout,
+      ...(userId ? { user_id: userId } : {}),
       content_types: content,
       audience_size: audience,
       bio: bio || null,

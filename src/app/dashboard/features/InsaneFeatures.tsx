@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };

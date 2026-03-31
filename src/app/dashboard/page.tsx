@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   // Fetch creator profile for phantom mode + vault pin
   const { data: creatorProfile, error: creatorProfileErr } = await supabase
     .from("creator_applications")
-    .select("phantom_mode, vault_pin_hash, display_name, handle, bio, category, created_at")
+    .select("phantom_mode, vault_pin_hash, name, handle, bio, category, created_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -306,7 +306,7 @@ export default async function DashboardPage() {
     phantomMode,
     hasVaultPin,
     creatorProfile: {
-      displayName: creatorProfile?.display_name ? String(creatorProfile.display_name) : "",
+      displayName: creatorProfile?.name ? String(creatorProfile.name) : "",
       handle: creatorProfile?.handle ? String(creatorProfile.handle) : "",
       bio: creatorProfile?.bio ? String(creatorProfile.bio) : "",
       category: creatorProfile?.category ? String(creatorProfile.category) : "luxury",

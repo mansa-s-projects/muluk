@@ -13,7 +13,21 @@
       "mcp__ide__getDiagnostics",
       "Skill(update-config)",
       "Bash(grep -E '\\\\.\\(tsx?|css|json\\)$')",
-      "mcp__claude_ai_Supabase__execute_sql"
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(git:*)",
+      "Bash(grep -r lib/analytics/posthog /c/Users/mehdi/Desktop/cipher/lib --include=*.ts --include=*.tsx -l)",
+      "Bash(grep -r @/lib/analytics /c/Users/mehdi/Desktop/cipher/src --include=*.ts --include=*.tsx)",
+      "Bash(mkdir -p /c/Users/mehdi/Desktop/cipher/src/app/admin/command-center)",
+      "Bash(cp /c/Users/mehdi/Desktop/cipher/app/admin/command-center/page.tsx /c/Users/mehdi/Desktop/cipher/src/app/admin/command-center/page.tsx)",
+      "Bash(rm -rf /c/Users/mehdi/Desktop/cipher/app)",
+      "Bash(grep -rn posthog /c/Users/mehdi/Desktop/cipher/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -rn posthog /c/Users/mehdi/Desktop/cipher/hooks --include=*.ts)",
+      "Bash(grep -rn posthog /c/Users/mehdi/Desktop/cipher/lib --include=*.ts)",
+      "Bash(grep -rn \"useTracking\\\\|trackEvent\\\\|analytics\" /c/Users/mehdi/Desktop/cipher/src --include=*.tsx --include=*.ts)",
+      "Bash(grep -rn TOKEN_ENCRYPTION_KEY /c/Users/mehdi/Desktop/cipher/src --include=*.ts --include=*.tsx)",
+      "Bash(node:*)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "Bash(cat /c/Users/mehdi/Desktop/cipher/src/app/api/fans/[fan_code]/route.ts)"
     ]
   }
 }

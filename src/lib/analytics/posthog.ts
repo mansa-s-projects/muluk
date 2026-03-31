@@ -1,4 +1,4 @@
-﻿// CIPHER PostHog Analytics Integration
+// CIPHER PostHog Analytics Integration
 import posthog from 'posthog-js';
 
 export const initPostHog = () => {
