@@ -122,11 +122,11 @@ export default function DebugStripe() {
                 </span>
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-mono, DM Mono), monospace' }}>{r.message}</div>
-              {r.details && (
+              {r.details != null ? (
                 <pre style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono, DM Mono), monospace', marginTop: 8, whiteSpace: 'pre-wrap', padding: '8px 12px', background: 'rgba(255,255,255,0.02)', borderRadius: 4 }}>
                   {JSON.stringify(r.details, null, 2)}
                 </pre>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
