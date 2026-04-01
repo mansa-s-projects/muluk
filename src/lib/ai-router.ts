@@ -48,11 +48,17 @@ const MODELS: Record<TaskTier, ModelConfig> = {
 // Task to tier mapping
 export const TASK_TIERS: Record<string, TaskTier> = {
   bio_generation: "fast",
-  content_ideas: "fast", // Also use cheap model
-  content_creation: "balanced", // Downgraded from premium to save
-  price_analysis: "fast", // Downgraded to save
+  content_ideas: "fast",
+  content_creation: "balanced",
+  price_analysis: "fast",
   chat_assistant: "fast",
   image_analysis: "balanced",
+  caption_generation: "fast",       // Social media captions
+  handle_generation: "fast",        // Creator handle suggestions
+  niche_recommendation: "fast",     // Category suggestions
+  content_strategy: "balanced",     // 7-day content plans
+  welcome_sequence: "balanced",     // Fan onboarding DMs
+  reply_suggestions: "fast",        // Auto-reply drafts
 };
 
 // Track usage (per request)

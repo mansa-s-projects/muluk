@@ -189,6 +189,147 @@ export function BioGeneratorModal({ userId, onClose }: { userId: string; onClose
   );
 }
 
+// ─── Caption Generator ─────────────────────────────────────────────────────────
+export function CaptionGeneratorModal({ onClose }: { onClose: () => void }) {
+  const [topic, setTopic] = useState("");
+  const [contentType, setContentType] = useState("photo");
+  const [tone, setTone] = useState("mysterious");
+  const [platform, setPlatform] = useState("general");
+  const [loading, setLoading] = useState(false);
+  const [output, setOutput] = useState("");
+  const [captions, setCaptions] = useState<string[]>([]);
+  const [selectedCaption, setSelectedCaption] = useState("");
+  const generationControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      generationControllerRef.current?.abort();
+      generationControllerRef.current = null;
+    };
+  }, []);
+
+  const generate = async () => {
+    if (!topic.trim()) return;
+    generationControllerRef.current?.abort();
+    const controller = new AbortController();
+    generationControllerRef.current = controller;
+
+    setLoading(true);
+    setOutput("");
+    setCaptions([]);
+    setSelectedCaption("");
+    try {
+      const res = await fetch("/api/tools/caption", {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), contentType, tone, platform }),
+      });
+      if (!res.ok || !res.body) throw new Error("Failed");
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let full = "";
+      while (true) {
+        if (controller.signal.aborted) break;
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = dec.decode(value, { stream: true });
+        full += chunk;
+        setOutput(full);
+      }
+      if (controller.signal.aborted) return;
+      // Parse the 3 captions
+      const parsed: string[] = [];
+      const linesArr = full.split("\n");
+      for (const line of linesArr) {
+        const m = line.match(/^CAPTION_\d+:\s*(.+)/);
+        if (m) parsed.push(m[1].trim());
+      }
+      if (parsed.length === 0) parsed.push(full.trim());
+      setCaptions(parsed);
+      setSelectedCaption(parsed[0] ?? "");
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+    } finally {
+      if (generationControllerRef.current === controller) {
+        generationControllerRef.current = null;
+      }
+      setLoading(false);
+    }
+  };
+
+  const copyCaption = () => {
+    if (selectedCaption) navigator.clipboard.writeText(selectedCaption);
+  };
+
+  const inputStyle: React.CSSProperties = { background: "#0a0a14", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px", width: "100%", fontSize: "13px" };
+
+  return (
+    <Modal title="Caption Generator" sub="AI writes social media captions that convert" onClose={onClose}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px", marginBottom: "10px" }}>
+        <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="What is your content about? (e.g. 'new exclusive photo shoot')" style={inputStyle} onKeyDown={e => { if (e.key === "Enter") generate(); }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+          <select value={contentType} onChange={e => setContentType(e.target.value)} style={inputStyle}>
+            <option value="photo">Photo</option>
+            <option value="video">Video</option>
+            <option value="announcement">Announcement</option>
+            <option value="teaser">Teaser</option>
+            <option value="behind-scenes">Behind Scenes</option>
+          </select>
+          <select value={tone} onChange={e => setTone(e.target.value)} style={inputStyle}>
+            <option value="mysterious">Mysterious</option>
+            <option value="bold">Bold</option>
+            <option value="playful">Playful</option>
+            <option value="exclusive">Exclusive</option>
+            <option value="seductive">Seductive</option>
+          </select>
+          <select value={platform} onChange={e => setPlatform(e.target.value)} style={inputStyle}>
+            <option value="general">All Platforms</option>
+            <option value="instagram">Instagram</option>
+            <option value="twitter">Twitter/X</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+      </div>
+      <button onClick={generate} disabled={loading} style={{ border: "none", borderRadius: "6px", padding: "10px 16px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer", marginBottom: "16px" }}>
+        {loading ? "GENERATING..." : "GENERATE 3 CAPTIONS"}
+      </button>
+
+      {captions.length > 0 && (
+        <div style={{ display: "grid", gap: "10px", marginBottom: "16px" }}>
+          {captions.map((cap, i) => (
+            <div
+              key={i}
+              onClick={() => setSelectedCaption(cap)}
+              style={{ border: `1px solid ${selectedCaption === cap ? "var(--gold)" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "12px", cursor: "pointer", background: selectedCaption === cap ? "rgba(200,169,110,0.08)" : "rgba(255,255,255,0.02)", transition: "all 0.15s" }}
+            >
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>OPTION {i + 1}</div>
+              <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.6 }}>{cap}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading && !captions.length && (
+        <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "12px", fontSize: "13px", color: "var(--dim)", lineHeight: 1.7, whiteSpace: "pre-wrap", minHeight: "60px" }}>
+          {output || "Writing..."}
+        </div>
+      )}
+
+      {captions.length > 0 && (
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <button onClick={copyCaption} disabled={!selectedCaption} style={{ border: "none", borderRadius: "6px", padding: "10px 16px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>
+            COPY TO CLIPBOARD
+          </button>
+          <button onClick={generate} disabled={loading} style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "6px", padding: "10px 16px", background: "transparent", color: "var(--dim)", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>
+            REGENERATE
+          </button>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ─── Price Optimizer ───────────────────────────────────────────────────────────
 export function PriceOptimizerModal({ onClose }: { onClose: () => void }) {
   const [currentPrice, setCurrentPrice] = useState("25");

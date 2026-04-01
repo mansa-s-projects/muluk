@@ -6,6 +6,7 @@ import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/client";
 import {
   BioGeneratorModal,
+  CaptionGeneratorModal,
   PriceOptimizerModal,
   ContentCalendarModal,
   FanMessageBlastModal,
@@ -1870,6 +1871,7 @@ export default function DashboardClient({
             {activeSection === "tools" && (
               <>
                 {activeTool === "bio" && <BioGeneratorModal userId={userId} onClose={() => setActiveTool(null)} />}
+                {activeTool === "caption" && <CaptionGeneratorModal onClose={() => setActiveTool(null)} />}
                 {activeTool === "price" && <PriceOptimizerModal onClose={() => setActiveTool(null)} />}
                 {activeTool === "calendar" && <ContentCalendarModal userId={userId} onClose={() => setActiveTool(null)} />}
                 {activeTool === "blast" && <FanMessageBlastModal userId={userId} fanCodeCount={fanCodeCount} onClose={() => setActiveTool(null)} />}
@@ -1879,6 +1881,7 @@ export default function DashboardClient({
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "10px" }}>
                   {[
                     { key: "bio", title: "Bio Generator", desc: "AI writes 3 creator bio variations from keywords. Pick your favorite, save it.", icon: "✦" },
+                    { key: "caption", title: "Caption Generator", desc: "AI writes platform-optimized captions for photos, videos, and announcements.", icon: "✎" },
                     { key: "price", title: "Price Optimizer", desc: "Analyzes your real transaction data. Recommends optimal price with AI confidence score.", icon: "◈" },
                     { key: "calendar", title: "Content Calendar", desc: "7-day planning board. Click each day, assign content drops, schedule to DB.", icon: "⬡" },
                     { key: "blast", title: "Fan Message Blast", desc: "Broadcast to all fans, active fans, or top spenders instantly.", icon: "▲" },
