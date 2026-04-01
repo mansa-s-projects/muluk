@@ -17,29 +17,29 @@ interface ModelConfig {
   costPer1MOutput: number;
 }
 
-// CHEAPEST MODELS - optimized for token savings
+// OPTIMIZED MODELS - best quality per dollar on OpenRouter
 const MODELS: Record<TaskTier, ModelConfig> = {
-  // Ultra cheap for simple creative tasks
+  // FAST: GPT-4o-mini - 3x cheaper than 3.5-turbo, much higher quality
   fast: {
     provider: "openrouter",
-    model: "openai/gpt-3.5-turbo", // Very cheap and reliable
-    maxTokens: 400, // Reduced from 600 to save tokens
-    costPer1MInput: 0.50,
-    costPer1MOutput: 1.50,
+    model: "openai/gpt-4o-mini",
+    maxTokens: 400,
+    costPer1MInput: 0.15,   // was $0.50 (70% cheaper)
+    costPer1MOutput: 0.60,  // was $1.50 (60% cheaper)
   },
-  // Balanced quality/cost
+  // BALANCED: Gemini Flash - 90% cheaper than Haiku, excellent quality
   balanced: {
     provider: "openrouter",
-    model: "anthropic/claude-3.5-haiku",
-    maxTokens: 800, // Reduced to save tokens
-    costPer1MInput: 0.80,
-    costPer1MOutput: 4.00,
+    model: "google/gemini-flash-1.5",
+    maxTokens: 800,
+    costPer1MInput: 0.075,  // was $0.80 (91% cheaper)
+    costPer1MOutput: 0.30,  // was $4.00 (93% cheaper)
   },
-  // Premium only when needed
+  // PREMIUM: Claude Sonnet - best quality for complex tasks
   premium: {
     provider: "anthropic",
     model: "claude-3-5-sonnet-20241022",
-    maxTokens: 2000, // Reduced to save tokens
+    maxTokens: 2000,
     costPer1MInput: 3.00,
     costPer1MOutput: 15.00,
   },
