@@ -18,6 +18,23 @@ npm run dev:raw
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Execution Status
+
+Current completion flow and final MVP closeout step are tracked in [PROJECT_TODO.md](PROJECT_TODO.md).
+
+Priority finish order:
+
+1. Complete social media integrations.
+2. Test and deploy to production.
+3. Write documentation and usage guides.
+4. Collect user feedback and iterate.
+5. Finalize core product features.
+
+## Guides
+
+- Creator quick start: [docs/CREATOR_QUICKSTART.md](docs/CREATOR_QUICKSTART.md)
+- Operator runbook: [docs/OPERATOR_RUNBOOK.md](docs/OPERATOR_RUNBOOK.md)
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

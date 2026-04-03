@@ -21,7 +21,7 @@ const CATEGORIES = [
 ];
 
 const PAYOUT_METHODS = [
-  { value: "stripe", label: "Stripe", icon: "💳" },
+  { value: "whop", label: "Whop", icon: "💳" },
   { value: "wise", label: "Wise", icon: "🌐" },
   { value: "usdc", label: "USDC (Polygon)", icon: "₿" },
   { value: "paypal", label: "PayPal", icon: "💰" },
@@ -42,7 +42,7 @@ export type SettingsData = {
   };
   payout: {
     method: string;
-    stripeAccountId?: string;
+    whopAccountId?: string;
     wiseEmail?: string;
     cryptoWallet?: string;
     paypalEmail?: string;
@@ -180,17 +180,36 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
     setSaving(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase
+      const normalizedMethod = payout.method === "stripe" ? "whop" : payout.method;
+
+      let { error } = await supabase
         .from("creator_payout_settings")
         .upsert({
           creator_id: initialData.userId,
-          method: payout.method,
-          stripe_account_id: payout.stripeAccountId,
+          method: normalizedMethod,
+          whop_account_id: payout.whopAccountId,
+          stripe_account_id: payout.whopAccountId,
           wise_email: payout.wiseEmail,
           crypto_wallet: payout.cryptoWallet,
           paypal_email: payout.paypalEmail,
           updated_at: new Date().toISOString(),
         }, { onConflict: "creator_id" });
+
+      // Backward compatibility if whop_account_id migration has not been applied yet.
+      if (error && /whop_account_id/i.test(error.message)) {
+        const legacy = await supabase
+          .from("creator_payout_settings")
+          .upsert({
+            creator_id: initialData.userId,
+            method: normalizedMethod,
+            stripe_account_id: payout.whopAccountId,
+            wise_email: payout.wiseEmail,
+            crypto_wallet: payout.cryptoWallet,
+            paypal_email: payout.paypalEmail,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "creator_id" });
+        error = legacy.error;
+      }
 
       if (error) throw error;
       showMessage("Payout settings saved!");
@@ -716,7 +735,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
 
             <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "12px", padding: "24px" }}>
               <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", marginBottom: "16px" }}>
-                {payout.method === "stripe" && "STRIPE ACCOUNT"}
+                {payout.method === "whop" && "WHOP ACCOUNT / PAYOUT PROFILE"}
                 {payout.method === "wise" && "WISE EMAIL"}
                 {payout.method === "usdc" && "CRYPTO WALLET ADDRESS"}
                 {payout.method === "paypal" && "PAYPAL EMAIL"}
@@ -724,7 +743,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
               <input
                 type="text"
                 value={
-                  payout.method === "stripe" ? payout.stripeAccountId || "" :
+                  payout.method === "whop" ? payout.whopAccountId || "" :
                   payout.method === "wise" ? payout.wiseEmail || "" :
                   payout.method === "usdc" ? payout.cryptoWallet || "" :
                   payout.paypalEmail || ""
@@ -733,14 +752,14 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
                   const value = e.target.value;
                   setPayout({
                     ...payout,
-                    ...(payout.method === "stripe" && { stripeAccountId: value }),
+                    ...(payout.method === "whop" && { whopAccountId: value }),
                     ...(payout.method === "wise" && { wiseEmail: value }),
                     ...(payout.method === "usdc" && { cryptoWallet: value }),
                     ...(payout.method === "paypal" && { paypalEmail: value }),
                   });
                 }}
                 placeholder={
-                  payout.method === "stripe" ? "acct_..." :
+                  payout.method === "whop" ? "Whop account or payout reference" :
                   payout.method === "wise" ? "your@email.com" :
                   payout.method === "usdc" ? "0x..." :
                   "your@email.com"

@@ -17,22 +17,36 @@ const API_ROUTES: { name: string; method: string; path: string }[] = [
   { name: 'Dashboard Notifications', method: 'GET', path: '/api/dashboard/notifications' },
   { name: 'Fan Code Generate', method: 'POST', path: '/api/fans/generate' },
   { name: 'Ghostwrite AI', method: 'POST', path: '/api/ai/ghostwrite' },
+  { name: 'AI Onboarding Analyze', method: 'POST', path: '/api/ai/onboarding/analyze' },
+  { name: 'AI Dynamic Pricing', method: 'POST', path: '/api/ai/monetization/dynamic-pricing' },
+  { name: 'AI Daily Brief', method: 'GET', path: '/api/ai/copilot/daily-brief' },
+  { name: 'AI Fan Personas', method: 'GET', path: '/api/ai/fans/personas' },
+  { name: 'AI Content Ideas', method: 'POST', path: '/api/ai/content/ideas' },
   { name: 'Marketing Agent', method: 'POST', path: '/api/marketing-agent' },
   { name: 'Social Auto-Share', method: 'POST', path: '/api/social/auto-share' },
   { name: 'Bio Tool', method: 'POST', path: '/api/tools/bio' },
+  { name: 'Caption Tool', method: 'POST', path: '/api/tools/caption' },
   { name: 'Predict Tool', method: 'POST', path: '/api/tools/predict' },
   { name: 'Referral Update', method: 'GET', path: '/api/referral/update-handle' },
   { name: 'Admin Applications', method: 'GET', path: '/api/admin/applications' },
   { name: 'V2 Earnings', method: 'GET', path: '/api/v2/earnings' },
   { name: 'V2 Content Create', method: 'POST', path: '/api/v2/content/create' },
   { name: 'V2 Crypto Initiate', method: 'POST', path: '/api/v2/crypto/initiate' },
-  { name: 'V2 Stripe Create Session', method: 'POST', path: '/api/v2/stripe/create-session' },
+  { name: 'V2 Unlock', method: 'GET', path: '/api/v2/unlock/[code]' },
   { name: 'Vault Setup', method: 'POST', path: '/api/vault/setup' },
+  { name: 'Messages', method: 'GET', path: '/api/messages' },
+  { name: 'Notifications Send', method: 'POST', path: '/api/notifications/send' },
+  { name: 'Upload', method: 'POST', path: '/api/upload' },
 ];
 
 export default function DebugApi() {
   const [tests, setTests] = useState<ApiTest[]>(API_ROUTES.map(r => ({ ...r, status: 'untested', httpStatus: null, responseTime: null, error: null })));
   const [testing, setTesting] = useState(false);
+
+  const getErrorMessage = (err: unknown): string => {
+    if (err instanceof Error) return err.message;
+    return 'Unknown error';
+  };
 
   const testRoute = async (index: number) => {
     const route = API_ROUTES[index];
@@ -59,7 +73,7 @@ export default function DebugApi() {
         };
         return next;
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       const elapsed = Math.round(performance.now() - start);
       setTests(prev => {
         const next = [...prev];
@@ -68,7 +82,7 @@ export default function DebugApi() {
           status: 'error',
           httpStatus: null,
           responseTime: elapsed,
-          error: e.message,
+          error: getErrorMessage(e),
         };
         return next;
       });

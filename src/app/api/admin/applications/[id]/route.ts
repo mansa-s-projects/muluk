@@ -95,7 +95,7 @@ export async function PATCH(
     }
 
     // Update application
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, string | null> = {
       status,
       reviewed_at: new Date().toISOString(),
       reviewed_by: user.id,

@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Topic is required" }, { status: 400 });
   }
 
-  // Check AI providers are configured
+  // Check AI provider is configured
   const status = aiRouter.getStatus();
-  if (!status.anthropic && !status.openrouter) {
+  if (!status.openrouter) {
     return NextResponse.json({ error: "AI not configured" }, { status: 500 });
   }
 

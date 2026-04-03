@@ -59,7 +59,7 @@ const ADVISORS = [
     insight: "The 88% creator revenue claim is the single strongest differentiator. Every competitor comparison ad should lead with that number. Secondary hook: anonymous fan codes.",
     action: "A/B test: '88%' vs 'anonymous fans' as primary CTA hook across all paid channels." },
   { role: "CTO", color: "#9898cc", bg: "rgba(140,140,200,0.08)", border: "rgba(140,140,200,0.22)",
-    insight: "Fan code system scales to 10M codes with current UUID architecture. USDC rails on Polygon L2 avoid Stripe's adult content policy risk entirely. 1,200 TPS headroom.",
+    insight: "Fan code system scales to 10M codes with current UUID architecture. USDC rails on Polygon L2 reduce single-provider payment risk materially. 1,200 TPS headroom.",
     action: "Ship fan code mobile wallet view before launch. Crypto onboarding is the biggest UX gap." },
   { role: "Devil's Advocate", color: "#e88888", bg: "rgba(200,76,76,0.06)", border: "rgba(200,76,76,0.18)",
     insight: "Anonymous payments attract fraud. One viral chargeback incident destroys creator trust instantly. The 190-country claim needs explicit carve-outs and legal review.",

@@ -283,7 +283,7 @@ export default function Home() {
               { num:"01", title:"Fans stay", em:"anonymous. Always.", text:"No email. No account. No credit card trail. Every fan gets a unique code — FAN-4729 — that's their entire identity. They pay, they access. Nothing else required.", callout:"No forms. No tracking. No identity required — ever." },
               { num:"02", title:"Splits happen", em:"automatically.", text:"Every payment — card, crypto, wallet — splits in real time. Creator gets their share. Platform takes its cut. Referrer earns their commission. All in one transaction.", callout:"You refer a creator earning $10K/month → you earn $400/month. Forever. No cap." },
               { num:"03", title:"Three tiers.", em:"Real unlocks.", text:"CIPHER, LEGEND, APEX — each tier is a completely different operating level. Different fees, different tools, different payout speed. Not vanity badges. Actual leverage.", callout:"APEX creators pay just 8%. No other platform comes close." },
-              { num:"04", title:"Get paid in", em:"190 countries.", text:"Stripe if you have it. Wise if you're in Africa or LatAm. USDC on Polygon if you want instant and borderless. Your earnings always land — no matter where you are.", callout:"Card, crypto, or wallet — your earnings reach you in seconds, anywhere on earth." },
+              { num:"04", title:"Get paid in", em:"190 countries.", text:"Whop if you want hosted checkout. Wise if you're in Africa or LatAm. USDC on Polygon if you want instant and borderless. Your earnings always land — no matter where you are.", callout:"Card, crypto, or wallet — your earnings reach you in seconds, anywhere on earth." },
             ].map(({ num, title, em, text, callout }, i) => (
               <div key={num} className={`reveal reveal-delay-${i % 2}`}
                 style={{ background: "var(--card)", padding: "48px 44px", position: "relative", overflow: "hidden", transition: "background 0.25s" }}
@@ -335,7 +335,7 @@ export default function Home() {
                 ["01","Fan finds a creator","No signup wall. No email prompt. The page just loads. Creators share their cipher.so link anywhere — social, DMs, bio."],
                 ["02","Fan pays — anonymously","Card, crypto, or stablecoin. One tap. The system generates their Fan Code. FAN-4729 is born. No registration, no password, no email."],
                 ["03","Payment splits instantly","In the same moment the fan pays: creator wallet credited, platform fee deducted, referrer commission queued. Automated. Immutable. Real time."],
-                ["04","Creator withdraws their way","Bank transfer, Wise, USDC on Polygon, PayPal. No Stripe required. Creators in Morocco, Nigeria, Pakistan — everyone gets paid."],
+                ["04","Creator withdraws their way","Bank transfer, Wise, USDC on Polygon, PayPal, or Whop-linked flows. Creators in Morocco, Nigeria, Pakistan — everyone gets paid."],
                 ["05","Referrers earn forever","Every creator you bring earns you a lifetime commission on everything they make. No caps. No expiry dates."],
               ].map(([num, title, text], i) => (
                 <div key={num} style={{ display: "flex", gap: "28px", padding: "32px 0", borderBottom: i < 4 ? "1px solid var(--border)" : "none", transition: "padding-left 0.3s" }}

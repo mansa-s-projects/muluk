@@ -56,6 +56,8 @@ export const TASK_TIERS: Record<string, TaskTier> = {
   content_strategy: "balanced",
   welcome_sequence: "balanced",
   reply_suggestions: "fast",
+  voice_clone: "premium",
+  voice_tts: "balanced",
 };
 
 // Track usage (per request)
@@ -242,7 +244,6 @@ export class AIRouter {
   getStatus() {
     return {
       openrouter: !!this.openRouterKey,
-      anthropic: false, // No longer used
     };
   }
 

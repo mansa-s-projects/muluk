@@ -11,6 +11,8 @@ import {
   getCreatorRecentTransactions,
   getToolGating,
   getV2ChartData,
+  getCreatorContentPlans,
+  getCreatorOnboardingSnapshot,
   type V2DashboardOverview,
   type V2ContentStats,
   type V2FanStats,
@@ -43,6 +45,8 @@ export default async function DashboardPage() {
   let v2ChartData: Array<{ label: string; amount: number }> = [];
   let v2Transactions: Awaited<ReturnType<typeof getCreatorRecentTransactions>> = [];
   let toolGating: Awaited<ReturnType<typeof getToolGating>> | null = null;
+  let contentPlans: Awaited<ReturnType<typeof getCreatorContentPlans>> = [];
+  let onboardingSnapshot: Awaited<ReturnType<typeof getCreatorOnboardingSnapshot>> = null;
 
   try {
     [
@@ -53,6 +57,8 @@ export default async function DashboardPage() {
       v2ChartData,
       v2Transactions,
       toolGating,
+      contentPlans,
+      onboardingSnapshot,
     ] = await Promise.all([
       getCreatorDashboardOverview(user.id),
       getCreatorContentStats(user.id),
@@ -61,6 +67,8 @@ export default async function DashboardPage() {
       getV2ChartData(user.id),
       getCreatorRecentTransactions(user.id, 20),
       getToolGating(user.id),
+      getCreatorContentPlans(user.id),
+      getCreatorOnboardingSnapshot(user.id),
     ]);
   } catch (err) {
     console.error("V2 data fetch error:", err);
@@ -113,7 +121,7 @@ export default async function DashboardPage() {
   // ─── SOCIAL CONNECTIONS ─────────────────────────────────────────────────────
   const { data: socialRaw, error: socialErr } = await supabase
     .from("social_connections")
-    .select("platform, platform_username, platform_user_id, follower_count, connected_at")
+    .select("platform, platform_username, platform_user_id, follower_count, connected_at, metrics, last_synced_at, profile_url")
     .eq("creator_id", user.id)
     .order("connected_at", { ascending: false });
 
@@ -127,6 +135,9 @@ export default async function DashboardPage() {
     platform_user_id: row.platform_user_id ? String(row.platform_user_id) : null,
     follower_count: safeNum(row.follower_count),
     connected_at: String(row.connected_at ?? ""),
+    metrics: row.metrics ?? {},
+    last_synced_at: row.last_synced_at ? String(row.last_synced_at) : null,
+    profile_url: row.profile_url ? String(row.profile_url) : null,
   }));
 
   const socialReach: DashboardData["socialReach"] = {
@@ -206,8 +217,8 @@ export default async function DashboardPage() {
   }));
 
   // ─── ANALYTICS ──────────────────────────────────────────────────────────────
-  const byType = ["stripe", "crypto"].map(label => ({
-    label: label === "stripe" ? "subscription" : "tip",
+  const byType = ["whop", "crypto"].map(label => ({
+    label: label === "whop" ? "unlock" : "tip",
     value: (v2Earnings?.byMethod?.[label]?.total ?? 0),
   }));
 
@@ -230,7 +241,7 @@ export default async function DashboardPage() {
     ],
   };
 
-  const topContentType = byType.sort((a, b) => b.value - a.value)[0]?.label ?? "subscription";
+  const topContentType = byType.sort((a, b) => b.value - a.value)[0]?.label ?? "unlock";
   const firstHalf = chartData.slice(0, 3).reduce((sum, d) => sum + d.amount, 0);
   const secondHalf = chartData.slice(4).reduce((sum, d) => sum + d.amount, 0);
   const chartTrend: DashboardData["chartTrend"] = secondHalf >= firstHalf ? "up" : "down";
@@ -282,5 +293,7 @@ export default async function DashboardPage() {
     fans: v2Fans,
     earnings: v2Earnings,
     toolGating,
+    contentPlans,
+    onboardingSnapshot,
   }} />;
 }

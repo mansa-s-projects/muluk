@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface AnalyticsState {
   posthogKey: string | null;
@@ -8,33 +8,38 @@ interface AnalyticsState {
   eventsLogged: string[];
 }
 
+type PosthogLike = {
+  capture: (event: string, properties?: Record<string, unknown>) => void;
+};
+
+const getPosthogClient = (): PosthogLike | null => {
+  if (typeof window === 'undefined') return null;
+  const candidate = (window as Window & { posthog?: PosthogLike }).posthog;
+  if (!candidate || typeof candidate.capture !== 'function') return null;
+  return candidate;
+};
+
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  return 'Unknown error';
+};
+
 export default function DebugAnalytics() {
-  const [state, setState] = useState<AnalyticsState>({
-    posthogKey: null,
-    posthogHost: null,
-    isLoaded: false,
-    eventsLogged: [],
+  const [state, setState] = useState<AnalyticsState>(() => {
+    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY || null;
+    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
+    return {
+      posthogKey: key,
+      posthogHost: host,
+      isLoaded: !!getPosthogClient(),
+      eventsLogged: [],
+    };
   });
   const [testEventName, setTestEventName] = useState('debug_test_event');
 
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY || null;
-    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com';
-
-    // Check if PostHog is loaded in window
-    const hasPosthog = typeof window !== 'undefined' && (window as any).posthog;
-
-    setState({
-      posthogKey: key,
-      posthogHost: host,
-      isLoaded: !!hasPosthog,
-      eventsLogged: [],
-    });
-  }, []);
-
   const sendTestEvent = () => {
     try {
-      const ph = (window as any).posthog;
+      const ph = getPosthogClient();
       if (ph && ph.capture) {
         ph.capture(testEventName, { test: true, timestamp: Date.now(), source: 'debug_page' });
         setState(prev => ({ ...prev, eventsLogged: [...prev.eventsLogged, testEventName] }));
@@ -42,14 +47,14 @@ export default function DebugAnalytics() {
       } else {
         alert('PostHog not loaded in browser. Check NEXT_PUBLIC_POSTHOG_KEY configuration.');
       }
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${getErrorMessage(e)}`);
     }
   };
 
   const trackPageView = () => {
     try {
-      const ph = (window as any).posthog;
+      const ph = getPosthogClient();
       if (ph && ph.capture) {
         ph.capture('$pageview', { $current_url: window.location.href });
         setState(prev => ({ ...prev, eventsLogged: [...prev.eventsLogged, '$pageview'] }));
@@ -57,8 +62,8 @@ export default function DebugAnalytics() {
       } else {
         alert('PostHog not loaded');
       }
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${getErrorMessage(e)}`);
     }
   };
 

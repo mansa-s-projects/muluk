@@ -433,6 +433,142 @@ export function PriceOptimizerModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Onboarding Beast AI ─────────────────────────────────────────────────────
+export function OnboardingBeastModal({ onClose }: { onClose: () => void }) {
+  const [interests, setInterests] = useState("");
+  const [contentTypes, setContentTypes] = useState("");
+  const [experience, setExperience] = useState("beginner");
+  const [currentPlatforms, setCurrentPlatforms] = useState("");
+  const [goals, setGoals] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [analysis, setAnalysis] = useState<null | {
+    niche?: string;
+    confidence?: string;
+    subNiches?: string[];
+    handleSuggestions?: string[];
+    pricing?: { recommendation?: string; rationale?: string };
+    contentPillars?: Array<{ name?: string; description?: string }>;
+    targetAudience?: { primary?: string; psychographics?: string[]; painPoints?: string };
+    platformPriority?: string[];
+    first30Days?: string[];
+  }>(null);
+
+  const listFromText = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
+
+  const runAnalysis = async () => {
+    setLoading(true);
+    setError("");
+    setAnalysis(null);
+
+    try {
+      const res = await fetch("/api/ai/onboarding/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interests: listFromText(interests),
+          contentTypes: listFromText(contentTypes),
+          experience,
+          currentPlatforms: listFromText(currentPlatforms),
+          followerCounts: {},
+          goals: listFromText(goals),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Analysis failed");
+      setAnalysis(data.analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analysis failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputStyle: React.CSSProperties = { background: "#0a0a14", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px", width: "100%", fontSize: "13px" };
+
+  return (
+    <Modal title="Onboarding Beast AI" sub="Build your niche, pricing, pillars, and first 30-day plan from one strategy pass" onClose={onClose}>
+      <div style={{ display: "grid", gap: "10px", marginBottom: "14px" }}>
+        <input value={interests} onChange={e => setInterests(e.target.value)} placeholder="Interests: luxury, fashion, mystery" style={inputStyle} />
+        <input value={contentTypes} onChange={e => setContentTypes(e.target.value)} placeholder="Content types: photos, reels, exclusive drops" style={inputStyle} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <select value={experience} onChange={e => setExperience(e.target.value)} style={inputStyle}>
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+          <input value={currentPlatforms} onChange={e => setCurrentPlatforms(e.target.value)} placeholder="Platforms: instagram, x, tiktok" style={inputStyle} />
+        </div>
+        <textarea value={goals} onChange={e => setGoals(e.target.value)} placeholder="Goals: first 50 paying fans, premium brand, recurring revenue" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+      </div>
+
+      <button onClick={runAnalysis} disabled={loading} style={{ border: "none", borderRadius: "6px", padding: "10px 16px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer", marginBottom: "16px" }}>
+        {loading ? "ANALYZING..." : "RUN ONBOARDING BEAST"}
+      </button>
+
+      {error && <div style={{ marginBottom: "12px", fontSize: "12px", color: "#ff6a6a" }}>{error}</div>}
+
+      {analysis && (
+        <div style={{ display: "grid", gap: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ border: "1px solid rgba(200,169,110,0.35)", borderRadius: "8px", padding: "12px", background: "rgba(200,169,110,0.06)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>NICHE</div>
+              <div style={{ ...disp, fontSize: "24px", color: "var(--gold)" }}>{analysis.niche || "Unknown"}</div>
+              <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>{analysis.confidence || ""}</div>
+            </div>
+            <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>STARTING PRICE</div>
+              <div style={{ ...disp, fontSize: "24px", color: "var(--gold)" }}>{analysis.pricing?.recommendation || "-"}</div>
+              <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>{analysis.pricing?.rationale || ""}</div>
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>CONTENT PILLARS</div>
+            <div style={{ display: "grid", gap: "8px" }}>
+              {(analysis.contentPillars || []).map((pillar, index) => (
+                <div key={`${pillar.name}-${index}`} style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.6 }}>
+                  <strong style={{ color: "var(--gold)" }}>{pillar.name || `Pillar ${index + 1}`}</strong>: {pillar.description || ""}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>HANDLE SUGGESTIONS</div>
+              <div style={{ display: "grid", gap: "6px" }}>
+                {(analysis.handleSuggestions || []).slice(0, 5).map((handle, index) => (
+                  <div key={`${handle}-${index}`} style={{ fontSize: "12px", color: "var(--muted)" }}>{handle}</div>
+                ))}
+              </div>
+            </div>
+            <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>FIRST 30 DAYS</div>
+              <div style={{ display: "grid", gap: "6px" }}>
+                {(analysis.first30Days || []).map((step, index) => (
+                  <div key={`${step}-${index}`} style={{ fontSize: "12px", color: "var(--muted)" }}>{step}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>TARGET AUDIENCE</div>
+            <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.7 }}>
+              <div><strong style={{ color: "var(--gold)" }}>Primary:</strong> {analysis.targetAudience?.primary || "-"}</div>
+              <div><strong style={{ color: "var(--gold)" }}>Psychographics:</strong> {(analysis.targetAudience?.psychographics || []).join(", ") || "-"}</div>
+              <div><strong style={{ color: "var(--gold)" }}>Pain points:</strong> {analysis.targetAudience?.painPoints || "-"}</div>
+              <div><strong style={{ color: "var(--gold)" }}>Platform priority:</strong> {(analysis.platformPriority || []).join(", ") || "-"}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ─── Content Calendar ──────────────────────────────────────────────────────────
 export function ContentCalendarModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [slots, setSlots] = useState<Record<number, { title: string; type: string }>>({});
@@ -441,8 +577,44 @@ export function ContentCalendarModal({ userId, onClose }: { userId: string; onCl
   const [draftType, setDraftType] = useState("subscription");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [existingPlans, setExistingPlans] = useState<Array<{ id: string; title: string; planned_for: string | null; plan_type: string; status: string }>>([]);
+  const [backlogIdeas, setBacklogIdeas] = useState<Array<{ id: string; title: string; plan_type: string; description: string | null }>>([]);
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      const supabase = createClient();
+      const now = new Date();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 7);
+
+      const { data } = await supabase
+        .from("content_plans_v2")
+        .select("id, title, planned_for, plan_type, status")
+        .eq("creator_id", userId)
+        .gte("planned_for", monday.toISOString())
+        .lt("planned_for", sunday.toISOString())
+        .order("planned_for", { ascending: true });
+
+      const { data: backlog } = await supabase
+        .from("content_plans_v2")
+        .select("id, title, description, plan_type")
+        .eq("creator_id", userId)
+        .eq("status", "idea")
+        .is("planned_for", null)
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      setExistingPlans(data || []);
+      setBacklogIdeas(backlog || []);
+    };
+
+    void loadPlans();
+  }, [userId]);
 
   const selectDay = (i: number) => {
     setEditing(i);
@@ -476,17 +648,28 @@ export function ContentCalendarModal({ userId, onClose }: { userId: string; onCl
           creator_id: userId,
           title: slot.title,
           description: `Scheduled ${slot.type} content`,
-          price: 0,
-          burn_mode: false,
+          plan_type: slot.type,
           status: "scheduled",
-          scheduled_for: date.toISOString(),
+          source: "manual",
+          planned_for: date.toISOString(),
+          metadata: {},
         };
       });
 
-      const { error } = await supabase.from("content_items").insert(rows);
+      const { error } = await supabase.from("content_plans_v2").insert(rows);
       if (error) throw error;
       setMsg(`Scheduled ${rows.length} content item(s) for this week.`);
       setSlots({});
+      setExistingPlans((prev) => [
+        ...prev,
+        ...rows.map((row, index) => ({
+          id: `local-${index}-${row.planned_for}`,
+          title: row.title,
+          planned_for: row.planned_for,
+          plan_type: row.plan_type,
+          status: row.status,
+        })),
+      ]);
     } catch {
       setMsg("Could not schedule — run SQL migration first.");
     } finally {
@@ -552,6 +735,46 @@ export function ContentCalendarModal({ userId, onClose }: { userId: string; onCl
         {saving ? "SCHEDULING..." : `SCHEDULE ${Object.keys(slots).length} ITEM(S) TO DB`}
       </button>
 
+      {existingPlans.length > 0 && (
+        <div style={{ marginTop: "16px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
+          <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>THIS WEEK&apos;S PLAN</div>
+          <div style={{ display: "grid", gap: "8px" }}>
+            {existingPlans.slice(0, 7).map((plan) => (
+              <div key={plan.id} style={{ display: "flex", justifyContent: "space-between", gap: "8px", fontSize: "12px", color: "var(--muted)" }}>
+                <span>{plan.title}</span>
+                <span style={{ ...mono, color: "var(--gold)" }}>{plan.planned_for ? new Date(plan.planned_for).toLocaleDateString("en-US", { weekday: "short" }) : plan.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {backlogIdeas.length > 0 && (
+        <div style={{ marginTop: "16px", border: "1px solid rgba(200,169,110,0.18)", borderRadius: "8px", padding: "12px", background: "rgba(200,169,110,0.04)" }}>
+          <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "8px" }}>AI IDEA BACKLOG</div>
+          <div style={{ display: "grid", gap: "8px" }}>
+            {backlogIdeas.map((idea) => (
+              <button
+                key={idea.id}
+                type="button"
+                onClick={() => {
+                  setDraftTitle(idea.title);
+                  setDraftType(idea.plan_type || "unlock");
+                  setEditing(0);
+                }}
+                style={{ textAlign: "left", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", color: "var(--white)", cursor: "pointer" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "12px", color: "var(--white)" }}>{idea.title}</span>
+                  <span style={{ ...mono, fontSize: "8px", color: "var(--gold)" }}>{idea.plan_type}</span>
+                </div>
+                {idea.description && <div style={{ fontSize: "11px", color: "var(--dim)", lineHeight: 1.5 }}>{idea.description}</div>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {msg && <div style={{ marginTop: "10px", fontSize: "12px", color: msg.includes("Could") ? "#ff6a6a" : "var(--gold)" }}>{msg}</div>}
     </Modal>
   );
@@ -585,11 +808,13 @@ export function FanMessageBlastModal({ userId, fanCodeCount, onClose }: { userId
     setMsg("");
     try {
       const supabase = createClient();
-      const { error } = await supabase.from("fan_messages").insert({
+      const { error } = await supabase.from("creator_broadcasts_v2").insert({
         creator_id: userId,
-        message: normalizedMessage,
         segment,
         recipient_count: selectedSeg.count,
+        message: normalizedMessage,
+        status: "queued",
+        metadata: {},
       });
       if (error) throw error;
       setMsg(`Message blasted to ${selectedSeg.count} fans.`);
@@ -761,18 +986,18 @@ export function TaxSummaryModal({ transactions, onClose }: {
   const [year, setYear] = useState(String(currentYear));
 
   const yearTx = transactions.filter(t =>
-    t.status === "completed" && String(t.created_at).startsWith(year)
+    t.status === "success" && String(t.created_at).startsWith(year)
   );
 
-  const grossRevenue = yearTx.reduce((s, t) => s + t.amount, 0);
+  const grossRevenue = yearTx.reduce((s, t) => s + t.amount, 0) / 100;
   const platformFee = grossRevenue * 0.15;
   const netRevenue = grossRevenue - platformFee;
   const estimatedTax = netRevenue * 0.28;
 
-  const byType = ["subscription", "tip", "unlock"].map(type => ({
+  const byType = ["whop", "crypto", "unknown"].map(type => ({
     type,
-    count: yearTx.filter(t => (t.type ?? "subscription") === type).length,
-    total: yearTx.filter(t => (t.type ?? "subscription") === type).reduce((s, t) => s + t.amount, 0),
+    count: yearTx.filter(t => (t.type ?? "unknown") === type).length,
+    total: yearTx.filter(t => (t.type ?? "unknown") === type).reduce((s, t) => s + t.amount, 0) / 100,
   }));
 
   const downloadCSV = () => {
@@ -846,6 +1071,463 @@ export function TaxSummaryModal({ transactions, onClose }: {
       <button onClick={downloadCSV} style={{ border: "none", borderRadius: "6px", padding: "10px 16px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>
         EXPORT CSV ({year})
       </button>
+    </Modal>
+  );
+}
+
+// ─── Voice Clone Modal ─────────────────────────────────────────────────────────
+type Voice = {
+  id: string;
+  voice_id: string;
+  name: string;
+  description?: string;
+  is_default?: boolean;
+};
+
+export function VoiceCloneModal({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<"clone" | "generate">("generate");
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cloning, setCloning] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [msg, setMsg] = useState("");
+  
+  // Clone form
+  const [voiceName, setVoiceName] = useState("");
+  const [voiceDesc, setVoiceDesc] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  
+  // TTS form
+  const [selectedVoice, setSelectedVoice] = useState("");
+  const [text, setText] = useState("");
+  const [stability, setStability] = useState(0.5);
+  const [similarity, setSimilarity] = useState(0.75);
+  const [audioUrl, setAudioUrl] = useState("");
+
+  useEffect(() => {
+    fetchVoices();
+  }, []);
+
+  const fetchVoices = async () => {
+    try {
+      const res = await fetch("/api/ai/voice/tts");
+      const data = await res.json();
+      const allVoices = [
+        ...(data.default_voices || []),
+        ...(data.cloned_voices || []),
+      ];
+      setVoices(allVoices);
+      if (allVoices.length > 0 && !selectedVoice) {
+        setSelectedVoice(allVoices[0].voice_id);
+      }
+    } catch (e) {
+      setMsg("Failed to load voices");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    const valid = selected.filter(f => {
+      const validTypes = ["audio/mpeg", "audio/wav", "audio/mp3", "audio/m4a"];
+      return validTypes.includes(f.type) && f.size <= 10 * 1024 * 1024;
+    });
+    if (valid.length !== selected.length) {
+      setMsg("Some files were skipped (max 10MB, MP3/WAV/M4A only)");
+    }
+    setFiles(valid);
+  };
+
+  const cloneVoice = async () => {
+    if (!voiceName || files.length === 0) {
+      setMsg("Enter a name and upload audio files");
+      return;
+    }
+    
+    setCloning(true);
+    setMsg("");
+    
+    try {
+      const formData = new FormData();
+      formData.append("name", voiceName);
+      formData.append("description", voiceDesc);
+      files.forEach(f => formData.append("files", f));
+      
+      const res = await fetch("/api/ai/voice/clone", {
+        method: "POST",
+        body: formData,
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setMsg("Voice cloned successfully!");
+      setVoiceName("");
+      setVoiceDesc("");
+      setFiles([]);
+      fetchVoices();
+      setActiveTab("generate");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Cloning failed");
+    } finally {
+      setCloning(false);
+    }
+  };
+
+  const generateSpeech = async () => {
+    if (!text || !selectedVoice) {
+      setMsg("Enter text and select a voice");
+      return;
+    }
+    
+    setGenerating(true);
+    setMsg("");
+    setAudioUrl("");
+    
+    try {
+      const res = await fetch("/api/ai/voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          voiceId: selectedVoice,
+          stability,
+          similarityBoost: similarity,
+        }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+      setMsg("Audio generated!");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const deleteVoice = async (voiceId: string) => {
+    try {
+      const res = await fetch(`/api/ai/voice/clone?voiceId=${voiceId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      fetchVoices();
+      setMsg("Voice deleted");
+    } catch {
+      setMsg("Failed to delete voice");
+    }
+  };
+
+  const inputStyle: React.CSSProperties = { 
+    background: "#0a0a14", 
+    border: "1px solid rgba(255,255,255,0.1)", 
+    color: "var(--white)", 
+    borderRadius: "6px", 
+    padding: "10px", 
+    fontSize: "13px",
+    width: "100%"
+  };
+
+  return (
+    <Modal title="Voice Studio" sub="Clone your voice or generate speech with AI" onClose={onClose}>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+        <button
+          onClick={() => setActiveTab("generate")}
+          style={{
+            flex: 1,
+            padding: "10px",
+            background: activeTab === "generate" ? "rgba(200,169,110,0.15)" : "transparent",
+            border: `1px solid ${activeTab === "generate" ? "var(--gold)" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: "6px",
+            color: activeTab === "generate" ? "var(--gold)" : "var(--dim)",
+            ...mono,
+            fontSize: "11px",
+            cursor: "pointer",
+          }}
+        >
+          GENERATE SPEECH
+        </button>
+        <button
+          onClick={() => setActiveTab("clone")}
+          style={{
+            flex: 1,
+            padding: "10px",
+            background: activeTab === "clone" ? "rgba(200,169,110,0.15)" : "transparent",
+            border: `1px solid ${activeTab === "clone" ? "var(--gold)" : "rgba(255,255,255,0.1)"}`,
+            borderRadius: "6px",
+            color: activeTab === "clone" ? "var(--gold)" : "var(--dim)",
+            ...mono,
+            fontSize: "11px",
+            cursor: "pointer",
+          }}
+        >
+          CLONE VOICE
+        </button>
+      </div>
+
+      {/* Generate Tab */}
+      {activeTab === "generate" && (
+        <div>
+          <div style={{ marginBottom: "12px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>SELECT VOICE</div>
+            <select 
+              value={selectedVoice} 
+              onChange={e => setSelectedVoice(e.target.value)}
+              style={inputStyle}
+            >
+              <optgroup label="Default Voices">
+                {voices.filter(v => v.is_default).map(v => (
+                  <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Your Cloned Voices">
+                {voices.filter(v => !v.is_default).map(v => (
+                  <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>TEXT TO SPEAK</div>
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Enter text to convert to speech..."
+              rows={4}
+              maxLength={5000}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+            />
+            <div style={{ ...mono, fontSize: "9px", color: "var(--dim)", marginTop: "4px", textAlign: "right" }}>
+              {text.length}/5000
+            </div>
+          </div>
+
+          {/* Voice Settings */}
+          <div style={{ marginBottom: "16px", padding: "12px", background: "rgba(255,255,255,0.02)", borderRadius: "8px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "10px" }}>VOICE SETTINGS</div>
+            <div style={{ marginBottom: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: "9px", color: "var(--dim)", marginBottom: "4px" }}>
+                <span>Stability</span>
+                <span>{stability}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={stability}
+                onChange={e => setStability(parseFloat(e.target.value))}
+                style={{ width: "100%", accentColor: "#c8a96e" }}
+              />
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: "9px", color: "var(--dim)", marginBottom: "4px" }}>
+                <span>Clarity + Similarity</span>
+                <span>{similarity}</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={similarity}
+                onChange={e => setSimilarity(parseFloat(e.target.value))}
+                style={{ width: "100%", accentColor: "#c8a96e" }}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={generateSpeech}
+            disabled={generating || !text}
+            style={{
+              width: "100%",
+              padding: "12px",
+              background: "var(--gold)",
+              border: "none",
+              borderRadius: "6px",
+              color: "#120c00",
+              ...mono,
+              fontSize: "11px",
+              letterSpacing: "0.1em",
+              cursor: "pointer",
+              opacity: generating || !text ? 0.6 : 1,
+              marginBottom: "16px",
+            }}
+          >
+            {generating ? "GENERATING..." : "GENERATE SPEECH"}
+          </button>
+
+          {audioUrl && (
+            <div style={{ padding: "16px", background: "rgba(200,169,110,0.08)", borderRadius: "8px", border: "1px solid rgba(200,169,110,0.2)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "10px" }}>GENERATED AUDIO</div>
+              <audio controls style={{ width: "100%" }} src={audioUrl} />
+              <a
+                href={audioUrl}
+                download="cipher-voice.mp3"
+                style={{
+                  display: "inline-block",
+                  marginTop: "10px",
+                  padding: "8px 16px",
+                  background: "rgba(200,169,110,0.15)",
+                  border: "1px solid rgba(200,169,110,0.3)",
+                  borderRadius: "4px",
+                  color: "var(--gold)",
+                  ...mono,
+                  fontSize: "10px",
+                  textDecoration: "none",
+                }}
+              >
+                DOWNLOAD MP3
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Clone Tab */}
+      {activeTab === "clone" && (
+        <div>
+          <div style={{ marginBottom: "12px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>VOICE NAME</div>
+            <input
+              value={voiceName}
+              onChange={e => setVoiceName(e.target.value)}
+              placeholder="e.g. My Voice"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>DESCRIPTION (OPTIONAL)</div>
+            <input
+              value={voiceDesc}
+              onChange={e => setVoiceDesc(e.target.value)}
+              placeholder="e.g. Calm, professional tone"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>AUDIO SAMPLES</div>
+            <div
+              style={{
+                border: "2px dashed rgba(200,169,110,0.3)",
+                borderRadius: "8px",
+                padding: "24px",
+                textAlign: "center",
+                cursor: "pointer",
+                background: files.length > 0 ? "rgba(200,169,110,0.05)" : "transparent",
+              }}
+              onClick={() => document.getElementById("voice-files")?.click()}
+            >
+              <input
+                id="voice-files"
+                type="file"
+                multiple
+                accept="audio/*"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              <div style={{ fontSize: "24px", marginBottom: "8px" }}>🎙️</div>
+              <div style={{ fontSize: "13px", color: "var(--muted)", marginBottom: "4px" }}>
+                {files.length > 0 ? `${files.length} file(s) selected` : "Click to upload audio files"}
+              </div>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--dim)" }}>
+                MP3, WAV, or M4A • Max 10MB each
+              </div>
+            </div>
+            {files.length > 0 && (
+              <div style={{ marginTop: "8px" }}>
+                {files.map((f, i) => (
+                  <div key={i} style={{ ...mono, fontSize: "10px", color: "var(--dim)", padding: "4px 0" }}>
+                    • {f.name} ({(f.size / 1024 / 1024).toFixed(2)}MB)
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={cloneVoice}
+            disabled={cloning || !voiceName || files.length === 0}
+            style={{
+              width: "100%",
+              padding: "12px",
+              background: "var(--gold)",
+              border: "none",
+              borderRadius: "6px",
+              color: "#120c00",
+              ...mono,
+              fontSize: "11px",
+              letterSpacing: "0.1em",
+              cursor: "pointer",
+              opacity: cloning || !voiceName || files.length === 0 ? 0.6 : 1,
+            }}
+          >
+            {cloning ? "CLONING... (this may take a minute)" : "CLONE VOICE"}
+          </button>
+
+          {/* Your Cloned Voices */}
+          {!loading && voices.filter(v => !v.is_default).length > 0 && (
+            <div style={{ marginTop: "24px", paddingTop: "24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "12px" }}>YOUR CLONED VOICES</div>
+              {voices.filter(v => !v.is_default).map(voice => (
+                <div
+                  key={voice.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 12px",
+                    background: "rgba(255,255,255,0.03)",
+                    borderRadius: "6px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "13px", color: "var(--white)" }}>{voice.name}</div>
+                    {voice.description && (
+                      <div style={{ ...mono, fontSize: "9px", color: "var(--dim)" }}>{voice.description}</div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteVoice(voice.id)}
+                    style={{
+                      padding: "6px 12px",
+                      background: "rgba(200,76,76,0.1)",
+                      border: "1px solid rgba(200,76,76,0.2)",
+                      borderRadius: "4px",
+                      color: "#ff6a6a",
+                      ...mono,
+                      fontSize: "9px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    DELETE
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {msg && (
+        <div style={{ marginTop: "12px", fontSize: "12px", color: msg.includes("success") || msg.includes("Audio") ? "var(--gold)" : "#ff6a6a" }}>
+          {msg}
+        </div>
+      )}
     </Modal>
   );
 }

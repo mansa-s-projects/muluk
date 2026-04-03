@@ -1,23 +1,44 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+type AuthUserSummary = {
+  hasSession: boolean;
+  hasUser: boolean;
+  userId: string | null;
+  email: string | null;
+  provider: string | null;
+  lastSignIn: string | null;
+  createdAt: string | null;
+  emailConfirmed: string | null;
+  role: string | null;
+};
+
+type AuthSessionSummary = {
+  expiresAt: number | undefined;
+  tokenType: string;
+  providerToken: 'PRESENT' | null;
+  providerRefreshToken: 'PRESENT' | null;
+};
+
 interface AuthState {
   loading: boolean;
-  user: any;
-  session: any;
+  user: AuthUserSummary | null;
+  session: AuthSessionSummary | null;
   error: string | null;
   supabaseConnected: boolean;
 }
 
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  return 'Unknown error';
+};
+
 export default function DebugAuth() {
   const [state, setState] = useState<AuthState>({ loading: true, user: null, session: null, error: null, supabaseConnected: false });
 
-  useEffect(() => {
-    testAuth();
-  }, []);
-
-  const testAuth = async () => {
+  async function testAuth() {
     try {
       const supabase = createClient();
 
@@ -33,7 +54,7 @@ export default function DebugAuth() {
       const { data: userData, error: userError } = await supabase.auth.getUser();
 
       // Get auth settings
-      const authConfig = {
+      const authConfig: AuthUserSummary = {
         hasSession: !!sessionData.session,
         hasUser: !!userData.user,
         userId: userData.user?.id || null,
@@ -57,21 +78,25 @@ export default function DebugAuth() {
         error: userError?.message || null,
         supabaseConnected: true,
       });
-    } catch (e: any) {
-      setState({ loading: false, user: null, session: null, error: e.message, supabaseConnected: false });
+    } catch (e: unknown) {
+      setState({ loading: false, user: null, session: null, error: getErrorMessage(e), supabaseConnected: false });
     }
-  };
+  }
+
+  useEffect(() => {
+    testAuth();
+  }, []);
 
   const handleTestSignIn = async () => {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: `${window.location.origin}/debug/auth` },
       });
       if (error) alert(`OAuth Error: ${error.message}`);
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${getErrorMessage(e)}`);
     }
   };
 

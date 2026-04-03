@@ -1,30 +1,42 @@
 ﻿'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+type DashboardStats = {
+  totalCreators: number;
+  totalFans: number;
+  activeUsers: number;
+};
+
+type ProfileRow = {
+  role: string | null;
+};
+
 export default function AdminCommandCenter() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
+
+  async function loadDashboardData() {
+    const { data } = await supabase.from('profiles').select('role');
+    const profiles = (data ?? []) as ProfileRow[];
+    const creators = profiles.filter((p) => p.role === 'creator');
+    const fans = profiles.filter((p) => p.role === 'fan');
+
+    setStats({
+      totalCreators: creators.length,
+      totalFans: fans.length,
+      activeUsers: profiles.length,
+    });
+    setLoading(false);
+  }
 
   useEffect(() => {
     loadDashboardData();
     const interval = setInterval(loadDashboardData, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  const loadDashboardData = async () => {
-    const { data: profiles } = await supabase.from('profiles').select('*');
-    const creators = profiles?.filter(p => p.role === 'creator') || [];
-    const fans = profiles?.filter(p => p.role === 'fan') || [];
-    
-    setStats({
-      totalCreators: creators.length,
-      totalFans: fans.length,
-      activeUsers: profiles?.length || 0,
-    });
-    setLoading(false);
-  };
 
   if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Loading...</div>;
 

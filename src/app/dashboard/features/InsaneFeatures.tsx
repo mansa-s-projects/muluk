@@ -8,6 +8,59 @@ const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 const disp: React.CSSProperties = { fontFamily: "var(--font-display)" };
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
+type DailyBrief = {
+  mood?: string;
+  headline?: string;
+  wins?: string[];
+  priorities?: Array<{ action?: string; why?: string }>;
+  moneyOpportunity?: string;
+};
+
+type ContentIdea = {
+  title: string;
+  monetization: string;
+  description: string;
+  type: string;
+  engagement?: string;
+};
+
+type PersonaFan = {
+  totalSpent: number;
+};
+
+type PersonaInsight = {
+  traits?: string;
+  strategy?: string;
+  messageTemplate?: string;
+};
+
+type PersonaData = {
+  fans: PersonaFan[];
+  insights?: PersonaInsight;
+};
+
+type PersonasMap = Record<string, PersonaData>;
+
+type PricingRecommendation = {
+  optimalPrice?: string;
+  confidence?: string;
+  rationale?: string;
+  dynamicPricing?: {
+    launch?: number;
+    standard?: number;
+  };
+  factors?: string[];
+};
+
+type OnboardingSnapshot = {
+  niche: string;
+  confidence: string;
+  pricingRecommendation: string;
+  first30Days: string[];
+  platformPriority: string[];
+  contentPillars: Array<{ name: string; description: string }>;
+};
+
 // ─── CIPHER Score ──────────────────────────────────────────────────────────────
 export type CipherScoreData = {
   totalEarnings: number;
@@ -454,7 +507,7 @@ export function CipherRadioCompact() {
 
 // ─── AI Daily Brief Widget ─────────────────────────────────────────────────────
 export function DailyBriefWidget() {
-  const [brief, setBrief] = useState<any>(null);
+  const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -482,10 +535,14 @@ export function DailyBriefWidget() {
     urgent: "#ff6a6a",
     focused: "var(--gold)"
   };
+  const moodKey = brief.mood ?? "focused";
+  const moodColor = moodColors[moodKey] || "var(--gold)";
+  const wins = brief.wins ?? [];
+  const priorities = brief.priorities ?? [];
 
   return (
     <div style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #151528 100%)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "12px", padding: "20px", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "100px", height: "100px", background: `radial-gradient(circle, ${moodColors[brief.mood] || "var(--gold)"}15 0%, transparent 70%)`, borderRadius: "50%" }} />
+      <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "100px", height: "100px", background: `radial-gradient(circle, ${moodColor}15 0%, transparent 70%)`, borderRadius: "50%" }} />
       
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
         <div>
@@ -495,21 +552,21 @@ export function DailyBriefWidget() {
         <div style={{ 
           padding: "4px 10px", 
           borderRadius: "100px", 
-          background: `${moodColors[brief.mood] || "var(--gold)"}15`,
-          border: `1px solid ${moodColors[brief.mood] || "var(--gold)"}30`,
+          background: `${moodColor}15`,
+          border: `1px solid ${moodColor}30`,
           ...mono,
           fontSize: "9px",
-          color: moodColors[brief.mood] || "var(--gold)",
+          color: moodColor,
           textTransform: "uppercase",
           letterSpacing: "0.1em"
         }}>{brief.mood}</div>
       </div>
 
-      {brief.wins?.length > 0 && (
+      {wins.length > 0 && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...mono, fontSize: "9px", color: "var(--dim)", marginBottom: "8px", letterSpacing: "0.1em" }}>WINS</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {brief.wins.slice(0, 2).map((win: string, i: number) => (
+            {wins.slice(0, 2).map((win: string, i: number) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ color: "#4cc88c", fontSize: "12px" }}>✓</span>
                 <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.8)" }}>{win}</span>
@@ -519,12 +576,12 @@ export function DailyBriefWidget() {
         </div>
       )}
 
-      {brief.priorities?.length > 0 && (
+      {priorities.length > 0 && (
         <div style={{ marginBottom: "16px" }}>
           <div style={{ ...mono, fontSize: "9px", color: "var(--dim)", marginBottom: "8px", letterSpacing: "0.1em" }}>TOP PRIORITY</div>
           <div style={{ background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "12px" }}>
-            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", marginBottom: "6px" }}>{brief.priorities[0]?.action}</div>
-            <div style={{ fontSize: "11px", color: "var(--dim)", lineHeight: 1.5 }}>{brief.priorities[0]?.why}</div>
+            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.9)", marginBottom: "6px" }}>{priorities[0]?.action}</div>
+            <div style={{ fontSize: "11px", color: "var(--dim)", lineHeight: 1.5 }}>{priorities[0]?.why}</div>
           </div>
         </div>
       )}
@@ -544,9 +601,42 @@ export function DailyBriefWidget() {
 
 // ─── AI Content Ideas Widget ───────────────────────────────────────────────────
 export function ContentIdeasWidget() {
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [savingIndex, setSavingIndex] = useState<number | null>(null);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  const saveIdeaToPlan = async (idea: ContentIdea, index: number) => {
+    setSavingIndex(index);
+    setSaveMsg("");
+    try {
+      const supabase = createClient();
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) throw new Error("You must be signed in.");
+
+      const { error } = await supabase.from("content_plans_v2").insert({
+        creator_id: userId,
+        title: idea.title,
+        description: idea.description,
+        plan_type: idea.monetization === "free" ? "unlock" : idea.monetization,
+        status: "idea",
+        source: "ai",
+        metadata: {
+          engagement: idea.engagement || null,
+          platform: idea.type,
+        },
+      });
+
+      if (error) throw error;
+      setSaveMsg(`Saved "${idea.title}" to your planning board.`);
+    } catch (error) {
+      setSaveMsg(error instanceof Error ? error.message : "Could not save idea.");
+    } finally {
+      setSavingIndex(null);
+    }
+  };
 
   const generate = async () => {
     setLoading(true);
@@ -617,6 +707,13 @@ export function ContentIdeasWidget() {
                 <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
                 <span style={{ ...mono, fontSize: "8px", color: idea.engagement?.includes("high") ? "#4cc88c" : "var(--dim)" }}>{idea.engagement}</span>
               </div>
+              <button
+                onClick={() => void saveIdeaToPlan(idea, i)}
+                disabled={savingIndex === i}
+                style={{ marginTop: "10px", padding: "7px 10px", background: "rgba(200,169,110,0.12)", border: "1px solid rgba(200,169,110,0.28)", borderRadius: "6px", color: "var(--gold)", ...mono, fontSize: "9px", cursor: "pointer", opacity: savingIndex === i ? 0.6 : 1 }}
+              >
+                {savingIndex === i ? "SAVING..." : "ADD TO PLAN"}
+              </button>
             </div>
           ))}
           {ideas.length > 2 && (
@@ -637,13 +734,68 @@ export function ContentIdeasWidget() {
           )}
         </div>
       )}
+
+      {saveMsg && <div style={{ marginTop: "10px", fontSize: "11px", color: saveMsg.startsWith("Saved") ? "var(--gold)" : "#ff6a6a" }}>{saveMsg}</div>}
+    </div>
+  );
+}
+
+export function OnboardingSnapshotWidget({
+  snapshot,
+  onOpen,
+}: {
+  snapshot: OnboardingSnapshot | null;
+  onOpen: () => void;
+}) {
+  return (
+    <div style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #151528 100%)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "12px", padding: "20px", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(circle at top right, rgba(200,169,110,0.08), transparent 45%)", pointerEvents: "none" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start", marginBottom: "14px" }}>
+        <div>
+          <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.2em", color: "var(--gold-dim)", marginBottom: "6px" }}>ONBOARDING BEAST AI</div>
+          <div style={{ ...disp, fontSize: "22px", color: "rgba(255,255,255,0.94)" }}>{snapshot?.niche || "Build your creator strategy"}</div>
+        </div>
+        <button onClick={onOpen} style={{ padding: "8px 12px", background: "rgba(200,169,110,0.14)", border: "1px solid rgba(200,169,110,0.28)", borderRadius: "6px", color: "var(--gold)", ...mono, fontSize: "9px", cursor: "pointer" }}>
+          {snapshot ? "REFINE" : "START"}
+        </button>
+      </div>
+
+      {!snapshot && (
+        <div style={{ fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>
+          Run one onboarding strategy pass to generate your niche, pricing angle, content pillars, and 30-day growth plan.
+        </div>
+      )}
+
+      {snapshot && (
+        <div style={{ display: "grid", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ ...mono, fontSize: "8px", color: "var(--gold-dim)", marginBottom: "4px" }}>CONFIDENCE</div>
+              <div style={{ fontSize: "13px", color: "var(--white)" }}>{snapshot.confidence || "-"}</div>
+            </div>
+            <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ ...mono, fontSize: "8px", color: "var(--gold-dim)", marginBottom: "4px" }}>STARTING PRICE</div>
+              <div style={{ fontSize: "13px", color: "var(--white)" }}>{snapshot.pricingRecommendation || "-"}</div>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ ...mono, fontSize: "8px", color: "var(--gold-dim)", marginBottom: "6px" }}>FIRST 30 DAYS</div>
+            <div style={{ display: "grid", gap: "6px" }}>
+              {snapshot.first30Days.slice(0, 3).map((step, index) => (
+                <div key={`${step}-${index}`} style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.5 }}>{step}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Fan Personas Widget ───────────────────────────────────────────────────────
 export function FanPersonasWidget() {
-  const [personas, setPersonas] = useState<any>(null);
+  const [personas, setPersonas] = useState<PersonasMap | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPersona, setSelectedPersona] = useState<string | null>(null);
 
@@ -684,17 +836,17 @@ export function FanPersonasWidget() {
 
   if (!personas || Object.keys(personas).length === 0) return null;
 
-  const sortedPersonas = Object.entries(personas).sort((a: any, b: any) => b[1].fans.length - a[1].fans.length);
+  const sortedPersonas = Object.entries(personas).sort((a, b) => b[1].fans.length - a[1].fans.length);
 
   return (
     <div style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #151528 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "18px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
         <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)" }}>AI FAN INTELLIGENCE</div>
-        <div style={{ ...mono, fontSize: "9px", color: "var(--dim)" }}>{Object.values(personas).reduce((s: number, p: any) => s + p.fans.length, 0)} FANS ANALYZED</div>
+        <div style={{ ...mono, fontSize: "9px", color: "var(--dim)" }}>{Object.values(personas).reduce((s, p) => s + p.fans.length, 0)} FANS ANALYZED</div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {sortedPersonas.map(([key, data]: [string, any]) => (
+        {sortedPersonas.map(([key, data]) => (
           <div key={key}>
             <button
               onClick={() => setSelectedPersona(selectedPersona === key ? null : key)}
@@ -718,7 +870,7 @@ export function FanPersonasWidget() {
                   <span style={{ ...mono, fontSize: "11px", color: personaColors[key] || "var(--gold)" }}>{data.fans.length}</span>
                 </div>
                 <div style={{ fontSize: "10px", color: "var(--dim)", marginTop: "2px" }}>
-                  Avg: ${(data.fans.reduce((s: number, f: any) => s + f.totalSpent, 0) / data.fans.length).toFixed(0)}
+                  Avg: ${(data.fans.reduce((s, f) => s + f.totalSpent, 0) / data.fans.length).toFixed(0)}
                 </div>
               </div>
             </button>
@@ -731,7 +883,7 @@ export function FanPersonasWidget() {
                 </div>
                 {data.insights.messageTemplate && (
                   <div style={{ padding: "8px", background: "rgba(200,169,110,0.08)", borderRadius: "4px", fontSize: "11px", color: "rgba(255,255,255,0.7)", fontStyle: "italic" }}>
-                    "{data.insights.messageTemplate.slice(0, 100)}..."
+                    &quot;{data.insights.messageTemplate.slice(0, 100)}...&quot;
                   </div>
                 )}
               </div>
@@ -745,7 +897,7 @@ export function FanPersonasWidget() {
 
 // ─── Dynamic Pricing Widget ────────────────────────────────────────────────────
 export function DynamicPricingWidget() {
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<PricingRecommendation | null>(null);
   const [loading, setLoading] = useState(false);
   const [contentType, setContentType] = useState("unlock");
   const [contentQuality, setContentQuality] = useState("premium");
@@ -836,11 +988,11 @@ export function DynamicPricingWidget() {
             </div>
           )}
 
-          {recommendation.factors?.length > 0 && (
+          {(recommendation.factors?.length ?? 0) > 0 && (
             <div>
               <div style={{ ...mono, fontSize: "9px", color: "var(--dim)", marginBottom: "6px" }}>FACTORS ANALYZED</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                {recommendation.factors.slice(0, 3).map((factor: string, i: number) => (
+                {(recommendation.factors ?? []).slice(0, 3).map((factor: string, i: number) => (
                   <span key={i} style={{ padding: "4px 8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", fontSize: "10px", color: "rgba(255,255,255,0.7)" }}>
                     {factor.split(":")[0]}
                   </span>
@@ -925,6 +1077,27 @@ export function LegacyMode() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Voice Clone Widget ───────────────────────────────────────────────────────
+export function VoiceCloneWidget() {
+  return (
+    <div style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #151528 100%)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "12px", padding: "18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+        <div>
+          <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)" }}>VOICE STUDIO</div>
+          <div style={{ fontSize: "11px", color: "var(--dim)", marginTop: "2px" }}>Coming soon</div>
+        </div>
+        <div style={{ fontSize: "24px" }}>🎙️</div>
+      </div>
+      <div style={{ border: "1px dashed rgba(200,169,110,0.28)", borderRadius: "10px", padding: "16px", background: "rgba(200,169,110,0.04)" }}>
+        <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>LIMITED ROLLOUT</div>
+        <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.7 }}>
+          Voice Studio is intentionally gated for a private release. Current dashboard stays focused on core monetization and growth tools.
+        </div>
+      </div>
     </div>
   );
 }

@@ -49,7 +49,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    let messageData: any = {
+    const messageData: {
+      content: string;
+      fan_code: string;
+      creator_id?: string;
+      from_creator?: boolean;
+    } = {
       content: content.trim(),
       fan_code: fanCode,
     };

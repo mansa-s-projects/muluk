@@ -19,3 +19,8 @@ CIPHER is a creator economy platform focused on maximizing creator earnings, pri
 2. Expand social integrations
 3. Add advanced analytics and marketing tools
 4. Scale to global user base
+
+## Current Focus
+- In progress: social integrations, release hardening, and docs completion
+- Final closeout target: finalize core product features for MVP lock
+- Detailed flow and checklist: see [PROJECT_TODO.md](PROJECT_TODO.md)

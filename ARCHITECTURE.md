@@ -10,7 +10,7 @@
 | **Styling** | Tailwind CSS 4, Radix UI primitives |
 | **Database** | Supabase (PostgreSQL + Auth + RLS) |
 | **Email** | Resend |
-| **AI** | Anthropic Claude (Ghostwrite feature) |
+| **AI** | OpenRouter (core AI routes) + OpenAI (marketing agent) |
 | **Analytics** | PostHog |
 | **Charts** | Recharts |
 

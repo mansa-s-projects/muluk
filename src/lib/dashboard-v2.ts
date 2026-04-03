@@ -82,6 +82,26 @@ export type V2PriceOptimizerResult = {
   recommendation: string | null;
 };
 
+export type V2ContentPlan = {
+  id: string;
+  title: string;
+  description: string | null;
+  planType: string;
+  status: string;
+  source: string;
+  plannedFor: string | null;
+  createdAt: string;
+};
+
+export type V2OnboardingSnapshot = {
+  niche: string;
+  confidence: string;
+  pricingRecommendation: string;
+  first30Days: string[];
+  platformPriority: string[];
+  contentPillars: Array<{ name: string; description: string }>;
+};
+
 // ─── Safe number parser ─────────────────────────────────────────────────────
 
 function safe(v: unknown): number {
@@ -174,7 +194,7 @@ export async function getCreatorDashboardOverview(
     content_title: contentMap.get(tx.content_id) ?? "Unknown",
     amount: safe(tx.amount),
     currency: tx.currency || "usd",
-    payment_method: tx.payment_method || "stripe",
+    payment_method: tx.payment_method || "whop",
     status: tx.status,
     creator_earnings: safe(tx.creator_earnings),
     platform_fee: safe(tx.platform_fee),
@@ -419,7 +439,7 @@ export async function getCreatorRecentTransactions(
     content_title: contentMap.get(tx.content_id) ?? "Unknown",
     amount: safe(tx.amount),
     currency: tx.currency || "usd",
-    payment_method: tx.payment_method || "stripe",
+    payment_method: tx.payment_method || "whop",
     status: tx.status,
     creator_earnings: safe(tx.creator_earnings),
     platform_fee: safe(tx.platform_fee),
@@ -493,17 +513,16 @@ export type ToolGating = {
 export async function getToolGating(userId: string): Promise<ToolGating> {
   const supabase = await createClient();
 
-  const { data: txCount } = await supabase
+  const { count: successCountRaw } = await supabase
     .from("transactions_v2")
     .select("id", { count: "exact", head: true })
     .eq("creator_id", userId)
     .eq("status", "success");
 
-  const successCount = (txCount as unknown as { length: number })?.length ?? 0;
+  const successCount = successCountRaw ?? 0;
 
-  // Check if fan messaging table exists
   const { error: fanMsgErr } = await supabase
-    .from("fan_messages")
+    .from("creator_broadcasts_v2")
     .select("id", { count: "exact", head: true })
     .eq("creator_id", userId)
     .limit(0);
@@ -532,6 +551,63 @@ export async function getToolGating(userId: string): Promise<ToolGating> {
           ? "Ready"
           : "No tax summary until first successful payment",
     },
+  };
+}
+
+export async function getCreatorContentPlans(userId: string): Promise<V2ContentPlan[]> {
+  const supabase = await createClient();
+
+  const { data: plans } = await supabase
+    .from("content_plans_v2")
+    .select("id, title, description, plan_type, status, source, planned_for, created_at")
+    .eq("creator_id", userId)
+    .order("planned_for", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  return (plans ?? []).map((plan) => ({
+    id: plan.id,
+    title: plan.title || "Untitled",
+    description: plan.description,
+    planType: plan.plan_type || "unlock",
+    status: plan.status || "planned",
+    source: plan.source || "manual",
+    plannedFor: plan.planned_for || null,
+    createdAt: plan.created_at || "",
+  }));
+}
+
+export async function getCreatorOnboardingSnapshot(userId: string): Promise<V2OnboardingSnapshot | null> {
+  const supabase = await createClient();
+
+  const { data: row } = await supabase
+    .from("creator_onboarding")
+    .select("analysis")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const analysis = row?.analysis as Record<string, unknown> | undefined;
+  if (!analysis) return null;
+
+  const contentPillars = Array.isArray(analysis.contentPillars)
+    ? analysis.contentPillars
+        .map((pillar) => {
+          const value = pillar as Record<string, unknown>;
+          return {
+            name: String(value.name ?? ""),
+            description: String(value.description ?? ""),
+          };
+        })
+        .filter((pillar) => pillar.name || pillar.description)
+    : [];
+
+  return {
+    niche: String(analysis.niche ?? ""),
+    confidence: String(analysis.confidence ?? ""),
+    pricingRecommendation: String((analysis.pricing as { recommendation?: string } | undefined)?.recommendation ?? ""),
+    first30Days: Array.isArray(analysis.first30Days) ? analysis.first30Days.map((item) => String(item)) : [],
+    platformPriority: Array.isArray(analysis.platformPriority) ? analysis.platformPriority.map((item) => String(item)) : [],
+    contentPillars,
   };
 }
 

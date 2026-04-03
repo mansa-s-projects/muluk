@@ -4,6 +4,23 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'CIPHER <notifications@cipher.so>';
 
+type WelcomeEmailData = {
+  name: string;
+  to: string;
+};
+
+type EarningsEmailData = {
+  amount: number;
+  newBalance: number;
+  to: string;
+};
+
+type PurchaseReceiptData = {
+  itemType: string;
+  creatorName: string;
+  to: string;
+};
+
 const emailTemplate = (content: string, title: string) => `
 <!DOCTYPE html>
 <html>
@@ -28,7 +45,7 @@ const emailTemplate = (content: string, title: string) => `
 </html>
 `;
 
-export const sendWelcomeEmail = async (data: any) => {
+export const sendWelcomeEmail = async (data: WelcomeEmailData) => {
   const content = `<h2>Welcome to CIPHER, ${data.name}</h2><p>You've joined the most exclusive creator platform.</p>`;
   return await resend.emails.send({
     from: FROM_EMAIL,
@@ -38,7 +55,7 @@ export const sendWelcomeEmail = async (data: any) => {
   });
 };
 
-export const sendEarningsNotification = async (data: any) => {
+export const sendEarningsNotification = async (data: EarningsEmailData) => {
   const content = `<h2>💰 You Just Earned $${data.amount}</h2><p>New balance: $${data.newBalance}</p>`;
   return await resend.emails.send({
     from: FROM_EMAIL,
@@ -48,7 +65,7 @@ export const sendEarningsNotification = async (data: any) => {
   });
 };
 
-export const sendPurchaseReceipt = async (data: any) => {
+export const sendPurchaseReceipt = async (data: PurchaseReceiptData) => {
   const content = `<h2>Purchase Successful</h2><p>You purchased ${data.itemType} from ${data.creatorName}</p>`;
   return await resend.emails.send({
     from: FROM_EMAIL,

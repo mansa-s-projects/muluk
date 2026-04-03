@@ -64,7 +64,7 @@ export default function DebugEnv() {
     // Check other env vars (existence only, no values shown)
     const envChecks = [
       { name: 'RESEND_API_KEY', required: false },
-      { name: 'ANTHROPIC_API_KEY', required: false },
+      { name: 'OPENAI_API_KEY', required: false },
       { name: 'OPENROUTER_API_KEY', required: false },
       { name: 'NEXT_PUBLIC_POSTHOG_KEY', required: false },
       { name: 'NEXT_PUBLIC_SITE_URL', required: false },
@@ -78,9 +78,8 @@ export default function DebugEnv() {
       { name: 'YOUTUBE_CLIENT_ID', required: false },
       { name: 'YOUTUBE_CLIENT_SECRET', required: false },
       { name: 'TELEGRAM_BOT_TOKEN', required: false },
-      { name: 'STRIPE_SECRET_KEY', required: false },
-      { name: 'STRIPE_WEBHOOK_SECRET', required: false },
-      { name: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', required: false },
+      { name: 'WHOP_API_KEY', required: false },
+      { name: 'WHOP_WEBHOOK_SECRET', required: false },
     ];
 
     for (const check of envChecks) {

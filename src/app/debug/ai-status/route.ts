@@ -6,7 +6,6 @@ export async function GET() {
     // OpenRouter - used for ALL AI features
     openrouter: {
       keySet: !!process.env.OPENROUTER_API_KEY,
-      keyPrefix: process.env.OPENROUTER_API_KEY?.slice(0, 12) || null,
       referer: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
     },
     // Supabase (for saving generated content)
@@ -41,8 +40,8 @@ export async function GET() {
         : "Working",
     },
     models: {
-      fast: "openai/gpt-4o-mini - $0.15/$0.60 (bio, captions, ideas)",
-      balanced: "google/gemini-flash-1.5 - $0.075/$0.30 (content, ghostwriter, strategy)",
+      fast: "openai/gpt-4o-mini - $0.15/$0.60 (bio, captions, pricing, some idea flows)",
+      balanced: "google/gemini-flash-1.5 - $0.075/$0.30 (daily brief, personas, strategy)",
       premium: "Available but unused - all features on cheaper models",
       savings: "Ghostwriter: 98% cheaper ($15 → $0.30 per 1M tokens)",
     },

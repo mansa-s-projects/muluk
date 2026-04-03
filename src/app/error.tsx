@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function ErrorBoundary({
   error,
@@ -83,7 +84,7 @@ export default function ErrorBoundary({
             Try Again
           </button>
           
-          <a
+          <Link
             href="/"
             style={{
               padding: "14px 28px",
@@ -99,7 +100,7 @@ export default function ErrorBoundary({
             }}
           >
             Go Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

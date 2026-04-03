@@ -12,6 +12,7 @@ interface ContentData {
   description: string | null;
   price: number;
   currency: string;
+  whop_checkout_url?: string | null;
   file_url: string | null;
   preview_url: string | null;
 }
@@ -21,6 +22,20 @@ interface FanCodeData {
   code: string;
   is_paid: boolean;
   payment_method: string | null;
+}
+
+interface PaymentData {
+  whopCheckoutUrl: string | null;
+}
+
+type PaymentMode = "hosted" | "embedded";
+
+type PaymentMethodOption = "apple_pay" | "card" | "paypal";
+
+interface PaymentConfig {
+  provider: "whop";
+  mode: PaymentMode;
+  checkoutUrl: string | null;
 }
 
 /* ─────────────────────────────────────────
@@ -38,10 +53,13 @@ export default function UnlockPage({
 
   const [content, setContent] = useState<ContentData | null>(null);
   const [fanCode, setFanCode] = useState<FanCodeData | null>(null);
+  const [payment, setPayment] = useState<PaymentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodOption>("apple_pay");
 
   // ── Fetch content + code status ───────────────────────────────────────
   useEffect(() => {
@@ -55,6 +73,7 @@ export default function UnlockPage({
         }
         setContent(json.data.content);
         setFanCode(json.data.fanCode);
+        setPayment(json.data.payment ?? null);
         if (json.data.fanCode.is_paid || success) {
           setUnlocked(true);
         }
@@ -67,26 +86,40 @@ export default function UnlockPage({
     load();
   }, [code, success]);
 
-  // ── Pay with Stripe ───────────────────────────────────────────────────
-  const handleStripePay = async () => {
+  // ── Pay with Whop ─────────────────────────────────────────────────────
+  const handleWhopPay = async () => {
+    if (!paymentConfig.checkoutUrl) {
+      setError("Whop checkout link is not configured for this content");
+      return;
+    }
+
     setPaying(true);
     try {
-      const res = await fetch("/api/v2/stripe/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fan_code: code }),
-      });
-      const json = await res.json();
-      if (json.success && json.data.url) {
-        window.location.href = json.data.url;
-      } else {
-        setError(json.error || "Failed to create payment session");
-        setPaying(false);
-      }
+      window.location.href = paymentConfig.checkoutUrl;
     } catch {
       setError("Payment failed — please try again");
       setPaying(false);
     }
+  };
+
+  const paymentConfig: PaymentConfig = {
+    provider: "whop",
+    mode: "hosted",
+    checkoutUrl: payment?.whopCheckoutUrl ?? null,
+  };
+
+  const openPaymentSheet = () => {
+    setError(null);
+    setShowPaymentSheet(true);
+  };
+
+  const closePaymentSheet = () => {
+    if (paying) return;
+    setShowPaymentSheet(false);
+  };
+
+  const startCheckout = async () => {
+    await handleWhopPay();
   };
 
   // ── Styles (inline to match CIPHER design system) ─────────────────────
@@ -95,6 +128,7 @@ export default function UnlockPage({
   const gold = { color: "#c8a96e" } as const;
   const muted = { color: "rgba(255,255,255,0.45)" } as const;
   const dim = { color: "rgba(255,255,255,0.22)" } as const;
+  const rim = "rgba(255,255,255,0.08)";
 
   // ── Loading state ─────────────────────────────────────────────────────
   if (loading) {
@@ -149,6 +183,11 @@ export default function UnlockPage({
     currency: content.currency?.toUpperCase() || "USD",
   }).format(content.price / 100);
 
+  const feeDisplay = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: content.currency?.toUpperCase() || "USD",
+  }).format(0);
+
   // ═══════════════════════════════════════════════════════════════════════
   //   UNLOCKED STATE
   // ═══════════════════════════════════════════════════════════════════════
@@ -173,7 +212,7 @@ export default function UnlockPage({
               {content.title}
             </h1>
             <div style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", ...dim }}>
-              {fanCode.code} · Paid via {fanCode.payment_method === "stripe" ? "card" : fanCode.payment_method || "card"}
+              {fanCode.code} · Paid via {fanCode.payment_method === "whop" ? "whop" : fanCode.payment_method || "whop"}
             </div>
           </div>
 
@@ -284,27 +323,37 @@ export default function UnlockPage({
             Payment method
           </div>
 
-          {/* Stripe (active) */}
+          {/* Checkout CTA */}
           <button
-            onClick={handleStripePay}
-            disabled={paying}
+            onClick={openPaymentSheet}
+            disabled={paying || !paymentConfig.checkoutUrl}
             id="pay-with-card-btn"
             style={{
               width: "100%", padding: "18px 24px",
               display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
               background: "#c8a96e", border: "none", borderRadius: "3px",
-              color: "#0a0800", cursor: paying ? "wait" : "pointer",
+              color: "#0a0800", cursor: paying || !paymentConfig.checkoutUrl ? "not-allowed" : "pointer",
               ...mono, fontSize: "12px", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase",
               transition: "opacity 0.2s",
-              opacity: paying ? 0.7 : 1,
+              opacity: paying || !paymentConfig.checkoutUrl ? 0.7 : 1,
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <rect x="1" y="4" width="22" height="16" rx="2" />
               <line x1="1" y1="10" x2="23" y2="10" />
             </svg>
-            {paying ? "Redirecting..." : "Pay with Card"}
+            {paying ? "Redirecting..." : paymentConfig.checkoutUrl ? "Open Secure Checkout" : "Whop Not Configured"}
           </button>
+
+          <div style={{ marginTop: "10px", padding: "12px 14px", border: `1px solid ${rim}`, borderRadius: "4px", background: "rgba(255,255,255,0.02)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
+              <div>
+                <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", color: "#c8a96e" }}>Payment shell</div>
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.62)", marginTop: "4px" }}>Apple Pay style flow in CIPHER. Secure payment is completed with Whop.</div>
+              </div>
+              <div style={{ ...mono, fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.12em" }}>{paymentConfig.mode}</div>
+            </div>
+          </div>
 
           {/* Crypto (placeholder) */}
           <button
@@ -356,6 +405,162 @@ export default function UnlockPage({
           </div>
         </div>
       </div>
+
+      {showPaymentSheet && (
+        <div
+          onClick={closePaymentSheet}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(2,2,3,0.82)",
+            backdropFilter: "blur(16px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              background: "linear-gradient(180deg, #111120 0%, #09090f 100%)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "18px",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg, transparent, #c8a96e, transparent)" }} />
+
+            <div style={{ padding: "18px 18px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(200,169,110,0.8)" }}>Express checkout</div>
+                <div style={{ ...disp, fontSize: "30px", fontWeight: 300, fontStyle: "italic", color: "rgba(255,255,255,0.92)", marginTop: "4px" }}>Complete payment</div>
+              </div>
+              <button
+                onClick={closePaymentSheet}
+                disabled={paying}
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "999px",
+                  border: `1px solid ${rim}`,
+                  background: "rgba(255,255,255,0.03)",
+                  color: "rgba(255,255,255,0.7)",
+                  cursor: paying ? "not-allowed" : "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ padding: "0 18px 18px" }}>
+              <div style={{ border: `1px solid ${rim}`, borderRadius: "14px", background: "rgba(255,255,255,0.03)", padding: "16px", marginBottom: "14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}>
+                  <div>
+                    <div style={{ fontSize: "15px", color: "rgba(255,255,255,0.94)", marginBottom: "4px" }}>{content.title}</div>
+                    <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>{content.description || "Private creator content unlock."}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ ...disp, fontSize: "26px", color: "#c8a96e" }}>{priceDisplay}</div>
+                    <div style={{ ...mono, fontSize: "9px", color: "rgba(255,255,255,0.28)", letterSpacing: "0.16em", textTransform: "uppercase" }}>one time</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ border: `1px solid ${rim}`, borderRadius: "14px", background: "rgba(255,255,255,0.02)", padding: "12px", marginBottom: "14px" }}>
+                {[
+                  { key: "apple_pay", title: "Apple Pay", subtitle: "Fastest checkout when available", badge: "Priority" },
+                  { key: "card", title: "Card", subtitle: "Credit or debit card via Whop", badge: "Fallback" },
+                  { key: "paypal", title: "PayPal", subtitle: "Shown when supported in Whop", badge: "Optional" },
+                ].map((option) => {
+                  const active = selectedMethod === option.key;
+                  return (
+                    <button
+                      key={option.key}
+                      onClick={() => setSelectedMethod(option.key as PaymentMethodOption)}
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "14px 12px",
+                        borderRadius: "12px",
+                        border: active ? "1px solid rgba(200,169,110,0.42)" : `1px solid ${rim}`,
+                        background: active ? "rgba(200,169,110,0.08)" : "transparent",
+                        color: "rgba(255,255,255,0.92)",
+                        marginBottom: "8px",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: option.key === "apple_pay" ? "18px" : "16px" }}>
+                            {option.key === "apple_pay" ? "" : option.key === "card" ? "◫" : "P"}
+                          </span>
+                          <span style={{ fontSize: "14px" }}>{option.title}</span>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.42)", marginTop: "4px" }}>{option.subtitle}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ ...mono, fontSize: "8px", letterSpacing: "0.16em", textTransform: "uppercase", color: active ? "#c8a96e" : "rgba(255,255,255,0.35)" }}>{option.badge}</span>
+                        <span style={{ width: "16px", height: "16px", borderRadius: "999px", border: active ? "4px solid #c8a96e" : `1px solid ${rim}`, background: active ? "rgba(200,169,110,0.18)" : "transparent" }} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ border: `1px solid ${rim}`, borderRadius: "14px", background: "rgba(255,255,255,0.02)", padding: "14px 16px", marginBottom: "14px" }}>
+                {[
+                  ["Subtotal", priceDisplay],
+                  ["Processing", feeDisplay],
+                  ["Provider", "Whop secure checkout"],
+                ].map(([label, value], index) => (
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: index === 2 ? "10px 0 0" : "0 0 10px", borderTop: index === 2 ? `1px solid ${rim}` : "none", marginTop: index === 2 ? "10px" : "0" }}>
+                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)" }}>{label}</span>
+                    <span style={{ ...mono, fontSize: "11px", color: "rgba(255,255,255,0.82)" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={startCheckout}
+                disabled={paying || !paymentConfig.checkoutUrl}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderRadius: "14px",
+                  padding: "16px 18px",
+                  background: selectedMethod === "apple_pay" ? "linear-gradient(180deg, #ffffff 0%, #d9d9d9 100%)" : "#c8a96e",
+                  color: selectedMethod === "apple_pay" ? "#000" : "#120c00",
+                  cursor: paying || !paymentConfig.checkoutUrl ? "not-allowed" : "pointer",
+                  opacity: paying || !paymentConfig.checkoutUrl ? 0.7 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                <span style={{ fontSize: selectedMethod === "apple_pay" ? "20px" : "14px" }}>{selectedMethod === "apple_pay" ? "" : "→"}</span>
+                <span style={{ ...mono, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: "11px" }}>
+                  {paying ? "Redirecting" : selectedMethod === "apple_pay" ? "Pay with Apple Pay" : `Continue with ${selectedMethod === "card" ? "Card" : "PayPal"}`}
+                </span>
+              </button>
+
+              <div style={{ marginTop: "12px", textAlign: "center", fontSize: "11px", color: "rgba(255,255,255,0.36)", lineHeight: 1.6 }}>
+                The final payment step opens on Whop. This payment sheet is ready to support embedded checkout later without changing the CIPHER unlock flow.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

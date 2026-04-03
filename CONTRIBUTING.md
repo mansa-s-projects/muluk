@@ -39,7 +39,8 @@ RESEND_API_KEY=re_xxxxx
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # AI Features (optional)
-ANTHROPIC_API_KEY=sk-ant-xxxxx
+OPENROUTER_API_KEY=
+OPENAI_API_KEY=
 
 # Social OAuth (optional - add as needed)
 TWITTER_CLIENT_ID=

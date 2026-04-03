@@ -31,7 +31,7 @@
 - **Database:** Supabase (PostgreSQL + Realtime)
 - **Auth:** Supabase Auth (Email + OAuth: Twitter, TikTok, Instagram, YouTube, Telegram)
 - **Storage:** Supabase Storage (creator assets)
-- **Payments:** Stripe (checkout, webhooks, subscriptions)
+- **Payments:** Whop checkout links for hosted fan payments, plus creator payout rails
 - **Email:** Resend
 - **AI:** OpenRouter (unified API for multiple providers)
 
@@ -74,14 +74,13 @@ cipher/
 │   │   │   │   └── predict/              # Price optimizer
 │   │   │   ├── v2/
 │   │   │   │   ├── content/create
-│   │   │   │   ├── stripe/create-session
-│   │   │   │   └── stripe/webhook
+│   │   │   │   └── unlock/[code]
 │   │   │   └── dashboard/notifications
 │   │   └── debug/              # Debug panels
 │   │       ├── ai-status
 │   │       ├── env
 │   │       ├── database
-│   │       └── stripe
+│   │       └── monetization
 │   ├── lib/                    # Shared libraries
 │   │   ├── ai-router.ts        # AI model routing
 │   │   ├── supabase/           # Supabase clients
@@ -131,9 +130,8 @@ cipher/
   - Fan activity heatmap
 
 - [x] **Monetization**
-  - Stripe integration (checkout sessions)
-  - Webhook handling
-  - Multiple payout methods (Stripe, Wise, USDC, PayPal)
+  - Whop checkout-link integration for hosted fan payments
+  - Multiple payout methods (Whop, Wise, USDC, PayPal)
   - Referral system with custom handles
   - Withdrawal requests
 
@@ -223,7 +221,7 @@ Request → AI Router → OpenRouter → Model
 ```
 
 **Cost Optimization:**
-- 98% cheaper than Anthropic direct
+- 98% cheaper than direct premium-model usage
 - 84% cheaper than old GPT-3.5 stack
 - All via OpenRouter (single API key)
 
@@ -257,8 +255,7 @@ Request → AI Router → OpenRouter → Model
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | /api/v2/content/create | POST | Create content with unlock |
-| /api/v2/stripe/create-session | POST | Stripe checkout |
-| /api/v2/stripe/webhook | POST | Payment webhooks |
+| /api/v2/unlock/[code] | GET | Unlock state + payment configuration |
 | /api/auth/[provider]/callback | GET | OAuth callbacks |
 
 ### Debug

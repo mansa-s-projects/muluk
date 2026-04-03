@@ -1,3 +1,4 @@
+check all mds lets make this app one of our magic apps lets finish building this baby and can u save some tokens
 # CIPHER Deployment Guide
 
 > Deploy CIPHER to production on Vercel with Supabase.
@@ -10,7 +11,7 @@
 - Supabase project (production)
 - Resend account with verified domain
 - OAuth credentials for social platforms
-- Anthropic API key (for AI features)
+- OpenAI API key (for marketing agent) and OpenRouter API key (for core AI routes)
 
 ---
 
@@ -72,7 +73,8 @@ RESEND_API_KEY=re_xxxxx
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 
 # AI Features
-ANTHROPIC_API_KEY=sk-ant-xxxxx
+OPENROUTER_API_KEY=sk-or-v1-xxxxx
+OPENAI_API_KEY=sk-xxxxx
 
 # Twitter/X OAuth
 TWITTER_CLIENT_ID=xxxxx

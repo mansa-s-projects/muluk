@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   BioGeneratorModal,
   CaptionGeneratorModal,
+  OnboardingBeastModal,
   PriceOptimizerModal,
   ContentCalendarModal,
   FanMessageBlastModal,
@@ -23,8 +24,10 @@ import {
   FanCodeGenerator,
   DailyBriefWidget,
   ContentIdeasWidget,
+  OnboardingSnapshotWidget,
   FanPersonasWidget,
   DynamicPricingWidget,
+  VoiceCloneWidget,
   type CipherScoreData,
 } from "./features/InsaneFeatures";
 
@@ -109,6 +112,16 @@ export type SocialConnection = {
   platform_user_id: string | null;
   follower_count: number;
   connected_at: string;
+  metrics?: {
+    followers?: number;
+    engagementRate?: number;
+    likes?: number;
+    views?: number;
+    posts?: number;
+    following?: number;
+  };
+  last_synced_at?: string | null;
+  profile_url?: string | null;
 };
 
 export type SocialReach = {
@@ -436,10 +449,10 @@ function DonutChart({ data }: { data: Array<{ label: string; value: number }> })
   );
 }
 
-export default function DashboardClient({ 
-  data, 
-  v2Data 
-}: { 
+export default function DashboardClient({
+  data,
+  v2Data,
+}: {
   data: DashboardData;
   v2Data?: {
     overview: import("@/lib/dashboard-v2").V2DashboardOverview | null;
@@ -447,6 +460,8 @@ export default function DashboardClient({
     fans: import("@/lib/dashboard-v2").V2FanStats | null;
     earnings: import("@/lib/dashboard-v2").V2EarningsBreakdown | null;
     toolGating: import("@/lib/dashboard-v2").ToolGating | null;
+    contentPlans: import("@/lib/dashboard-v2").V2ContentPlan[];
+    onboardingSnapshot: import("@/lib/dashboard-v2").V2OnboardingSnapshot | null;
   };
 }) {
   const {
@@ -489,6 +504,7 @@ export default function DashboardClient({
   const [contentTitle, setContentTitle] = useState("");
   const [contentDesc, setContentDesc] = useState("");
   const [contentPrice, setContentPrice] = useState("0");
+  const [contentWhopCheckoutUrl, setContentWhopCheckoutUrl] = useState("");
   const [contentExpiry, setContentExpiry] = useState("24h");
   const [contentSaving, setContentSaving] = useState(false);
   const [contentMsg, setContentMsg] = useState("");
@@ -529,6 +545,7 @@ export default function DashboardClient({
   const [connections, setConnections] = useState<SocialConnection[]>(socialConnections);
   const [socialMsg, setSocialMsg] = useState("");
   const [socialLoading, setSocialLoading] = useState<SocialPlatform | null>(null);
+  const [socialRefreshing, setSocialRefreshing] = useState(false);
   const [autoShareEnabled, setAutoShareEnabled] = useState(false);
   const [shareText, setShareText] = useState("New exclusive content just dropped 🔒 cipher.co/@creator");
 
@@ -626,6 +643,22 @@ export default function DashboardClient({
 
   const effectiveReach = socialReachLive.totalFollowers > 0 ? socialReachLive : socialReach;
 
+  const socialAnalyticsSummary = useMemo(() => {
+    const totals = connections.reduce(
+      (acc, connection) => {
+        acc.connectedAccounts += 1;
+        acc.followers += Number(connection.metrics?.followers ?? connection.follower_count ?? 0);
+        acc.likes += Number(connection.metrics?.likes ?? 0);
+        acc.views += Number(connection.metrics?.views ?? 0);
+        acc.posts += Number(connection.metrics?.posts ?? 0);
+        return acc;
+      },
+      { connectedAccounts: 0, followers: 0, likes: 0, views: 0, posts: 0 }
+    );
+
+    return totals;
+  }, [connections]);
+
   const potentialFans = Math.floor(effectiveReach.totalFollowers * 0.01);
   const estimatedMonthly = potentialFans * 15;
 
@@ -681,7 +714,7 @@ export default function DashboardClient({
       const supabase = createClient();
       const { data, error } = await supabase
         .from("social_connections")
-        .select("platform, platform_username, platform_user_id, follower_count, connected_at")
+        .select("platform, platform_username, platform_user_id, follower_count, connected_at, metrics, last_synced_at, profile_url")
         .eq("creator_id", userId)
         .order("connected_at", { ascending: false });
       if (error) throw error;
@@ -711,6 +744,27 @@ export default function DashboardClient({
       window.history.replaceState({}, "", url.toString());
     }
   }, [refreshConnections]);
+
+  const refreshSocialMetrics = async () => {
+    setSocialRefreshing(true);
+    setSocialMsg("");
+    try {
+      const res = await fetch("/api/social/refresh-metrics", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not refresh social metrics.");
+      await refreshConnections();
+      const failures = (data.results || []).filter((item: { status?: string }) => item.status === "error");
+      setSocialMsg(
+        failures.length > 0
+          ? `Refreshed with ${failures.length} platform issue(s).`
+          : "Live social metrics refreshed."
+      );
+    } catch (err) {
+      setSocialMsg(err instanceof Error ? err.message : "Could not refresh social metrics.");
+    } finally {
+      setSocialRefreshing(false);
+    }
+  };
 
   // Check referral handle unlock status
   useEffect(() => {
@@ -842,7 +896,12 @@ export default function DashboardClient({
 
       if (!res.ok || !res.body) {
         const msg = await res.text();
-        throw new Error(msg || "Failed to generate draft");
+        let parsedMessage = msg;
+        try {
+          const parsed = JSON.parse(msg) as { error?: string };
+          parsedMessage = parsed.error || msg;
+        } catch {}
+        throw new Error(parsedMessage || "Failed to generate draft");
       }
 
       const reader = res.body.getReader();
@@ -855,7 +914,7 @@ export default function DashboardClient({
       }
     } catch (err) {
       console.error("Ghostwriter failed:", err);
-      setAiErr("Generation failed. Try again.");
+      setAiErr(err instanceof Error ? err.message : "Generation failed. Try again.");
     } finally {
       setAiLoading(false);
     }
@@ -868,6 +927,11 @@ export default function DashboardClient({
     setGeneratedUnlockUrl("");
     if (!contentTitle.trim()) {
       setContentMsg("Title is required.");
+      return;
+    }
+
+    if (!contentWhopCheckoutUrl.trim()) {
+      setContentMsg("Whop checkout URL is required.");
       return;
     }
 
@@ -889,6 +953,7 @@ export default function DashboardClient({
           description: contentDesc.trim(),
           price: priceVal,
           currency: "usd",
+          whop_checkout_url: contentWhopCheckoutUrl.trim(),
           file_url: "https://placeholder.com/content", // Replace with actual file upload
         }),
       });
@@ -928,6 +993,7 @@ export default function DashboardClient({
       setContentTitle("");
       setContentDesc("");
       setContentPrice("0");
+      setContentWhopCheckoutUrl("");
     } catch (err) {
       console.error("Save content failed:", err);
       setContentMsg(err instanceof Error ? err.message : "Could not save content item.");
@@ -1296,11 +1362,22 @@ export default function DashboardClient({
                 {/* AI Daily Brief - Prominent at top */}
                 <DailyBriefWidget />
 
-                {/* AI Content Ideas & Stats Grid */}
+                <OnboardingSnapshotWidget
+                  snapshot={v2Data?.onboardingSnapshot ?? null}
+                  onOpen={() => {
+                    setActiveSection("tools");
+                    setActiveTool("onboarding");
+                  }}
+                />
+
+                {/* AI Content Ideas & Voice Clone Grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                   <ContentIdeasWidget />
-                  
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "12px" }}>
+                  <VoiceCloneWidget />
+                </div>
+                
+                {/* Stats Grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "12px" }}>
                   {[
                     { label: "Total Earnings", value: money.format(wallet.total_earnings), sub: "Net processed" },
                     { label: "Balance Available", value: money.format(wallet.balance), sub: "Ready for payout" },
@@ -1313,7 +1390,6 @@ export default function DashboardClient({
                       <div style={{ color: "var(--dim)", fontSize: "12px", marginTop: "8px" }}>{card.sub}</div>
                     </div>
                   ))}
-                  </div>
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
@@ -1422,7 +1498,7 @@ export default function DashboardClient({
                     <div style={{ fontSize: "16px", color: "var(--gold)", marginTop: "4px" }}>Full content management system</div>
                     <div style={{ fontSize: "13px", color: "var(--dim)", marginTop: "4px" }}>Upload, organize, and manage all your content</div>
                   </div>
-                  <a 
+                  <Link
                     href="/dashboard/content"
                     style={{
                       padding: "12px 24px",
@@ -1438,7 +1514,7 @@ export default function DashboardClient({
                     }}
                   >
                     OPEN →
-                  </a>
+                  </Link>
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
@@ -1456,6 +1532,7 @@ export default function DashboardClient({
                     <input value={contentTitle} onChange={e => setContentTitle(e.target.value)} placeholder="Content title" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                     <input value={contentPrice} onChange={e => setContentPrice(e.target.value)} placeholder="Price" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   </div>
+                  <input value={contentWhopCheckoutUrl} onChange={e => setContentWhopCheckoutUrl(e.target.value)} placeholder="Whop checkout URL" style={{ marginTop: "10px", width: "100%", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   <textarea value={contentDesc} onChange={e => setContentDesc(e.target.value)} placeholder="Description" style={{ marginTop: "10px", width: "100%", minHeight: "72px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   <div style={{ marginTop: "10px", border: "1px solid rgba(29,161,242,0.28)", borderRadius: "8px", padding: "10px", background: "rgba(29,161,242,0.06)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -1695,7 +1772,7 @@ export default function DashboardClient({
                   </div>
                   <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
                     <select value={withdrawMethod} onChange={e => setWithdrawMethod(e.target.value)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
-                      <option>Stripe</option>
+                      <option>Whop</option>
                       <option>Wise</option>
                       <option>USDC</option>
                       <option>PayPal</option>
@@ -1847,6 +1924,58 @@ export default function DashboardClient({
             {activeSection === "analytics" && (
               <div style={{ display: "grid", gap: "12px" }}>
                 <FanPredictionEngine />
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", marginBottom: "12px", flexWrap: "wrap" }}>
+                    <div>
+                      <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>LIVE SOCIAL ANALYTICS</div>
+                      <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "4px" }}>Linked accounts with refreshed follower and engagement signals.</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void refreshSocialMetrics()}
+                      disabled={socialRefreshing}
+                      style={{ border: "1px solid rgba(200,169,110,0.3)", borderRadius: "6px", padding: "8px 12px", background: "rgba(200,169,110,0.08)", color: "var(--gold)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer", opacity: socialRefreshing ? 0.6 : 1 }}
+                    >
+                      {socialRefreshing ? "REFRESHING..." : "REFRESH METRICS"}
+                    </button>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "10px", marginBottom: "12px" }}>
+                    {[
+                      { label: "CONNECTED", value: socialAnalyticsSummary.connectedAccounts.toLocaleString() },
+                      { label: "FOLLOWERS", value: socialAnalyticsSummary.followers.toLocaleString() },
+                      { label: "LIKES", value: socialAnalyticsSummary.likes.toLocaleString() },
+                      { label: "VIEWS", value: socialAnalyticsSummary.views.toLocaleString() },
+                    ].map((item) => (
+                      <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "12px" }}>
+                        <div style={{ ...mono, fontSize: "9px", color: "var(--gold-dim)", marginBottom: "6px" }}>{item.label}</div>
+                        <div style={{ ...disp, fontSize: "28px", color: "var(--gold)" }}>{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "grid", gap: "8px" }}>
+                    {connections.length === 0 && <div style={{ fontSize: "12px", color: "var(--dim)" }}>No linked social accounts yet.</div>}
+                    {connections.map((connection) => (
+                      <div key={connection.platform} style={{ display: "grid", gridTemplateColumns: "1.2fr repeat(4,minmax(0,1fr))", gap: "8px", alignItems: "center", padding: "10px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div>
+                          <div style={{ display: "inline-flex", gap: "8px", alignItems: "center" }}>
+                            <SocialIcon platform={connection.platform} />
+                            <span style={{ fontSize: "12px", color: "var(--white)" }}>{PLATFORM_META[connection.platform].label}</span>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--dim)", marginTop: "4px" }}>@{connection.platform_username || "unknown"}</div>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>{Number(connection.metrics?.followers ?? connection.follower_count ?? 0).toLocaleString()} followers</div>
+                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>{Number(connection.metrics?.likes ?? 0).toLocaleString()} likes</div>
+                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>{Number(connection.metrics?.views ?? 0).toLocaleString()} views</div>
+                        <div style={{ fontSize: "11px", color: "var(--muted)" }}>
+                          {connection.metrics?.engagementRate ? `${connection.metrics.engagementRate.toFixed(1)}% engagement` : `${Number(connection.metrics?.posts ?? 0).toLocaleString()} posts`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "10px" }}>
                   <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "14px" }}>
                     <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>TOTAL PAGE VIEWS</div>
@@ -1890,6 +2019,7 @@ export default function DashboardClient({
               <>
                 {activeTool === "bio" && <BioGeneratorModal userId={userId} onClose={() => setActiveTool(null)} />}
                 {activeTool === "caption" && <CaptionGeneratorModal onClose={() => setActiveTool(null)} />}
+                {activeTool === "onboarding" && <OnboardingBeastModal onClose={() => setActiveTool(null)} />}
                 {activeTool === "price" && <PriceOptimizerModal onClose={() => setActiveTool(null)} />}
                 {activeTool === "calendar" && <ContentCalendarModal userId={userId} onClose={() => setActiveTool(null)} />}
                 {activeTool === "blast" && <FanMessageBlastModal userId={userId} fanCodeCount={fanCodeCount} onClose={() => setActiveTool(null)} />}
@@ -1898,19 +2028,24 @@ export default function DashboardClient({
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: "10px" }}>
                   {[
+                    { key: "onboarding", title: "Onboarding Beast AI", desc: "Build your niche, pricing, audience, handles, and first 30-day creator strategy in one pass.", icon: "⚚" },
                     { key: "bio", title: "Bio Generator", desc: "AI writes 3 creator bio variations from keywords. Pick your favorite, save it.", icon: "✦" },
                     { key: "caption", title: "Caption Generator", desc: "AI writes platform-optimized captions for photos, videos, and announcements.", icon: "✎" },
                     { key: "price", title: "Price Optimizer", desc: "Analyzes your real transaction data. Recommends optimal price with AI confidence score.", icon: "◈" },
                     { key: "calendar", title: "Content Calendar", desc: "7-day planning board. Click each day, assign content drops, schedule to DB.", icon: "⬡" },
                     { key: "blast", title: "Fan Message Blast", desc: "Broadcast to all fans, active fans, or top spenders instantly.", icon: "▲" },
                     { key: "collab", title: "Collaboration Finder", desc: "Discover other CIPHER creators. Send split proposals with custom cut percentages.", icon: "◎" },
+                    { key: "voice", title: "Voice Studio", desc: "Private rollout. Coming soon.", icon: "🎙️", comingSoon: true },
                     { key: "tax", title: "Tax Summary", desc: "Full earnings breakdown by year. Platform fee calc. Export CSV for your accountant.", icon: "≡" },
                   ].map(tool => (
                     <button
                       key={tool.key}
                       type="button"
-                      onClick={() => setActiveTool(tool.key)}
-                      style={{ textAlign: "left", background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px", color: "var(--white)", cursor: "pointer", transition: "border-color 0.2s" }}
+                      onClick={() => {
+                        if (tool.comingSoon) return;
+                        setActiveTool(tool.key);
+                      }}
+                      style={{ textAlign: "left", background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px", color: "var(--white)", cursor: tool.comingSoon ? "not-allowed" : "pointer", transition: "border-color 0.2s", opacity: tool.comingSoon ? 0.72 : 1 }}
                       onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(200,169,110,0.4)")}
                       onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.055)")}
                     >
@@ -1918,7 +2053,7 @@ export default function DashboardClient({
                       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "var(--gold-dim)", marginBottom: "6px" }}>CREATOR TOOL</div>
                       <div style={{ ...disp, fontSize: "24px", color: "var(--gold)", marginBottom: "8px" }}>{tool.title}</div>
                       <div style={{ fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>{tool.desc}</div>
-                      <div style={{ marginTop: "14px", ...mono, fontSize: "10px", color: "rgba(200,169,110,0.6)", letterSpacing: "0.1em" }}>OPEN TOOL →</div>
+                      <div style={{ marginTop: "14px", ...mono, fontSize: "10px", color: "rgba(200,169,110,0.6)", letterSpacing: "0.1em" }}>{tool.comingSoon ? "COMING SOON" : "OPEN TOOL →"}</div>
                     </button>
                   ))}
                 </div>
@@ -1984,7 +2119,17 @@ export default function DashboardClient({
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
                   <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", marginBottom: "8px" }}>CONNECTED ACCOUNTS</div>
-                  <div style={{ fontSize: "12px", color: "var(--dim)", marginBottom: "12px" }}>Connect your social platforms to grow and auto-share from CIPHER.</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginBottom: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ fontSize: "12px", color: "var(--dim)" }}>Connect your social platforms, then refresh live follower and engagement stats.</div>
+                    <button
+                      type="button"
+                      onClick={() => void refreshSocialMetrics()}
+                      disabled={socialRefreshing}
+                      style={{ border: "1px solid rgba(200,169,110,0.3)", borderRadius: "6px", padding: "8px 12px", background: "rgba(200,169,110,0.08)", color: "var(--gold)", ...mono, fontSize: "10px", letterSpacing: "0.1em", cursor: "pointer", opacity: socialRefreshing ? 0.6 : 1 }}
+                    >
+                      {socialRefreshing ? "REFRESHING..." : "REFRESH LIVE METRICS"}
+                    </button>
+                  </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
                     {SOCIAL_PLATFORMS.map(platform => {
                       const meta = PLATFORM_META[platform];
@@ -2021,6 +2166,19 @@ export default function DashboardClient({
                                 ? "Ready to connect"
                                 : "Coming soon"}
                           </div>
+
+                          {isConnected && (
+                            <div style={{ marginTop: "8px", display: "grid", gap: "4px" }}>
+                              <div style={{ fontSize: "11px", color: "var(--white)" }}>{Number(connected?.metrics?.followers ?? connected?.follower_count ?? 0).toLocaleString()} followers</div>
+                              {!!connected?.metrics?.engagementRate && <div style={{ fontSize: "11px", color: "#8dcfff" }}>{connected.metrics.engagementRate.toFixed(1)}% engagement</div>}
+                              {!!connected?.metrics?.likes && <div style={{ fontSize: "11px", color: "var(--dim)" }}>{Number(connected.metrics.likes).toLocaleString()} likes</div>}
+                              {!!connected?.metrics?.views && <div style={{ fontSize: "11px", color: "var(--dim)" }}>{Number(connected.metrics.views).toLocaleString()} views</div>}
+                              {!!connected?.metrics?.posts && <div style={{ fontSize: "11px", color: "var(--dim)" }}>{Number(connected.metrics.posts).toLocaleString()} posts</div>}
+                              <div style={{ ...mono, fontSize: "9px", color: "var(--dim)" }}>
+                                {connected?.last_synced_at ? `Synced ${formatDateTime(connected.last_synced_at)}` : "Not synced yet"}
+                              </div>
+                            </div>
+                          )}
 
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", gap: "8px" }}>
                             {platform === "telegram" && canConnect && !isConnected && (

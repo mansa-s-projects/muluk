@@ -49,9 +49,9 @@ export async function POST(req: NextRequest) {
   const conversionRate = transactions.length > 0 ? (completedTx / transactions.length) * 100 : 0;
   const balance = Number(walletData?.balance ?? 0);
 
-  // Check AI providers are configured
+  // Check AI provider is configured
   const status = aiRouter.getStatus();
-  if (!status.anthropic && !status.openrouter) {
+  if (!status.openrouter) {
     return NextResponse.json({ error: "AI not configured" }, { status: 500 });
   }
 

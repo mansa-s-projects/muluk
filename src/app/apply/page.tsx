@@ -25,7 +25,7 @@ type FormData = {
 
 const CATEGORIES = ["Music", "Art & Design", "Photography", "Film & Video", "Writing", "Podcasting", "Gaming", "Fitness", "Cooking", "Education", "Comedy", "Fashion", "Tech", "Other"];
 const CONTENT_TYPES = ["Photos", "Videos", "Audio", "Live streams", "Written posts", "Exclusive downloads", "1-on-1 messages", "Tutorials"];
-const PAYOUT_METHODS = ["Stripe", "Wise", "USDC (Polygon)", "PayPal"];
+const PAYOUT_METHODS = ["Whop", "Wise", "USDC (Polygon)", "PayPal"];
 const AUDIENCE_SIZES = ["Under 1K", "1K–10K", "10K–50K", "50K–100K", "100K–500K", "500K+"];
 const COUNTRIES = ["United Arab Emirates", "United States", "United Kingdom", "Morocco", "Nigeria", "France", "Germany", "Canada", "Australia", "Saudi Arabia", "Egypt", "South Africa", "Brazil", "India", "Pakistan", "Indonesia", "Philippines", "Other"];
 
@@ -359,7 +359,7 @@ export default function Apply() {
             </h1>
             <p style={{ fontSize: "14px", fontWeight: 300, lineHeight: 1.8, ...muted, maxWidth: "320px" }}>
               {step === 0 && "Tell us about yourself. Your handle is your identity on CIPHER."}
-              {step === 1 && "We support Stripe, Wise, crypto, and PayPal. No Stripe account required."}
+              {step === 1 && "We support Whop, Wise, crypto, and PayPal. No Whop payout profile required to apply."}
               {step === 2 && "What kind of content do you create and how big is your current audience?"}
               {step === 3 && "Review your application. We'll reach out within 48 hours."}
               {step === 4 && "Founding creator access confirmed. Your fee is locked in for life."}

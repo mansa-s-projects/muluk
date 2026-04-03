@@ -10,7 +10,7 @@
 - [x] **Creator Dashboard** - Real-time earnings, charts, notifications
 - [x] **Content Management** - Create, schedule, unlock links, burn mode
 - [x] **Fan Management** - Anonymous codes, CRM, transaction tracking
-- [x] **Monetization** - Stripe, payouts, referrals, withdrawals
+- [x] **Monetization** - Whop checkout links, payouts, referrals, withdrawals
 - [x] **Email Notifications** - Resend integration, welcome + earnings emails
 - [x] **File Uploads** - Supabase Storage for images/videos (100MB max)
 - [x] **Fan Messaging** - DM system between creators and fans
@@ -59,8 +59,8 @@
 
 ### Core (10+ endpoints)
 - [x] `POST /api/v2/content/create`
-- [x] `POST /api/v2/stripe/create-session`
-- [x] `POST /api/v2/stripe/webhook`
+- [x] `POST /api/v2/content/create`
+- [x] `GET /api/v2/unlock/[code]`
 - [x] `POST /api/upload` - File uploads
 - [x] `GET/POST /api/messages` - Fan messaging
 - [x] `POST /api/notifications/send` - Email notifications
@@ -70,7 +70,7 @@
 - [x] `/api/debug/ai-status`
 - [x] `/api/debug/env`
 - [x] `/api/debug/database`
-- [x] `/api/debug/stripe`
+- [x] `/api/debug/env`
 
 ---
 
@@ -111,7 +111,7 @@
 
 ✅ **Platform Status:** PRODUCTION READY
 ✅ **AI Features:** OPERATIONAL
-✅ **Payments:** STRIPE INTEGRATED
+✅ **Payments:** WHOP CHECKOUT FLOW ACTIVE
 ✅ **Security:** RLS ENABLED
 ✅ **Monitoring:** LOGS CONFIGURED
 
