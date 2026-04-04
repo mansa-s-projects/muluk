@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit, DM_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { PostHogProvider } from "./providers/PostHogProvider";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -51,7 +53,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       style={{ background: "#020203" }}
     >
       <body style={{ background: "#020203", color: "rgba(255,255,255,0.92)" }}>
-        {children}
+        <PostHogProvider>
+            {children}
+          </PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );

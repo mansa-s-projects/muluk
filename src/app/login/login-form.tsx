@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { identifyUser, track } from "@/lib/analytics/track";
 
 const panelStyle: React.CSSProperties = {
   width: "100%",
@@ -61,7 +62,15 @@ export default function LoginForm() {
 
     if (mode === "signup") {
       setMessage("Account created. If email confirmation is enabled, check your inbox before signing in.");
+      track.signedUp({ email });
       return;
+    }
+
+    // Identify the user in PostHog after successful login
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      identifyUser(authData.user.id, { email: authData.user.email ?? email });
+      track.signedIn({ email });
     }
 
     router.replace(nextPath);

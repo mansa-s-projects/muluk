@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/analytics/track";
 
 /* ─────────────────────────────────────────
    CURSOR — lives outside React tree so it
@@ -402,28 +403,130 @@ export default function Home() {
 
           <div className="tiers-layout" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
             {[
-              { tag:"Entry",       name:"Cipher", cut:"Platform keeps 12%", featured:false, tagColor:"#9898cc", tagBg:"rgba(140,140,200,0.08)", tagBorder:"rgba(140,140,200,0.15)", arrow:"#7878aa", bg:"var(--card)",   bgHover:"var(--card-hover)", features:["Up to 500 fan codes","Video, photo, text content","Analytics dashboard","Referral program unlocked","Standard 7-day payouts","All payout rails available"] },
-              { tag:"Most Popular",name:"Legend", cut:"Platform keeps 10%", featured:true,  tagColor:"var(--gold)", tagBg:"var(--gold-glow)", tagBorder:"rgba(200,169,110,0.25)", arrow:"var(--gold-dim)", bg:"#131220", bgHover:"#161528", features:["Unlimited fan codes","All formats + live rooms","AI content tools included","Collab split system","48-hour priority payouts","Dedicated success rep","Boosted referral rate","Algorithm placement boost"] },
-              { tag:"Invite Only", name:"Apex",   cut:"Platform keeps 8%",  featured:false, tagColor:"#d88888",  tagBg:"rgba(200,76,76,0.08)",  tagBorder:"rgba(200,76,76,0.18)",  arrow:"#aa6868", bg:"var(--card)",   bgHover:"var(--card-hover)", features:["Custom domain for page","API access","Instant payouts, always","Highest referral multiplier","Private team access","Roadmap input","Revenue guarantees (pilot)","White-glove onboarding"] },
-            ].map(({ tag, name, cut, featured, tagColor, tagBg, tagBorder, arrow, bg, bgHover, features }, i) => (
+              { 
+                tag: "Start",
+                name: "Cipher",
+                position: "Everything you need to reach $1K/mo",
+                cut: "You keep 88%",
+                standout: "No setup fees. No monthly fees. Pay only when you earn.",
+                socialProof: null,
+                upgradeNudge: null,
+                featured: false,
+                tagColor: "#9898cc",
+                tagBg: "rgba(140,140,200,0.08)",
+                tagBorder: "rgba(140,140,200,0.15)",
+                arrow: "#7878aa",
+                bg: "var(--card)",
+                bgHover: "var(--card-hover)",
+                cta: "Get Started →",
+                features: [
+                  "500 fans — room to build real income",
+                  "Video, photo, and text drops",
+                  "Real-time revenue and engagement tracking",
+                  "10% when your fans bring fans",
+                  "Weekly payouts — card, crypto, or bank",
+                ]
+              },
+              { 
+                tag: "Scale",
+                name: "Legend",
+                position: "Reach $10K/mo with AI that handles the busywork",
+                cut: "You keep 90%",
+                standout: "AI drafts. You approve. It ships.",
+                socialProof: "Most Cipher creators upgrade here.",
+                upgradeNudge: "↑",
+                featured: true,
+                tagColor: "var(--gold)",
+                tagBg: "var(--gold-glow)",
+                tagBorder: "rgba(200,169,110,0.25)",
+                arrow: "var(--gold-dim)",
+                bg: "#131220",
+                bgHover: "#161528",
+                cta: "Upgrade to Legend →",
+                features: [
+                  "Unlimited fans — no growth cap",
+                  "Live rooms for real-time engagement",
+                  "AI captions, scheduling, edits — saves 5+ hrs/week",
+                  "Auto-split revenue with collaborators",
+                  "48-hour payouts — 3× faster",
+                  "Dedicated success rep",
+                  "15% referral rate (vs 10%)",
+                ]
+              },
+              { 
+                tag: "Elite",
+                name: "Apex",
+                position: "For creators earning $50K+/year who need full infrastructure",
+                cut: "You keep 92%",
+                standout: "Same-day payouts. 20% referral rate. Direct Slack with the team.",
+                socialProof: null,
+                upgradeNudge: null,
+                featured: false,
+                tagColor: "#d88888",
+                tagBg: "rgba(200,76,76,0.08)",
+                tagBorder: "rgba(200,76,76,0.18)",
+                arrow: "#aa6868",
+                bg: "var(--card)",
+                bgHover: "var(--card-hover)",
+                cta: "Request Access →",
+                features: [
+                  "Your domain — full brand ownership",
+                  "API access for custom integrations",
+                  "Instant payouts — same-day to your account",
+                  "20% referral rate (double Cipher)",
+                  "Team access with role-based permissions",
+                  "Direct input on product roadmap",
+                  "White-glove onboarding and migration",
+                ]
+              },
+            ].map(({ tag, name, position, cut, standout, socialProof, upgradeNudge, featured, tagColor, tagBg, tagBorder, arrow, bg, bgHover, cta, features }, i) => (
               <div key={name} className={`reveal reveal-delay-${i}`}
-                style={{ padding: "48px 40px", background: bg, position: "relative", transition: "background 0.25s" }}
+                style={{ padding: "48px 40px", background: bg, position: "relative", transition: "background 0.25s", display: "flex", flexDirection: "column" }}
                 onMouseEnter={e => (e.currentTarget.style.background = bgHover)}
                 onMouseLeave={e => (e.currentTarget.style.background = bg)}
               >
                 {featured && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, var(--gold), transparent)" }} />}
-                <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase" as const, marginBottom: "20px", display: "inline-block", padding: "5px 12px", borderRadius: "2px", color: tagColor, background: tagBg, border: `1px solid ${tagBorder}` }}>{tag}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+                  <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase" as const, display: "inline-block", padding: "5px 12px", borderRadius: "2px", color: tagColor, background: tagBg, border: `1px solid ${tagBorder}` }}>{tag}</div>
+                  {upgradeNudge && <span style={{ fontSize: "10px", color: "var(--gold-dim)" }}>{upgradeNudge}</span>}
+                </div>
                 <div style={{ ...disp, fontSize: "38px", fontWeight: 300, letterSpacing: "-0.01em", marginBottom: "6px" }}>{name}</div>
-                <div style={{ ...mono, fontSize: "12px", color: featured ? "var(--gold-dim)" : "var(--dim)", marginBottom: "32px", letterSpacing: "0.08em" }}>{cut}</div>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "14px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 300, ...muted, marginBottom: "8px", lineHeight: 1.5 }}>{position}</div>
+                <div style={{ ...mono, fontSize: "12px", color: featured ? "var(--gold)" : "var(--gold-dim)", marginBottom: "16px", letterSpacing: "0.08em" }}>{cut}</div>
+                <div style={{ fontSize: "11px", fontWeight: 400, color: featured ? "var(--gold-dim)" : "rgba(255,255,255,0.5)", marginBottom: socialProof ? "10px" : "24px", lineHeight: 1.5, fontStyle: "italic" }}>{standout}</div>
+                {socialProof && <div style={{ fontSize: "10px", color: "rgba(200,169,110,0.7)", marginBottom: "24px", lineHeight: 1.5 }}>{socialProof}</div>}
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "14px", flex: 1 }}>
                   {features.map(f => (
                     <li key={f} style={{ fontSize: "13px", fontWeight: 300, ...muted, display: "flex", alignItems: "flex-start", gap: "10px", lineHeight: 1.5 }}>
                       <span style={{ ...mono, fontSize: "11px", flexShrink: 0, marginTop: "1px", color: arrow }}>→</span>{f}
                     </li>
                   ))}
                 </ul>
+                <a href="/apply" onClick={() => {
+                    if (name === 'Legend') track.legendCtaClicked();
+                    else if (name === 'Apex') track.apexAccessRequested();
+                    else track.pricingViewed();
+                  }} style={{ 
+                  display: "block",
+                  marginTop: "32px",
+                  padding: "14px 24px",
+                  textAlign: "center",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  letterSpacing: "0.1em",
+                  textDecoration: "none",
+                  borderRadius: "3px",
+                  transition: "all 0.2s",
+                  ...(featured 
+                    ? { background: "var(--gold)", color: "#0a0800", border: "1px solid var(--gold)" }
+                    : { background: "transparent", color: "rgba(255,255,255,0.7)", border: "1px solid var(--border-mid)" }
+                  )
+                }}>{cta}</a>
               </div>
             ))}
+          </div>
+          <div className="reveal reveal-delay-3" style={{ textAlign: "center", marginTop: "28px", fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>
+            Switch tiers anytime — no lock-in, no penalties.
           </div>
         </div>
       </div>

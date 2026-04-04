@@ -98,21 +98,19 @@ export function ContentManager({ userId, initialContent, fanCodes }: ContentMana
     try {
       for (let i = 0; i < uploadFiles.length; i++) {
         const file = uploadFiles[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${userId}/${Date.now()}-${i}.${fileExt}`;
         
-        // Upload file to storage
+        // Upload file via server API (handles auth + storage reliably)
         setUploadProgress(Math.round((i / uploadFiles.length) * 100));
-        const { error: uploadError } = await supabase.storage
-          .from('creator-content')
-          .upload(fileName, file);
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "content");
         
-        if (uploadError) throw uploadError;
-        
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('creator-content')
-          .getPublicUrl(fileName);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const uploadResult = await res.json();
+        if (!res.ok) {
+          throw new Error(uploadResult.error ?? `Upload failed (${res.status})`);
+        }
+        const publicUrl: string = uploadResult.url;
         
         // Create content record
         const { data: newContent, error: dbError } = await supabase
@@ -137,7 +135,7 @@ export function ContentManager({ userId, initialContent, fanCodes }: ContentMana
           .select()
           .single();
         
-        if (dbError) throw dbError;
+        if (dbError) throw new Error(dbError.message ?? "Database error saving content");
         
         setUploadProgress(Math.round(((i + 1) / uploadFiles.length) * 100));
         
@@ -182,8 +180,9 @@ export function ContentManager({ userId, initialContent, fanCodes }: ContentMana
         });
       }, 1500);
     } catch (err) {
-      console.error("Upload error:", err);
-      alert("Upload failed. Please try again.");
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("Upload error:", msg, err);
+      alert(`Upload failed: ${msg}`);
     } finally {
       setUploading(false);
     }

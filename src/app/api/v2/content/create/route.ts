@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { generateFanCode, calculateSplit } from "@/lib/monetization";
+import { checkFanCodeLimit } from "@/lib/tiers";
 
 /**
  * POST /api/v2/content/create
@@ -15,6 +16,18 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ── Fan code quantity gate (cipher tier: max 500) ───────────────────────────
+  const fanCodeCheck = await checkFanCodeLimit(user.id, supabase);
+  if (!fanCodeCheck.allowed) {
+    return NextResponse.json({
+      upgrade_required: true,
+      current_tier:  fanCodeCheck.tier.slug,
+      required_tier: "legend",
+      feature:       "fan_codes",
+      message:       `Fan code limit reached (${fanCodeCheck.current}/${fanCodeCheck.limit}). Upgrade to Legend for unlimited fan codes.`,
+    }, { status: 403 });
   }
 
   let body: {

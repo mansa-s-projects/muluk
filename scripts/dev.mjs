@@ -89,13 +89,13 @@ const nextBin = path.join(root, "node_modules", ".bin", process.platform === "wi
 const escapedNextBin = nextBin.replace(/'/g, "''");
 
 const child = process.platform === "win32"
-  ? spawn("powershell.exe", ["-NoProfile", "-Command", `& '${escapedNextBin}' dev`], {
+  ? spawn("powershell.exe", ["-NoProfile", "-Command", `& '${escapedNextBin}' dev -p 3001`], {
       stdio: "inherit",
       shell: false,
       cwd: root,
       env: process.env,
     })
-  : spawn(nextBin, ["dev"], {
+  : spawn(nextBin, ["dev", "-p", "3001"], {
       stdio: "inherit",
       shell: false,
       cwd: root,

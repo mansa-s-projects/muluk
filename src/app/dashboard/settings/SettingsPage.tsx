@@ -67,6 +67,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
   const [message, setMessage] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [removingAsset, setRemovingAsset] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -280,6 +281,36 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
     }
   };
 
+  const removeAvatar = async () => {
+    if (avatarFile) { setAvatarFile(null); return; }
+    setRemovingAsset(true);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("creator_applications")
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq("user_id", initialData.userId);
+      setProfile(p => ({ ...p, avatarUrl: null }));
+      showMessage("Profile photo removed.");
+    } catch { showMessage("Failed to remove photo", true); }
+    finally { setRemovingAsset(false); }
+  };
+
+  const removeBanner = async () => {
+    if (bannerFile) { setBannerFile(null); return; }
+    setRemovingAsset(true);
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("creator_applications")
+        .update({ banner_url: null, updated_at: new Date().toISOString() })
+        .eq("user_id", initialData.userId);
+      setProfile(p => ({ ...p, bannerUrl: null }));
+      showMessage("Banner removed.");
+    } catch { showMessage("Failed to remove banner", true); }
+    finally { setRemovingAsset(false); }
+  };
+
   const tabs = [
     { key: "profile", label: "Profile", icon: "👤" },
     { key: "account", label: "Account", icon: "🔐" },
@@ -347,24 +378,42 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               )}
-              <button
-                onClick={() => bannerInputRef.current?.click()}
-                style={{
-                  position: "absolute",
-                  bottom: "12px",
-                  right: "12px",
-                  padding: "8px 16px",
-                  background: "rgba(0,0,0,0.7)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: "6px",
-                  color: "#fff",
-                  ...mono,
-                  fontSize: "11px",
-                  cursor: "pointer",
-                }}
-              >
-                Change Banner
-              </button>
+              <div style={{ position: "absolute", bottom: "12px", right: "12px", display: "flex", gap: "8px" }}>
+                <button
+                  onClick={() => bannerInputRef.current?.click()}
+                  style={{
+                    padding: "8px 16px",
+                    background: "rgba(0,0,0,0.7)",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: "6px",
+                    color: "#fff",
+                    ...mono,
+                    fontSize: "11px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {(profile.bannerUrl || bannerFile) ? "Change" : "Add Banner"}
+                </button>
+                {(profile.bannerUrl || bannerFile) && (
+                  <button
+                    onClick={removeBanner}
+                    disabled={removingAsset}
+                    style={{
+                      padding: "8px 14px",
+                      background: "rgba(224,85,85,0.1)",
+                      border: "1px solid rgba(224,85,85,0.28)",
+                      borderRadius: "6px",
+                      color: "#e05555",
+                      ...mono,
+                      fontSize: "11px",
+                      cursor: removingAsset ? "not-allowed" : "pointer",
+                      opacity: removingAsset ? 0.5 : 1,
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
               <input
                 ref={bannerInputRef}
                 type="file"
@@ -433,6 +482,26 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
                 <div style={{ ...mono, fontSize: "13px", color: "var(--dim)" }}>
                   @{profile.handle || "handle"}
                 </div>
+                {(profile.avatarUrl || avatarFile) && (
+                  <button
+                    onClick={removeAvatar}
+                    disabled={removingAsset}
+                    style={{
+                      marginTop: "8px",
+                      padding: "0",
+                      background: "transparent",
+                      border: "none",
+                      color: "#e05555",
+                      ...mono,
+                      fontSize: "10px",
+                      letterSpacing: "0.1em",
+                      cursor: removingAsset ? "not-allowed" : "pointer",
+                      opacity: removingAsset ? 0.5 : 1,
+                    }}
+                  >
+                    REMOVE PHOTO
+                  </button>
+                )}
               </div>
             </div>
 

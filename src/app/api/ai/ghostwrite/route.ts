@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { assertFeatureAccess, TierGateError, tierGatePayload } from "@/lib/tiers";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const TIMEOUT_MS = Number(process.env.OPENROUTER_TIMEOUT_MS) || 30_000;
@@ -28,6 +29,14 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ── Tier gate: ai_tools requires legend+ ────────────────────────────────
+    try {
+      await assertFeatureAccess(user.id, "ai_tools", supabase);
+    } catch (e) {
+      if (e instanceof TierGateError) return NextResponse.json(tierGatePayload(e), { status: 403 });
+      throw e;
     }
 
     if (isRateLimited(user.id)) {

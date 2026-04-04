@@ -253,7 +253,6 @@ FIRST_30_DAYS: [3 specific action items]`;
       interests,
       content_types: contentTypes,
       experience_level: experience,
-      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
 

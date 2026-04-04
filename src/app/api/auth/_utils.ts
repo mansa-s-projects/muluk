@@ -90,3 +90,25 @@ export function decryptToken(hex: string): string {
   decipher.setAuthTag(tag);
   return decipher.update(enc).toString("utf8") + decipher.final("utf8");
 }
+
+/**
+ * Returns an HTML response that displays a success/error message and auto-closes the popup window.
+ * Used for OAuth callbacks when the flow was initiated from a popup (e.g., onboarding).
+ */
+export function popupCloseResponse(success: boolean, platform: string, error?: string): Response {
+  const html = `<!DOCTYPE html>
+<html><head><title>${success ? "Connected" : "Error"}</title></head>
+<body style="background:#0a0a0b;color:#fff;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+<div style="text-align:center">
+<div style="font-size:48px;margin-bottom:16px">${success ? "✓" : "✕"}</div>
+<div style="font-size:18px;margin-bottom:8px">${success ? `${platform} connected` : "Connection failed"}</div>
+${error ? `<div style="font-size:13px;color:#888">${error}</div>` : ""}
+<div style="font-size:12px;color:#666;margin-top:16px">This window will close automatically...</div>
+</div>
+<script>setTimeout(()=>window.close(),1500)</script>
+</body></html>`;
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
+}

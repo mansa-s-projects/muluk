@@ -34,6 +34,12 @@ body {
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── FORM ELEMENTS DARK THEME ── */
+select, select option {
+  background: var(--surface);
+  color: var(--white);
+}
+
 /* ── CURSOR ── */
 #cipher-cursor {
   position: fixed;
@@ -97,6 +103,10 @@ body::after {
   50%  { transform: scaleY(1); transform-origin: top; }
   51%  { transform: scaleY(1); transform-origin: bottom; }
   100% { transform: scaleY(0); transform-origin: bottom; }
+}
+@keyframes livepulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
 }
 
 /* ── APPLIED ANIMATIONS ── */

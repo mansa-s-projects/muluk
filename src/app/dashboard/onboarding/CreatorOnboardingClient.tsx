@@ -104,43 +104,43 @@ export default function CreatorOnboardingClient({ initialValues, existingAnalysi
 
           <div style={{ display: "grid", gap: "14px" }}>
             <div>
-              <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
+              <label htmlFor="interests-input" style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
                 Interests
               </label>
-              <input value={interests} onChange={(event) => setInterests(event.target.value)} placeholder="luxury, fashion, music" style={inputStyle} />
+              <input id="interests-input" value={interests} onChange={(event) => setInterests(event.target.value)} placeholder="luxury, fashion, music" style={inputStyle} />
             </div>
 
             <div>
-              <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
+              <label htmlFor="content-types-input" style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
                 Content Types
               </label>
-              <input value={contentTypes} onChange={(event) => setContentTypes(event.target.value)} placeholder="photos, videos, exclusive drops" style={inputStyle} />
+              <input id="content-types-input" value={contentTypes} onChange={(event) => setContentTypes(event.target.value)} placeholder="photos, videos, exclusive drops" style={inputStyle} />
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
+                <label htmlFor="experience-select" style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
                   Experience
                 </label>
-                <select value={experience} onChange={(event) => setExperience(event.target.value)} style={inputStyle}>
+                <select id="experience-select" value={experience} onChange={(event) => setExperience(event.target.value)} style={inputStyle}>
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
+                <label htmlFor="current-platforms-input" style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
                   Current Platforms
                 </label>
-                <input value={currentPlatforms} onChange={(event) => setCurrentPlatforms(event.target.value)} placeholder="instagram, x, tiktok" style={inputStyle} />
+                <input id="current-platforms-input" value={currentPlatforms} onChange={(event) => setCurrentPlatforms(event.target.value)} placeholder="instagram, x, tiktok" style={inputStyle} />
               </div>
             </div>
 
             <div>
-              <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
+              <label htmlFor="goals-textarea" style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "8px" }}>
                 Goals
               </label>
-              <textarea value={goals} onChange={(event) => setGoals(event.target.value)} placeholder="first 50 paying fans, premium positioning, recurring revenue" rows={4} style={{ ...inputStyle, resize: "vertical" }} />
+              <textarea id="goals-textarea" value={goals} onChange={(event) => setGoals(event.target.value)} placeholder="first 50 paying fans, premium positioning, recurring revenue" rows={4} style={{ ...inputStyle, resize: "vertical" }} />
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
@@ -207,7 +207,7 @@ export function PhantomModeToggle({ userId, initialPhantom }: { userId: string; 
 }
 
 // ─── Dark Vault ────────────────────────────────────────────────────────────────
-export function DarkVault({ hasPin, onSetup }: { userId: string; hasPin: boolean; onSetup: () => void }) {
+export function DarkVault({ hasPin, onSetup }: { hasPin: boolean; onSetup: () => void }) {
   const [open, setOpen] = useState(false);
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -380,14 +380,97 @@ export function CipherRadioCompact() {
   const [playing, setPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
   const [expanded, setExpanded] = useState(true);
+  const [volume, setVolume] = useState(0.3);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Royalty-free ambient/lo-fi tracks (Pixabay license - free for commercial use)
   const tracks = [
-    { title: "Midnight Protocol", artist: "CIPHER FM", duration: "3:42" },
-    { title: "Neon Drift", artist: "CIPHER FM", duration: "4:15" },
-    { title: "Shadow Markets", artist: "CIPHER FM", duration: "3:28" },
+    { 
+      title: "Midnight Protocol", 
+      artist: "CIPHER FM", 
+      duration: "3:42",
+      // Ambient electronic track
+      url: "https://cdn.pixabay.com/audio/2024/11/29/audio_cb337f4415.mp3"
+    },
+    { 
+      title: "Neon Drift", 
+      artist: "CIPHER FM", 
+      duration: "4:15",
+      // Lo-fi chill track
+      url: "https://cdn.pixabay.com/audio/2024/09/10/audio_6e5d7d1912.mp3"
+    },
+    { 
+      title: "Shadow Markets", 
+      artist: "CIPHER FM", 
+      duration: "3:28",
+      // Dark ambient track
+      url: "https://cdn.pixabay.com/audio/2024/10/25/audio_52696cd20a.mp3"
+    },
   ];
 
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = volume;
+      audioRef.current.loop = false;
+      
+      // Auto-advance to next track when current ends
+      audioRef.current.addEventListener('ended', () => {
+        setCurrentTrack(prev => (prev + 1) % tracks.length);
+      });
+      
+      // Update progress bar
+      audioRef.current.addEventListener('timeupdate', () => {
+        if (audioRef.current && audioRef.current.duration) {
+          setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+        }
+      });
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handle track changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.src = tracks[currentTrack].url;
+      if (playing) {
+        audioRef.current.play().catch(console.error);
+      }
+    }
+  }, [currentTrack]);
+
+  // Handle play/pause
+  useEffect(() => {
+    if (audioRef.current) {
+      if (playing) {
+        audioRef.current.play().catch(console.error);
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [playing]);
+
+  // Handle volume changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
   const toggle = () => setPlaying(!playing);
+  
+  const selectTrack = (index: number) => {
+    setCurrentTrack(index);
+    setPlaying(true);
+  };
 
   return (
     <div style={{ background: "linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "10px", padding: "12px", position: "relative", overflow: "hidden" }}>
@@ -452,10 +535,53 @@ export function CipherRadioCompact() {
 
       {expanded && (
         <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          {/* Progress bar */}
+          {playing && (
+            <div style={{ 
+              width: "100%", 
+              height: "3px", 
+              background: "rgba(255,255,255,0.1)", 
+              borderRadius: "2px", 
+              marginBottom: "10px",
+              overflow: "hidden"
+            }}>
+              <div style={{ 
+                width: `${progress}%`, 
+                height: "100%", 
+                background: "var(--gold)",
+                transition: "width 0.3s linear"
+              }} />
+            </div>
+          )}
+          
+          {/* Volume control */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--dim)">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+            </svg>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              style={{
+                flex: 1,
+                height: "4px",
+                WebkitAppearance: "none",
+                background: `linear-gradient(to right, var(--gold) ${volume * 100}%, rgba(255,255,255,0.1) ${volume * 100}%)`,
+                borderRadius: "2px",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+          
+          {/* Track list */}
           {tracks.map((track, i) => (
             <button
               key={i}
-              onClick={() => setCurrentTrack(i)}
+              onClick={() => selectTrack(i)}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -480,7 +606,25 @@ export function CipherRadioCompact() {
                 }
               }}
             >
-              <span style={{ fontSize: "11px", color: currentTrack === i ? "var(--gold)" : "var(--dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: currentTrack === i ? 500 : 400 }}>{track.title}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {currentTrack === i && playing ? (
+                  <div style={{ display: "flex", gap: "2px", alignItems: "flex-end", height: "12px" }}>
+                    {[0,1,2].map(j => (
+                      <span key={j} style={{ 
+                        width: "2px", 
+                        background: "var(--gold)", 
+                        animation: `eq 0.4s ease-in-out ${j * 0.1}s infinite alternate`,
+                        height: "6px"
+                      }} />
+                    ))}
+                  </div>
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill={currentTrack === i ? "var(--gold)" : "var(--dim)"}>
+                    <polygon points="5,3 19,12 5,21" />
+                  </svg>
+                )}
+                <span style={{ fontSize: "11px", color: currentTrack === i ? "var(--gold)" : "var(--dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: currentTrack === i ? 500 : 400 }}>{track.title}</span>
+              </div>
               <span style={{ ...mono, fontSize: "9px", color: "var(--dim)", flexShrink: 0 }}>{track.duration}</span>
             </button>
           ))}
@@ -499,7 +643,10 @@ export function CipherRadioCompact() {
         }} />
       )}
 
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes eq { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+      `}</style>
     </div>
   );
 }

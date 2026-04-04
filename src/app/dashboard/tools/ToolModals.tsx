@@ -124,10 +124,12 @@ export function BioGeneratorModal({ userId, onClose }: { userId: string; onClose
       const supabase = createClient();
       const { error } = await supabase
         .from("creator_applications")
-        .upsert({ user_id: userId, bio: selectedBio }, { onConflict: "user_id" });
+        .update({ bio: selectedBio })
+        .eq("user_id", userId);
       if (error) throw error;
       setMsg("Bio saved to your profile.");
-    } catch {
+    } catch (err) {
+      console.error("Save bio error:", err);
       setMsg("Could not save — check DB.");
     } finally {
       setSaving(false);
@@ -948,7 +950,7 @@ type Voice = {
   is_default?: boolean;
 };
 
-export function VoiceCloneModal({ onClose }: { userId: string; onClose: () => void }) {
+export function VoiceCloneModal({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<"clone" | "generate">("generate");
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -990,6 +992,11 @@ export function VoiceCloneModal({ onClose }: { userId: string; onClose: () => vo
   useEffect(() => {
     void fetchVoices();
   }, [fetchVoices]);
+
+  // Revoke blob URL when component unmounts or URL changes to prevent memory leaks
+  useEffect(() => {
+    return () => { if (audioUrl) URL.revokeObjectURL(audioUrl); };
+  }, [audioUrl]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
@@ -1066,7 +1073,8 @@ export function VoiceCloneModal({ onClose }: { userId: string; onClose: () => vo
         throw new Error(data.error);
       }
       
-      const blob = await res.blob();
+      const buffer = await res.arrayBuffer();
+      const blob = new Blob([buffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       setAudioUrl(url);
       setMsg("Audio generated!");

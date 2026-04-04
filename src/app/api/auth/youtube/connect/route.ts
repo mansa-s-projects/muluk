@@ -5,6 +5,7 @@ export async function GET(req: NextRequest) {
   const clientId = process.env.YOUTUBE_CLIENT_ID;
   const callback = `${appBaseUrl(req)}/api/auth/youtube/callback`;
   const isSecure = process.env.NODE_ENV !== "development";
+  const redirect = req.nextUrl.searchParams.get("redirect") || "";
 
   if (!clientId) {
     return NextResponse.redirect(dashboardUrl(req, {
@@ -25,5 +26,8 @@ export async function GET(req: NextRequest) {
 
   const res = NextResponse.redirect(authUrl);
   res.cookies.set("youtube_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
+  if (redirect) {
+    res.cookies.set("youtube_oauth_redirect", redirect, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
+  }
   return res;
 }

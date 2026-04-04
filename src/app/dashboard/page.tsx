@@ -34,13 +34,15 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: onboardingRow } = await supabase
+  const { data: onboardingRow, error: onboardingErr } = await supabase
     .from("creator_onboarding")
     .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!onboardingRow) {
+  if (onboardingErr) console.error("creator_onboarding query failed:", onboardingErr);
+
+  if (!onboardingErr && !onboardingRow) {
     redirect("/dashboard/onboarding");
   }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/client";
+import { getBaseUrl } from "@/lib/utils/getBaseUrl";
 import {
   BioGeneratorModal,
   CaptionGeneratorModal,
@@ -381,6 +382,7 @@ const SECTIONS = [
   { key: "content", label: "Content" },
   { key: "fans", label: "Fans" },
   { key: "earnings", label: "Earnings" },
+  { key: "paylinks", label: "Pay Links" },
   { key: "referrals", label: "Referrals" },
   { key: "analytics", label: "Analytics" },
   { key: "tools", label: "Tools" },
@@ -658,6 +660,8 @@ export default function DashboardClient({
 
   const potentialFans = Math.floor(effectiveReach.totalFollowers * 0.01);
   const estimatedMonthly = potentialFans * 15;
+  const isActivationMode = wallet.total_earnings === 0 && transactions.length === 0;
+  const activeDrop = contentItems.find(item => item.status === "active") ?? contentItems[0] ?? null;
 
   useEffect(() => {
     setShareText(`New exclusive content just dropped 🔒 cipher.co/@${handle}`);
@@ -918,6 +922,37 @@ export default function DashboardClient({
   };
 
   const [generatedUnlockUrl, setGeneratedUnlockUrl] = useState("");
+  const [copiedDropLink, setCopiedDropLink] = useState(false);
+  const [checkedLaunch, setCheckedLaunch] = useState<Set<number>>(new Set());
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  // ── Pay Links state ────────────────────────────────────────────────────────
+  type PayLinkItem = {
+    id: string;
+    title: string;
+    description: string | null;
+    price: number;
+    content_type: string;
+    cover_image_url: string | null;
+    whop_checkout_url: string | null;
+    is_active: boolean;
+    view_count: number;
+    purchase_count: number;
+    created_at: string;
+  };
+  const [payLinks, setPayLinks] = useState<PayLinkItem[]>([]);
+  const [payLinksLoading, setPayLinksLoading] = useState(false);
+  const [payLinksLoaded, setPayLinksLoaded] = useState(false);
+  const [plTitle, setPlTitle] = useState("");
+  const [plDescription, setPlDescription] = useState("");
+  const [plPrice, setPlPrice] = useState("10");
+  const [plContentType, setPlContentType] = useState<"text" | "url" | "file">("text");
+  const [plContentValue, setPlContentValue] = useState("");
+  const [plWhopUrl, setPlWhopUrl] = useState("");
+  const [plSaving, setPlSaving] = useState(false);
+  const [plMsg, setPlMsg] = useState("");
+  const [plCreatedId, setPlCreatedId] = useState<string | null>(null);
+  const [plCopiedId, setPlCopiedId] = useState<string | null>(null);
 
   const saveContentItem = async () => {
     setContentMsg("");
@@ -1229,6 +1264,84 @@ export default function DashboardClient({
     window.location.href = "/login";
   };
 
+  // ── Pay Links helpers ──────────────────────────────────────────────────────
+  const loadPayLinks = async () => {
+    if (payLinksLoading) return;
+    setPayLinksLoading(true);
+    try {
+      const res = await fetch("/api/payment-links");
+      if (!res.ok) throw new Error("Could not load payment links.");
+      const json = await res.json();
+      setPayLinks(json.items ?? []);
+      setPayLinksLoaded(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPayLinksLoading(false);
+    }
+  };
+
+  const savePayLink = async () => {
+    setPlMsg("");
+    setPlCreatedId(null);
+    if (!plTitle.trim()) { setPlMsg("Title is required."); return; }
+    const priceNum = Math.round(Number(plPrice) * 100);
+    if (!Number.isFinite(priceNum) || priceNum < 50) { setPlMsg("Minimum price is $0.50."); return; }
+    if (!plWhopUrl.trim()) { setPlMsg("Whop checkout URL is required."); return; }
+
+    setPlSaving(true);
+    try {
+      const res = await fetch("/api/payment-links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: plTitle.trim(),
+          description: plDescription.trim() || undefined,
+          price: priceNum,
+          content_type: plContentType,
+          content_value: plContentValue.trim() || undefined,
+          whop_checkout_url: plWhopUrl.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to create payment link.");
+      const baseUrl = getBaseUrl();
+      const generatedLink = `${baseUrl}/pay/${json.id}`;
+      setPlCreatedId(json.id);
+      setPlMsg("✓ Payment link created.");
+      navigator.clipboard.writeText(generatedLink).catch(() => {});
+      setPlTitle(""); setPlDescription(""); setPlPrice("10"); setPlContentValue(""); setPlWhopUrl(""); setPlContentType("text");
+      await loadPayLinks();
+    } catch (err) {
+      setPlMsg(err instanceof Error ? err.message : "Failed to create payment link.");
+    } finally {
+      setPlSaving(false);
+    }
+  };
+
+  const togglePayLink = async (id: string, active: boolean) => {
+    await fetch(`/api/payment-links/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: active }),
+    });
+    setPayLinks(prev => prev.map(p => p.id === id ? { ...p, is_active: active } : p));
+  };
+
+  const deletePayLink = async (id: string) => {
+    await fetch(`/api/payment-links/${id}`, { method: "DELETE" });
+    setPayLinks(prev => prev.filter(p => p.id !== id));
+    if (plCreatedId === id) setPlCreatedId(null);
+  };
+
+  const copyPayLinkUrl = (id: string) => {
+    const baseUrl = getBaseUrl();
+    navigator.clipboard.writeText(`${baseUrl}/pay/${id}`).then(() => {
+      setPlCopiedId(id);
+      setTimeout(() => setPlCopiedId(null), 2000);
+    }).catch(() => {});
+  };
+
   return (
     <>
       <div id="db-cursor" style={{ position: "fixed", width: "8px", height: "8px", background: "var(--gold)", borderRadius: "50%", pointerEvents: "none", zIndex: 99999, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)", mixBlendMode: "screen" }} />
@@ -1276,16 +1389,80 @@ export default function DashboardClient({
             })}
           </nav>
 
-          <div style={{ padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.055)", display: "flex", flexDirection: "column", gap: "10px", minHeight: 0 }}>
-            <div style={{ marginBottom: "10px" }}>
-              <PhantomModeToggle userId={userId} initialPhantom={phantomMode} />
-            </div>
-            <div style={{ marginBottom: "10px" }}>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.055)" }}>
+            {/* Radio stays above profile block */}
+            <div style={{ padding: "10px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
               <CipherRadioCompact />
             </div>
-            <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.2em", color: "var(--gold-dim)", marginBottom: "6px", textTransform: "uppercase" }}>Signed in as</div>
-            <div style={{ fontSize: "12px", color: "var(--muted)", marginBottom: "14px", wordBreak: "break-all", lineHeight: 1.4 }}>{userEmail}</div>
-            <button type="button" onClick={handleSignOut} style={{ ...mono, width: "100%", padding: "9px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "3px", color: "var(--dim)", fontSize: "10px", letterSpacing: "0.15em", cursor: "pointer", transition: "all 0.2s" }}>SIGN OUT</button>
+
+            {/* Compact profile block */}
+            <div style={{ padding: "10px 12px", position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen(v => !v)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "9px",
+                  background: profileMenuOpen ? "rgba(200,169,110,0.07)" : "transparent",
+                  border: `1px solid ${profileMenuOpen ? "rgba(200,169,110,0.22)" : "rgba(255,255,255,0.07)"}`,
+                  borderRadius: "6px",
+                  padding: "8px 10px",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {/* Avatar */}
+                <div style={{ width: "26px", height: "26px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.35)", background: "rgba(200,169,110,0.12)", display: "grid", placeItems: "center", ...mono, color: "var(--gold)", fontSize: "11px", flexShrink: 0 }}>
+                  {(userEmail[0] || "C").toUpperCase()}
+                </div>
+                {/* Email + role */}
+                <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                  <div style={{ fontSize: "11px", color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userEmail}</div>
+                  <div style={{ ...mono, fontSize: "8px", color: "var(--gold-dim)", letterSpacing: "0.14em", marginTop: "2px" }}>CREATOR</div>
+                </div>
+                {/* Chevron */}
+                <svg viewBox="0 0 10 6" width="9" height="9" fill="none" style={{ color: "var(--dim)", flexShrink: 0, transform: profileMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
+                  <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+
+              {/* Profile dropdown — opens upward */}
+              {profileMenuOpen && (
+                <div style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "12px", right: "12px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", overflow: "hidden" }}>
+                  {/* Phantom Mode */}
+                  <div style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "7px" }}>PHANTOM MODE</div>
+                    <PhantomModeToggle userId={userId} initialPhantom={phantomMode} />
+                  </div>
+                  {/* Settings */}
+                  <button
+                    type="button"
+                    onClick={() => { setActiveSection("settings"); setProfileMenuOpen(false); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "10px 12px", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", color: "var(--muted)", fontSize: "12px", cursor: "pointer", textAlign: "left" }}
+                  >
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+                      <circle cx="8" cy="8" r="2.5" />
+                      <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06" />
+                    </svg>
+                    Settings
+                  </button>
+                  {/* Sign out */}
+                  <button
+                    type="button"
+                    onClick={() => { setProfileMenuOpen(false); handleSignOut(); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "10px 12px", background: "transparent", border: "none", color: "var(--dim)", fontSize: "12px", cursor: "pointer", textAlign: "left" }}
+                  >
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+                      <path d="M10 8H2M6 5l-3 3 3 3" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M6 2h7a1 1 0 011 1v10a1 1 0 01-1 1H6" strokeLinecap="round" />
+                    </svg>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
 
@@ -1305,11 +1482,15 @@ export default function DashboardClient({
                   // Note: unreadCount is managed exclusively by the backend poll
                   // (every 30 s) to avoid flicker from optimistic local clears.
                 }}
-                style={{ position: "relative", width: "34px", height: "34px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.02)", color: "var(--gold)", cursor: "pointer" }}
+                style={{ position: "relative", width: "34px", height: "34px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.1)", background: notifOpen ? "rgba(200,169,110,0.08)" : "rgba(255,255,255,0.02)", color: "var(--gold)", cursor: "pointer", display: "grid", placeItems: "center" }}
+                aria-label="Notifications"
               >
-                B
+                <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+                  <path d="M8 1a5 5 0 00-5 5v2.5L2 10h12l-1-1.5V6a5 5 0 00-5-5z" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M6.5 13a1.5 1.5 0 003 0" strokeLinecap="round" />
+                </svg>
                 {unreadCount > 0 && (
-                  <span style={{ position: "absolute", top: "-4px", right: "-2px", minWidth: "18px", height: "18px", borderRadius: "9px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "10px", display: "grid", placeItems: "center" }}>
+                  <span style={{ position: "absolute", top: "-4px", right: "-4px", minWidth: "16px", height: "16px", borderRadius: "999px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "9px", display: "grid", placeItems: "center", padding: "0 3px" }}>
                     {unreadCount}
                   </span>
                 )}
@@ -1327,10 +1508,6 @@ export default function DashboardClient({
                   ))}
                 </div>
               )}
-
-              <div style={{ width: "30px", height: "30px", borderRadius: "50%", border: "1px solid rgba(200,169,110,0.3)", display: "grid", placeItems: "center", ...mono, color: "var(--gold)", background: "var(--gold-glow)" }}>
-                {(userEmail[0] || "C").toUpperCase()}
-              </div>
             </div>
           </header>
 
@@ -1354,7 +1531,118 @@ export default function DashboardClient({
                   <VoiceCloneWidget />
                 </div>
                 
-                {/* Stats Grid */}
+                {/* Activation mode: no earnings yet */}
+                {isActivationMode && (
+                  <>
+                    {/* Next Actions Rail */}
+                    <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.25)", borderRadius: "8px", padding: "20px" }}>
+                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "16px" }}>NEXT ACTIONS</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://cipher.so/${creatorProfile.handle || userId}`).then(() => {
+                              setCopiedDropLink(true);
+                              setTimeout(() => setCopiedDropLink(false), 2000);
+                            }).catch(() => {});
+                          }}
+                          style={{ background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "8px", padding: "16px", textAlign: "left", cursor: "pointer" }}
+                        >
+                          <div style={{ ...mono, fontSize: "18px", color: "var(--gold)", marginBottom: "8px" }}>01</div>
+                          <div style={{ ...disp, fontSize: "17px", color: "var(--gold)", marginBottom: "4px" }}>{copiedDropLink ? "Copied!" : "Share Your Drop"}</div>
+                          <div style={{ fontSize: "12px", color: "var(--dim)" }}>Copy your drop link and send it to followers</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection("fans")}
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "16px", textAlign: "left", cursor: "pointer" }}
+                        >
+                          <div style={{ ...mono, fontSize: "18px", color: "var(--muted)", marginBottom: "8px" }}>02</div>
+                          <div style={{ ...disp, fontSize: "17px", color: "var(--white)", marginBottom: "4px" }}>Message Fans</div>
+                          <div style={{ fontSize: "12px", color: "var(--dim)" }}>Blast your fan list with a direct message</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection("content")}
+                          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "16px", textAlign: "left", cursor: "pointer" }}
+                        >
+                          <div style={{ ...mono, fontSize: "18px", color: "var(--muted)", marginBottom: "8px" }}>03</div>
+                          <div style={{ ...disp, fontSize: "17px", color: "var(--white)", marginBottom: "4px" }}>Post Content</div>
+                          <div style={{ fontSize: "12px", color: "var(--dim)" }}>Schedule or publish your next drop</div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Active drop spotlight */}
+                    {activeDrop ? (
+                      <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "8px", padding: "20px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "8px" }}>YOUR ACTIVE DROP</div>
+                            <div style={{ ...disp, fontSize: "26px", color: "var(--gold)", marginBottom: "4px" }}>{activeDrop.title}</div>
+                            {activeDrop.description && <div style={{ fontSize: "13px", color: "var(--dim)", marginBottom: "10px" }}>{activeDrop.description}</div>}
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                              <div style={{ ...disp, fontSize: "28px", color: "var(--gold)" }}>{money.format(activeDrop.price / 100)}</div>
+                              <div style={{ ...mono, fontSize: "9px", color: "#39c56f", letterSpacing: "0.16em", background: "rgba(57,197,111,0.12)", border: "1px solid rgba(57,197,111,0.3)", borderRadius: "4px", padding: "3px 8px" }}>● LIVE</div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px", flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`https://cipher.so/${creatorProfile.handle || userId}`).then(() => {
+                                  setCopiedDropLink(true);
+                                  setTimeout(() => setCopiedDropLink(false), 2000);
+                                }).catch(() => {});
+                              }}
+                              style={{ border: "none", borderRadius: "6px", padding: "10px 18px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.12em", cursor: "pointer" }}
+                            >
+                              {copiedDropLink ? "COPIED ✓" : "COPY LINK"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveSection("content")}
+                              style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "10px 18px", background: "transparent", color: "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.12em", cursor: "pointer" }}
+                            >
+                              MANAGE
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "24px", textAlign: "center" }}>
+                        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "10px" }}>NO ACTIVE DROP</div>
+                        <div style={{ fontSize: "14px", color: "var(--muted)", marginBottom: "14px" }}>You need a live drop before your first sale can happen.</div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveSection("content")}
+                          style={{ border: "none", borderRadius: "6px", padding: "10px 20px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.12em", cursor: "pointer" }}
+                        >
+                          CREATE YOUR FIRST DROP →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Contextual stats */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "12px" }}>
+                      {[
+                        { label: "Revenue", value: "—", sub: "No sales yet — drop is live" },
+                        { label: "Fan Codes", value: String(fanCodeCount), sub: fanCodeCount > 0 ? "Identities ready to buy" : "Generate codes in Fans tab" },
+                        { label: "Potential Reach", value: effectiveReach.totalFollowers > 0 ? effectiveReach.totalFollowers.toLocaleString() : "—", sub: effectiveReach.totalFollowers > 0 ? `≈ ${potentialFans} potential buyers` : "Connect socials to estimate" },
+                        { label: "Content Items", value: String(contentItems.length), sub: contentItems.length > 0 ? "Drop is ready to sell" : "Create your first drop" },
+                      ].map(card => (
+                        <div key={card.label} style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
+                          <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "12px" }}>{card.label}</div>
+                          <div style={{ ...disp, fontSize: "34px", color: card.label === "Revenue" ? "var(--dim)" : "var(--gold)", lineHeight: 1 }}>{card.value}</div>
+                          <div style={{ color: "var(--dim)", fontSize: "12px", marginTop: "8px" }}>{card.sub}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Stats Grid — analytics mode only */}
+                {!isActivationMode && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "12px" }}>
                   {[
                     { label: "Total Earnings", value: money.format(wallet.total_earnings), sub: "Net processed" },
@@ -1369,6 +1657,7 @@ export default function DashboardClient({
                     </div>
                   ))}
                 </div>
+                )}
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
                   <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "10px" }}>SOCIAL REACH</div>
@@ -1397,6 +1686,19 @@ export default function DashboardClient({
                   </div>
                 </div>
 
+                {/* Earnings chart or empty state */}
+                {isActivationMode ? (
+                  <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "32px 18px", textAlign: "center" }}>
+                    <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", color: "var(--gold-dim)", marginBottom: "16px" }}>EARNINGS TIMELINE</div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", height: "80px", justifyContent: "center", opacity: 0.15 }}>
+                      {[20, 35, 15, 50, 30, 45, 60].map((h, i) => (
+                        <div key={i} style={{ width: "32px", height: `${h}%`, background: "linear-gradient(180deg, rgba(232,204,150,0.85), rgba(200,169,110,0.35))", borderRadius: "4px 4px 0 0" }} />
+                      ))}
+                    </div>
+                    <div style={{ ...disp, fontSize: "20px", color: "var(--muted)", marginTop: "14px" }}>Your earnings chart will appear after your first sale</div>
+                    <div style={{ fontSize: "12px", color: "var(--dim)", marginTop: "6px" }}>Every sale adds a bar. Share your link to start the clock.</div>
+                  </div>
+                ) : (
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
                     <div>
@@ -1448,7 +1750,91 @@ export default function DashboardClient({
                     </div>
                   </div>
                 </div>
+                )}
 
+                {/* First sale module or transactions */}
+                {isActivationMode ? (
+                  <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "20px" }}>
+                    <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "16px" }}>GET YOUR FIRST SALE</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                      <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px" }}>
+                        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "#8dcfff", marginBottom: "10px" }}>POST THIS NOW (COPY → PASTE)</div>
+                        <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.7, marginBottom: "12px" }}>
+                          <div>Just dropped exclusive content on CIPHER. First access is limited — grab it before it expires 🔒</div>
+                          {activeDrop && <div style={{ marginTop: "8px", color: "var(--gold)" }}>&quot;{activeDrop.title}&quot; — {money.format(activeDrop.price / 100)}</div>}
+                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>cipher.so/{creatorProfile.handle || userId}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const text = `Just dropped exclusive content on CIPHER. First access is limited — grab it before it expires 🔒${activeDrop ? `\n\n"${activeDrop.title}" — ${money.format(activeDrop.price / 100)}` : ""}\n\ncipher.so/${creatorProfile.handle || userId}`;
+                            navigator.clipboard.writeText(text).catch(() => {});
+                          }}
+                          style={{ border: "1px solid rgba(29,161,242,0.4)", borderRadius: "5px", padding: "7px 12px", background: "rgba(29,161,242,0.08)", color: "#8dcfff", ...mono, fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer" }}
+                        >
+                          COPY TWEET
+                        </button>
+                      </div>
+
+                      <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px" }}>
+                        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "#d9b3ff", marginBottom: "10px" }}>DM SCRIPT (SEND TO TOP FOLLOWERS)</div>
+                        <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.7, marginBottom: "12px" }}>
+                          <div>Hey — just launched something exclusive on CIPHER, thought you&apos;d want first access before I post publicly.</div>
+                          <div style={{ marginTop: "8px" }}>It&apos;s {activeDrop ? money.format(activeDrop.price / 100) : "limited pricing"} and expires soon.</div>
+                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>cipher.so/{creatorProfile.handle || userId}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const text = `Hey — just launched something exclusive on CIPHER, thought you'd want first access before I post publicly.\n\nIt's ${activeDrop ? money.format(activeDrop.price / 100) : "limited pricing"} and expires soon.\n\ncipher.so/${creatorProfile.handle || userId}`;
+                            navigator.clipboard.writeText(text).catch(() => {});
+                          }}
+                          style={{ border: "1px solid rgba(217,179,255,0.4)", borderRadius: "5px", padding: "7px 12px", background: "rgba(217,179,255,0.08)", color: "#d9b3ff", ...mono, fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer" }}
+                        >
+                          COPY DM
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: "16px", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "14px" }}>
+                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "12px" }}>LAUNCH CHECKLIST</div>
+                      {[
+                        "Drop link copied and ready to share",
+                        "Posted on Twitter / X",
+                        "Posted on Instagram or TikTok",
+                        "DM\u2019d at least 5 followers",
+                        "Shared in a Telegram group or Discord",
+                        "Story or video mention posted",
+                      ].map((text, idx) => (
+                        <label
+                          key={idx}
+                          style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderBottom: idx < 5 ? "1px solid rgba(255,255,255,0.04)" : "none", cursor: "pointer" }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checkedLaunch.has(idx)}
+                            onChange={() => {
+                              setCheckedLaunch(prev => {
+                                const next = new Set(prev);
+                                if (next.has(idx)) next.delete(idx); else next.add(idx);
+                                return next;
+                              });
+                            }}
+                            style={{ accentColor: "var(--gold)", width: "16px", height: "16px", cursor: "pointer" }}
+                          />
+                          <span style={{ fontSize: "13px", color: checkedLaunch.has(idx) ? "var(--dim)" : "var(--white)", textDecoration: checkedLaunch.has(idx) ? "line-through" : "none" }}>
+                            {text}
+                          </span>
+                        </label>
+                      ))}
+                      {checkedLaunch.size > 0 && (
+                        <div style={{ marginTop: "12px", ...mono, fontSize: "10px", color: "var(--gold)", letterSpacing: "0.12em" }}>
+                          {checkedLaunch.size}/6 COMPLETE{checkedLaunch.size === 6 ? " — FULL LAUNCH DONE \u2713" : ""}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", overflow: "hidden" }}>
                   <div style={{ padding: "14px", ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>RECENT TRANSACTIONS</div>
                   {transactions.length === 0 && (
@@ -1464,6 +1850,7 @@ export default function DashboardClient({
                     </div>
                   ))}
                 </div>
+                )}
               </>
             )}
 
@@ -1771,6 +2158,269 @@ export default function DashboardClient({
                       <div style={{ ...mono, fontSize: "10px", color: w.status === "completed" ? "var(--gold)" : "var(--dim)", letterSpacing: "0.1em" }}>{w.status.toUpperCase()}</div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeSection === "paylinks" && (
+              <div
+                style={{ display: "grid", gap: "16px" }}
+                // Load data on first visit to this tab
+                ref={el => { if (el && !payLinksLoaded && !payLinksLoading) loadPayLinks(); }}
+              >
+                {/* ── Section header ── */}
+                <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.25)", borderRadius: "8px", padding: "20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
+                    <div>
+                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "6px" }}>PAYMENT LINKS</div>
+                      <div style={{ ...disp, fontSize: "26px", color: "var(--gold)", lineHeight: 1.2, marginBottom: "8px" }}>Direct Sale Pages</div>
+                      <div style={{ fontSize: "13px", color: "var(--dim)", lineHeight: 1.6, maxWidth: "480px" }}>
+                        Generate a shareable <span style={{ color: "var(--muted)" }}>cipher.so/pay/[id]</span> URL.
+                        Visitors pay via your Whop checkout link, then unlock exclusive content using their access token.
+                      </div>
+                    </div>
+                    <div style={{ ...mono, fontSize: "10px", color: "var(--gold)", background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "6px", padding: "8px 14px", whiteSpace: "nowrap" }}>
+                      {payLinks.length} LINK{payLinks.length !== 1 ? "S" : ""} CREATED
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Create form ── */}
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "20px", display: "grid", gap: "12px" }}>
+                  <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)" }}>CREATE NEW PAYMENT LINK</div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "start" }}>
+                    <input
+                      value={plTitle}
+                      onChange={e => setPlTitle(e.target.value)}
+                      placeholder="Link title (e.g. 'Exclusive Strategy Guide')"
+                      style={{ background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", outline: "none" }}
+                    />
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ ...mono, fontSize: "14px", color: "var(--gold)" }}>$</span>
+                      <input
+                        value={plPrice}
+                        onChange={e => setPlPrice(e.target.value)}
+                        placeholder="10.00"
+                        style={{ width: "90px", background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", outline: "none" }}
+                      />
+                    </div>
+                  </div>
+
+                  <textarea
+                    value={plDescription}
+                    onChange={e => setPlDescription(e.target.value)}
+                    placeholder="Short description shown on the payment page (optional)"
+                    rows={2}
+                    style={{ background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", resize: "vertical", outline: "none" }}
+                  />
+
+                  <input
+                    value={plWhopUrl}
+                    onChange={e => setPlWhopUrl(e.target.value)}
+                    placeholder="Your Whop checkout URL (https://whop.com/checkout/...)"
+                    style={{ background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", outline: "none" }}
+                  />
+
+                  {/* Content type selector */}
+                  <div>
+                    <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.14em", color: "var(--dim)", marginBottom: "8px" }}>CONTENT TO UNLOCK AFTER PAYMENT</div>
+                    <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                      {(["text", "url", "file"] as const).map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setPlContentType(type)}
+                          style={{
+                            ...mono,
+                            padding: "6px 14px",
+                            borderRadius: "999px",
+                            border: `1px solid ${plContentType === type ? "rgba(200,169,110,0.5)" : "rgba(255,255,255,0.08)"}`,
+                            background: plContentType === type ? "rgba(200,169,110,0.1)" : "transparent",
+                            color: plContentType === type ? "var(--gold)" : "var(--dim)",
+                            fontSize: "10px",
+                            letterSpacing: "0.12em",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {type.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={plContentValue}
+                      onChange={e => setPlContentValue(e.target.value)}
+                      placeholder={
+                        plContentType === "text" ? "Paste the exclusive text, code, password, or note…"
+                        : plContentType === "url"  ? "https://link-to-unlock.com/…"
+                        : "https://file-download-url.com/file.pdf"
+                      }
+                      rows={3}
+                      style={{ width: "100%", background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", resize: "vertical", outline: "none" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between", flexWrap: "wrap" }}>
+                    {plMsg && (
+                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.1em", color: plMsg.startsWith("✓") ? "var(--gold)" : "#e05555" }}>
+                        {plMsg}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={savePayLink}
+                      disabled={plSaving}
+                      style={{ ...mono, padding: "10px 22px", border: "none", borderRadius: "6px", background: "var(--gold)", color: "#120c00", fontSize: "11px", letterSpacing: "0.14em", cursor: "pointer", opacity: plSaving ? 0.6 : 1, marginLeft: "auto" }}
+                    >
+                      {plSaving ? "GENERATING…" : "GENERATE LINK →"}
+                    </button>
+                  </div>
+
+                  {/* Generated link display */}
+                  {plCreatedId && (
+                    <div style={{ padding: "14px", background: "rgba(200,169,110,0.06)", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "8px" }}>
+                      <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.16em", color: "var(--gold-dim)", marginBottom: "8px" }}>YOUR PAYMENT LINK IS READY</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <input
+                          readOnly
+                          value={`${getBaseUrl()}/pay/${plCreatedId}`}
+                          style={{ flex: 1, ...mono, fontSize: "12px", color: "var(--gold)", background: "#070711", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "5px", padding: "9px 12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", outline: "none" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => copyPayLinkUrl(plCreatedId)}
+                          style={{ ...mono, padding: "9px 16px", border: "1px solid rgba(200,169,110,0.4)", borderRadius: "5px", background: plCopiedId === plCreatedId ? "rgba(200,169,110,0.15)" : "transparent", color: "var(--gold)", fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer", flexShrink: 0 }}
+                        >
+                          {plCopiedId === plCreatedId ? "COPIED ✓" : "COPY LINK"}
+                        </button>
+                        <a
+                          href={`/pay/${plCreatedId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ ...mono, padding: "9px 14px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "5px", background: "transparent", color: "var(--muted)", fontSize: "10px", letterSpacing: "0.12em", textDecoration: "none", flexShrink: 0 }}
+                        >
+                          PREVIEW ↗
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Existing links list ── */}
+                {payLinksLoading && (
+                  <div style={{ ...mono, fontSize: "11px", color: "var(--dim)", textAlign: "center", padding: "24px" }}>
+                    LOADING…
+                  </div>
+                )}
+                {!payLinksLoading && payLinks.length > 0 && (
+                  <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", overflow: "hidden" }}>
+                    <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)" }}>
+                      YOUR PAYMENT LINKS
+                    </div>
+                    {payLinks.map((pl, idx) => (
+                      <div
+                        key={pl.id}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: "12px",
+                          padding: "14px 16px",
+                          borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                          alignItems: "center",
+                        }}
+                      >
+                        {/* Info */}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                            <div style={{ fontSize: "14px", color: "rgba(255,255,255,0.85)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {pl.title}
+                            </div>
+                            <div
+                              style={{
+                                ...mono,
+                                fontSize: "9px",
+                                letterSpacing: "0.1em",
+                                padding: "2px 7px",
+                                borderRadius: "999px",
+                                background: pl.is_active ? "rgba(80,212,138,0.1)" : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${pl.is_active ? "rgba(80,212,138,0.3)" : "rgba(255,255,255,0.08)"}`,
+                                color: pl.is_active ? "#50d48a" : "var(--dim)",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {pl.is_active ? "LIVE" : "PAUSED"}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: "16px" }}>
+                            <span style={{ ...mono, fontSize: "12px", color: "var(--gold)" }}>
+                              ${(pl.price / 100).toFixed(2)}
+                            </span>
+                            <span style={{ ...mono, fontSize: "10px", color: "var(--dim)" }}>
+                              {pl.view_count} views
+                            </span>
+                            <span style={{ ...mono, fontSize: "10px", color: "var(--dim)" }}>
+                              {pl.purchase_count} sales
+                            </span>
+                          </div>
+                          <div style={{ ...mono, fontSize: "10px", color: "rgba(255,255,255,0.2)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            /pay/{pl.id}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => copyPayLinkUrl(pl.id)}
+                            style={{ ...mono, padding: "7px 12px", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "5px", background: plCopiedId === pl.id ? "rgba(200,169,110,0.12)" : "transparent", color: "var(--gold)", fontSize: "9px", letterSpacing: "0.1em", cursor: "pointer" }}
+                          >
+                            {plCopiedId === pl.id ? "COPIED ✓" : "COPY"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => togglePayLink(pl.id, !pl.is_active)}
+                            style={{ ...mono, padding: "7px 12px", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "5px", background: "transparent", color: "var(--dim)", fontSize: "9px", letterSpacing: "0.1em", cursor: "pointer" }}
+                          >
+                            {pl.is_active ? "PAUSE" : "RESUME"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { if (window.confirm("Delete this payment link?")) deletePayLink(pl.id); }}
+                            style={{ ...mono, padding: "7px 10px", border: "1px solid rgba(224,85,85,0.2)", borderRadius: "5px", background: "transparent", color: "rgba(224,85,85,0.6)", fontSize: "9px", letterSpacing: "0.1em", cursor: "pointer" }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!payLinksLoading && payLinksLoaded && payLinks.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "32px", color: "var(--dim)", fontSize: "13px" }}>
+                    No payment links yet. Create your first one above.
+                  </div>
+                )}
+
+                {/* ── How it works ── */}
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "20px" }}>
+                  <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>HOW IT WORKS</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                    {[
+                      { n: "01", title: "Create a link", body: "Set a title, price, and the content to unlock. Paste your Whop checkout URL." },
+                      { n: "02", title: "Share the link", body: "Copy your /pay/[id] URL and share it anywhere — posts, stories, DMs, bios." },
+                      { n: "03", title: "Buyer unlocks", body: "After paying, the buyer receives an access token that reveals your content instantly." },
+                    ].map(step => (
+                      <div key={step.n} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px", padding: "14px" }}>
+                        <div style={{ ...mono, fontSize: "18px", color: "rgba(200,169,110,0.35)", marginBottom: "8px" }}>{step.n}</div>
+                        <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", marginBottom: "5px" }}>{step.title}</div>
+                        <div style={{ fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>{step.body}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "6px", fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>
+                    <strong style={{ color: "var(--muted)" }}>Webhook integration:</strong> To auto-deliver tokens, configure your Whop product with <span style={{ ...mono, color: "rgba(200,169,110,0.5)" }}>metadata.payment_link_id = [id]</span> — the webhook handler will create the access record and the token URL appears in the buyer&apos;s confirmation.
+                  </div>
                 </div>
               </div>
             )}

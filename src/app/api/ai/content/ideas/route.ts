@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { aiRouter } from "@/lib/ai-router";
+import { assertFeatureAccess, TierGateError, tierGatePayload } from "@/lib/tiers";
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // ── Tier gate: ai_tools requires legend+ ────────────────────────────────
+    try {
+      await assertFeatureAccess(user.id, "ai_tools", supabase);
+    } catch (e) {
+      if (e instanceof TierGateError) return NextResponse.json(tierGatePayload(e), { status: 403 });
+      throw e;
+    }
 
     const { data: profile } = await supabase
       .from("creator_applications")

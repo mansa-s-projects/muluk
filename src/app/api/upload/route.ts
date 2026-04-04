@@ -16,9 +16,14 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime"];
+    const allowedTypes = [
+      "image/jpeg", "image/png", "image/webp", "image/gif",
+      "video/mp4", "video/quicktime", "video/webm",
+      "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "audio/x-m4a", "audio/mp4",
+      "text/plain",
+    ];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+      return NextResponse.json({ error: `File type not allowed: ${file.type}` }, { status: 400 });
     }
 
     // Validate file size (100MB max)
@@ -39,7 +44,7 @@ export async function POST(req: Request) {
         upsert: false,
       });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) throw new Error(uploadError.message ?? "Storage upload failed");
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
@@ -55,7 +60,8 @@ export async function POST(req: Request) {
       type: file.type,
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "Upload failed";
+    console.error("Upload error:", msg, error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

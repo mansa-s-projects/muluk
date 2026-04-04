@@ -19,6 +19,7 @@ export { decryptToken };
 
 function clearOAuthCookies(res: NextResponse): NextResponse {
   res.cookies.delete("youtube_oauth_state");
+  res.cookies.delete("youtube_oauth_redirect");
   return res;
 }
 
@@ -26,12 +27,24 @@ export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
   const savedState = req.cookies.get("youtube_oauth_state")?.value;
+  const redirect = req.cookies.get("youtube_oauth_redirect")?.value;
+  const isOnboarding = redirect === "onboarding";
 
-  if (!code || !state || !savedState || state !== savedState) {
+  const errorRedirect = (msg: string) => {
+    if (isOnboarding) {
+      const url = new URL("/dashboard/onboarding", appBaseUrl(req));
+      url.searchParams.set("social_error", "youtube");
+      url.searchParams.set("social_msg", msg);
+      return clearOAuthCookies(NextResponse.redirect(url));
+    }
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "youtube",
-      social_msg: "YouTube auth validation failed.",
+      social_msg: msg,
     })));
+  };
+
+  if (!code || !state || !savedState || state !== savedState) {
+    return errorRedirect("YouTube auth validation failed.");
   }
 
   const clientId = process.env.YOUTUBE_CLIENT_ID;
@@ -39,10 +52,7 @@ export async function GET(req: NextRequest) {
   const callback = `${appBaseUrl(req)}/api/auth/youtube/callback`;
 
   if (!clientId || !clientSecret) {
-    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
-      social_error: "youtube",
-      social_msg: "YouTube OAuth credentials missing.",
-    })));
+    return errorRedirect("YouTube OAuth credentials missing.");
   }
 
   try {
@@ -67,10 +77,7 @@ export async function GET(req: NextRequest) {
 
     if (!channelInfo?.id || !channelInfo.snippet?.title) {
       console.error("YouTube channel data missing or empty", channel);
-      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
-        social_error: "youtube",
-        social_msg: "YouTube connection failed: channel not found.",
-      })));
+      return errorRedirect("YouTube connection failed: channel not found.");
     }
 
     const channelTitle = channelInfo.snippet.title;
@@ -83,7 +90,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { social_error: "youtube", social_msg: "Sign in to connect YouTube." })));
+      return errorRedirect("Sign in to connect YouTube.");
     }
 
     const { error } = await supabase
@@ -104,12 +111,15 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
+    // Redirect to onboarding or dashboard based on where the flow started
+    if (isOnboarding) {
+      const onboardingUrl = new URL("/dashboard/onboarding", appBaseUrl(req));
+      onboardingUrl.searchParams.set("connected", "youtube");
+      return clearOAuthCookies(NextResponse.redirect(onboardingUrl));
+    }
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { connected: "youtube" })));
   } catch (err) {
     console.error("YouTube callback failed", err);
-    return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
-      social_error: "youtube",
-      social_msg: "YouTube connection failed.",
-    })));
+    return errorRedirect("YouTube connection failed.");
   }
 }
