@@ -30,7 +30,7 @@ export async function GET(
     // Get creator profile
     const { data: creator, error: creatorError } = await supabase
       .from("creator_applications")
-      .select(`*, auth.users!inner(email, created_at, last_sign_in_at)`)
+      .select("*")
       .eq("user_id", id)
       .single();
 
