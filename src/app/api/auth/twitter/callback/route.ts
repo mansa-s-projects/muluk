@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const isPopup = redirect === "onboarding";
 
   if (!code || !state || !savedState || state !== savedState || !verifier) {
-    if (isPopup) return popupCloseResponse(false, "Twitter auth validation failed.");
+    if (isPopup) return popupCloseResponse(false, "Twitter", "Twitter auth validation failed.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter auth validation failed.",
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   const callback = process.env.TWITTER_CALLBACK_URL || `${appBaseUrl(req)}/api/auth/twitter/callback`;
 
   if (!clientId || !clientSecret) {
-    if (isPopup) return popupCloseResponse(false, "Twitter OAuth credentials missing.");
+    if (isPopup) return popupCloseResponse(false, "Twitter", "Twitter OAuth credentials missing.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter OAuth credentials missing.",
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     if (!token?.access_token) {
       console.error("Twitter token exchange missing access_token");
-      if (isPopup) return popupCloseResponse(false, "Twitter connection failed.");
+      if (isPopup) return popupCloseResponse(false, "Twitter", "Twitter connection failed.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
       return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed.",
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     if (!me.data?.id) {
       console.error("Twitter /me returned missing user data for callback");
-      if (isPopup) return popupCloseResponse(false, "Twitter connection failed: missing user data.");
+      if (isPopup) return popupCloseResponse(false, "Twitter", "Twitter connection failed: missing user data.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
       return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "twitter",
         social_msg: "Twitter connection failed: missing user data.",
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      if (isPopup) return popupCloseResponse(false, "Sign in to connect Twitter.");
+      if (isPopup) return popupCloseResponse(false, "Twitter", "Sign in to connect Twitter.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
       return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { social_error: "twitter", social_msg: "Sign in to connect Twitter." })));
     }
 
@@ -113,11 +113,11 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    if (isPopup) return popupCloseResponse(true, "Twitter");
+    if (isPopup) return popupCloseResponse(true, "Twitter", undefined, ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, { connected: "twitter" })));
   } catch (err) {
     console.error("Twitter callback failed", err);
-    if (isPopup) return popupCloseResponse(false, "Twitter connection failed.");
+    if (isPopup) return popupCloseResponse(false, "Twitter", "Twitter connection failed.", ["twitter_oauth_state", "twitter_oauth_verifier", "twitter_oauth_redirect"]);
     return clearOAuthCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "twitter",
       social_msg: "Twitter connection failed.",

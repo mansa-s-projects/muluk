@@ -18,8 +18,13 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-actions] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const body = await request.json();
@@ -81,12 +86,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Add to realtime events
+    const isCriticalAction =
+      action.includes("delete") || (action.includes("ban") && !action.includes("unban"));
     await supabase.from("admin_realtime_events").insert({
       event_type: "admin_action",
       user_id: targetId,
       user_type: targetType,
       metadata: { action, admin_id: user.id, reason },
-      severity: action.includes("ban") || action.includes("delete") ? "critical" : "warning"
+      severity: isCriticalAction ? "critical" : "warning"
     });
 
     return NextResponse.json({ 
@@ -127,11 +134,16 @@ async function handleBanCreator(supabase: any, adminId: string, creatorId: strin
 
   if (error) throw error;
 
-  // Update creator status
-  await supabase
+  // Update creator status and rollback the ban row on failure.
+  const { error: statusError } = await supabase
     .from("creator_applications")
     .update({ status: "suspended" })
     .eq("user_id", creatorId);
+
+  if (statusError) {
+    await supabase.from("creator_bans").delete().eq("id", data.id);
+    throw statusError;
+  }
 
   return { ban_id: data.id, expires_at: expiresAt };
 }
@@ -251,6 +263,21 @@ async function handleForceWithdrawal(supabase: any, adminId: string, creatorId: 
     throw new Error("Invalid withdrawal amount");
   }
 
+  const { data: wallet, error: walletError } = await supabase
+    .from("creator_wallets")
+    .select("balance")
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+
+  if (walletError) {
+    throw new Error(`Failed to read wallet balance: ${walletError.message}`);
+  }
+
+  const balance = Number(wallet?.balance ?? 0);
+  if (balance < amount) {
+    throw new Error("Insufficient wallet balance");
+  }
+
   // Create withdrawal record
   const { data, error } = await supabase
     .from("withdrawal_requests")
@@ -268,10 +295,22 @@ async function handleForceWithdrawal(supabase: any, adminId: string, creatorId: 
   if (error) throw error;
 
   // Deduct from wallet
-  await supabase.rpc("deduct_from_wallet", {
+  const rpcResult = await supabase.rpc("deduct_from_wallet", {
     p_creator_id: creatorId,
     p_amount: amount
   });
+
+  if (rpcResult.error) {
+    await supabase
+      .from("withdrawal_requests")
+      .update({
+        status: "failed",
+        admin_notes: `Force withdrawal failed after creation: ${rpcResult.error.message}`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    throw new Error(`Wallet deduction failed: ${rpcResult.error.message}`);
+  }
 
   return { withdrawal_id: data.id, amount, method };
 }

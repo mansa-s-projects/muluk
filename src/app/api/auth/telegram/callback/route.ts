@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
-    if (isPopup) return popupCloseResponse(false, "Telegram bot token missing.");
+    if (isPopup) return popupCloseResponse(false, "Telegram", "Telegram bot token missing.", ["telegram_oauth_redirect"]);
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "telegram",
       social_msg: "Telegram bot token missing.",
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!verifyTelegramAuth(req, botToken)) {
-    if (isPopup) return popupCloseResponse(false, "Telegram verification failed.");
+    if (isPopup) return popupCloseResponse(false, "Telegram", "Telegram verification failed.", ["telegram_oauth_redirect"]);
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "telegram",
       social_msg: "Telegram verification failed.",
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
     if (!telegramId) {
       console.error("Telegram callback missing required user id after verification");
-      if (isPopup) return popupCloseResponse(false, "Telegram verification failed: missing user ID.");
+      if (isPopup) return popupCloseResponse(false, "Telegram", "Telegram verification failed: missing user ID.", ["telegram_oauth_redirect"]);
       return NextResponse.redirect(dashboardUrl(req, {
         social_error: "telegram",
         social_msg: "Telegram verification failed: missing user ID.",
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      if (isPopup) return popupCloseResponse(false, "Sign in to connect Telegram.");
+      if (isPopup) return popupCloseResponse(false, "Telegram", "Sign in to connect Telegram.", ["telegram_oauth_redirect"]);
       return NextResponse.redirect(dashboardUrl(req, { social_error: "telegram", social_msg: "Sign in to connect Telegram." }));
     }
 
@@ -94,11 +94,11 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    if (isPopup) return popupCloseResponse(true, "Telegram");
+    if (isPopup) return popupCloseResponse(true, "Telegram", undefined, ["telegram_oauth_redirect"]);
     return NextResponse.redirect(dashboardUrl(req, { connected: "telegram" }));
   } catch (err) {
     console.error("Telegram callback failed", err);
-    if (isPopup) return popupCloseResponse(false, "Telegram connection failed.");
+    if (isPopup) return popupCloseResponse(false, "Telegram", "Telegram connection failed.", ["telegram_oauth_redirect"]);
     return NextResponse.redirect(dashboardUrl(req, {
       social_error: "telegram",
       social_msg: "Telegram connection failed.",

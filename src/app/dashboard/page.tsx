@@ -12,6 +12,7 @@ import {
   getToolGating,
   getV2ChartData,
   getCreatorContentPlans,
+  getCreatorAnalyticsStats,
   type V2DashboardOverview,
   type V2ContentStats,
   type V2FanStats,
@@ -34,15 +35,16 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: onboardingRow, error: onboardingErr } = await supabase
-    .from("creator_onboarding")
-    .select("user_id")
-    .eq("user_id", user.id)
+  // Gate: redirect to onboarding if the wizard was never completed.
+  const { data: profileRow, error: profileErr } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (onboardingErr) console.error("creator_onboarding query failed:", onboardingErr);
+  if (profileErr) console.error("profiles query failed:", profileErr);
 
-  if (!onboardingErr && !onboardingRow) {
+  if (profileRow?.onboarding_completed !== true) {
     redirect("/dashboard/onboarding");
   }
 
@@ -57,6 +59,7 @@ export default async function DashboardPage() {
   let v2Transactions: Awaited<ReturnType<typeof getCreatorRecentTransactions>> = [];
   let toolGating: Awaited<ReturnType<typeof getToolGating>> | null = null;
   let contentPlans: Awaited<ReturnType<typeof getCreatorContentPlans>> = [];
+  let v2Analytics: Awaited<ReturnType<typeof getCreatorAnalyticsStats>> | null = null;
 
   try {
     [
@@ -68,6 +71,7 @@ export default async function DashboardPage() {
       v2Transactions,
       toolGating,
       contentPlans,
+      v2Analytics,
     ] = await Promise.all([
       getCreatorDashboardOverview(user.id),
       getCreatorContentStats(user.id),
@@ -77,6 +81,7 @@ export default async function DashboardPage() {
       getCreatorRecentTransactions(user.id, 20),
       getToolGating(user.id),
       getCreatorContentPlans(user.id),
+      getCreatorAnalyticsStats(user.id),
     ]);
   } catch (err) {
     console.error("V2 data fetch error:", err);
@@ -239,18 +244,12 @@ export default async function DashboardPage() {
   const viewedFans = Math.max(fanCodeCount, 1);
 
   const analytics: DashboardData["analytics"] = {
-    pageViews: Math.max((fanCodeCount) * 14, 120),
+    pageViews: v2Analytics?.pageViews ?? 0,
     conversionRate: viewedFans > 0 ? (paidFans / viewedFans) * 100 : 0,
     bestDay: bestDayObj?.label ?? "N/A",
-    retentionRate: 0, // Calculate from repeat purchases
+    retentionRate: v2Analytics?.retentionRate ?? 0,
     byType,
-    topCountries: [
-      { country: "United States", fans: Math.max(Math.floor(viewedFans * 0.38), 1) },
-      { country: "United Kingdom", fans: Math.max(Math.floor(viewedFans * 0.17), 1) },
-      { country: "Canada", fans: Math.max(Math.floor(viewedFans * 0.14), 1) },
-      { country: "Germany", fans: Math.max(Math.floor(viewedFans * 0.11), 1) },
-      { country: "Japan", fans: Math.max(Math.floor(viewedFans * 0.09), 1) },
-    ],
+    topCountries: [],
   };
 
   const topContentType = byType.sort((a, b) => b.value - a.value)[0]?.label ?? "unlock";
@@ -259,12 +258,12 @@ export default async function DashboardPage() {
   const chartTrend: DashboardData["chartTrend"] = secondHalf >= firstHalf ? "up" : "down";
 
   const referralStats: DashboardData["referralStats"] = {
-    totalCreators: Math.max(Math.floor((fanCodeCount) / 2), 0),
-    activeCreators: Math.max(Math.floor((fanCodeCount) / 3), 0),
+    totalCreators: v2Analytics?.referralTotalCreators ?? 0,
+    activeCreators: v2Analytics?.referralActiveCreators ?? 0,
     lifetimeEarnings: referralIncome,
-    monthEarnings: referralIncome * 0.18,
-    leaderboardPosition: 3,
-    leaderboardTotal: 126,
+    monthEarnings: v2Analytics?.referralMonthEarnings ?? 0,
+    leaderboardPosition: 0,
+    leaderboardTotal: 0,
   };
 
   const dashboardData: DashboardData = {

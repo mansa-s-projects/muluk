@@ -22,8 +22,13 @@ export async function GET(
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-application-get] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id, applicationId: id });
     }
 
     const { data: application, error } = await supabase
@@ -69,8 +74,13 @@ export async function PATCH(
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-application-patch] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id, applicationId: id });
     }
 
     const body = await request.json();

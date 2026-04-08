@@ -18,8 +18,13 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-transactions] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const { searchParams } = new URL(request.url);

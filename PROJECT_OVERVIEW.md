@@ -11,6 +11,9 @@ CIPHER is a creator economy platform focused on maximizing creator earnings, pri
 
 ## Goals
 - Disrupt traditional creator platforms with lower fees and better privacy
+
+Data privacy note:
+- `fan_accounts.device_fingerprint` is intended for anti-abuse only, should be stored as a one-way hash, and retained for no more than 90 days.
 - Empower creators to reach global audiences
 - Provide seamless onboarding and payout experiences
 

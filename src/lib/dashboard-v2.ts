@@ -568,6 +568,93 @@ export async function getCreatorContentPlans(userId: string): Promise<V2ContentP
   }));
 }
 
+// ─── Real analytics stats ─────────────────────────────────────────────────
+
+export type V2AnalyticsStats = {
+  pageViews: number;
+  retentionRate: number;
+  referralTotalCreators: number;
+  referralActiveCreators: number;
+  referralMonthEarnings: number;
+};
+
+export async function getCreatorAnalyticsStats(
+  userId: string
+): Promise<V2AnalyticsStats> {
+  const supabase = await createClient();
+
+  // Page views: sum of view_count across all payment links
+  const { data: plRows } = await supabase
+    .from("payment_links")
+    .select("view_count")
+    .eq("creator_id", userId);
+
+  const pageViews = (plRows ?? []).reduce((s, r) => s + (r.view_count ?? 0), 0);
+
+  // Retention: buyers who made more than one purchase
+  const { data: purchaseRows } = await supabase
+    .from("purchases")
+    .select("buyer_email")
+    .eq("creator_id", userId)
+    .eq("status", "paid");
+
+  const totalBuyers = purchaseRows?.length ?? 0;
+  const emailCounts = new Map<string, number>();
+  for (const row of purchaseRows ?? []) {
+    if (row.buyer_email) {
+      emailCounts.set(row.buyer_email, (emailCounts.get(row.buyer_email) ?? 0) + 1);
+    }
+  }
+  const repeatBuyers = [...emailCounts.values()].filter(c => c > 1).length;
+  const retentionRate = emailCounts.size > 0
+    ? (repeatBuyers / emailCounts.size) * 100
+    : 0;
+
+  // Referral stats: load our handle then count who used it as referral_handle
+  const { data: selfProfile } = await supabase
+    .from("creator_applications")
+    .select("handle")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let referralTotalCreators = 0;
+  let referralActiveCreators = 0;
+
+  if (selfProfile?.handle) {
+    const { data: referred } = await supabase
+      .from("creator_applications")
+      .select("user_id, status")
+      .eq("referral_handle", selfProfile.handle);
+
+    referralTotalCreators = referred?.length ?? 0;
+    referralActiveCreators = (referred ?? []).filter(r => r.status === "approved").length;
+  }
+
+  // Referral month earnings: transactions credited in the last 30 days from referral_income
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data: walletRow } = await supabase
+    .from("creator_wallets")
+    .select("referral_income")
+    .eq("creator_id", userId)
+    .maybeSingle();
+
+  // Best approximation without a separate referral_transactions table:
+  // use 1/12 of annual referral income as month estimate, only if referrals exist
+  const referralMonthEarnings = referralTotalCreators > 0
+    ? (walletRow?.referral_income ?? 0) / 12
+    : 0;
+
+  return {
+    pageViews,
+    retentionRate,
+    referralTotalCreators,
+    referralActiveCreators,
+    referralMonthEarnings,
+  };
+}
+
 // ─── 7-day chart data from v2 ───────────────────────────────────────────────
 
 export type V2ChartDay = { label: string; amount: number };

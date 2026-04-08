@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   const isPopup = redirect === "onboarding";
 
   if (!code || !state || !savedState || state !== savedState) {
-    if (isPopup) return popupCloseResponse(false, "Instagram auth validation failed.");
+    if (isPopup) return popupCloseResponse(false, "Instagram", "Instagram auth validation failed.", ["instagram_oauth_state", "instagram_oauth_redirect"]);
     return clearCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram auth validation failed.",
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   const callback = process.env.INSTAGRAM_CALLBACK_URL || `${appBaseUrl(req)}/api/auth/instagram/callback`;
 
   if (!clientId || !clientSecret) {
-    if (isPopup) return popupCloseResponse(false, "Instagram OAuth credentials missing.");
+    if (isPopup) return popupCloseResponse(false, "Instagram", "Instagram OAuth credentials missing.", ["instagram_oauth_state", "instagram_oauth_redirect"]);
     return clearCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram OAuth credentials missing.",
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
     if (!token?.access_token) {
       console.error("Instagram token exchange missing access_token", token);
-      if (isPopup) return popupCloseResponse(false, "Instagram connection failed.");
+      if (isPopup) return popupCloseResponse(false, "Instagram", "Instagram connection failed.", ["instagram_oauth_state", "instagram_oauth_redirect"]);
       return clearCookies(NextResponse.redirect(dashboardUrl(req, {
         social_error: "instagram",
         social_msg: "Instagram connection failed.",
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      if (isPopup) return popupCloseResponse(false, "Sign in to connect Instagram.");
+      if (isPopup) return popupCloseResponse(false, "Instagram", "Sign in to connect Instagram.", ["instagram_oauth_state", "instagram_oauth_redirect"]);
       return clearCookies(NextResponse.redirect(dashboardUrl(req, { social_error: "instagram", social_msg: "Sign in to connect Instagram." })));
     }
 
@@ -106,11 +106,11 @@ export async function GET(req: NextRequest) {
 
     if (error) throw error;
 
-    if (isPopup) return popupCloseResponse(true, "Instagram");
+    if (isPopup) return popupCloseResponse(true, "Instagram", undefined, ["instagram_oauth_state", "instagram_oauth_redirect"]);
     return clearCookies(NextResponse.redirect(dashboardUrl(req, { connected: "instagram" })));
   } catch (err) {
     console.error("Instagram callback failed", err);
-    if (isPopup) return popupCloseResponse(false, "Instagram", "Instagram connection failed.");
+    if (isPopup) return popupCloseResponse(false, "Instagram", "Instagram connection failed.", ["instagram_oauth_state", "instagram_oauth_redirect"]);
     return clearCookies(NextResponse.redirect(dashboardUrl(req, {
       social_error: "instagram",
       social_msg: "Instagram connection failed.",

@@ -38,7 +38,11 @@ export async function POST(req: NextRequest) {
     let body: Record<string, unknown>;
     try {
       body = await req.json();
-    } catch {
+    } catch (parseErr) {
+      console.error("Apply payload JSON parse failed:", {
+        message: parseErr instanceof Error ? parseErr.message : "Unknown parse error",
+        stack: parseErr instanceof Error ? parseErr.stack : null,
+      });
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
@@ -89,7 +93,13 @@ export async function POST(req: NextRequest) {
       if (dbError.code === "23505") {
         return NextResponse.json({ error: "Already applied" }, { status: 409 });
       }
-      console.error("DB error:", dbError.message, dbError);
+      console.error("Apply DB insert failed:", {
+        message: dbError.message,
+        stack: (dbError as { stack?: string }).stack ?? null,
+        code: dbError.code,
+        details: dbError.details,
+        hint: dbError.hint,
+      });
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 

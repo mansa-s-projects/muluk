@@ -933,12 +933,16 @@ export default function DashboardClient({
     description: string | null;
     price: number;
     content_type: string;
-    cover_image_url: string | null;
-    whop_checkout_url: string | null;
+    content_value: string | null;
+    file_url: string | null;
     is_active: boolean;
     view_count: number;
     purchase_count: number;
     created_at: string;
+      slug?: string | null;
+      whop_checkout_url?: string | null;
+      whop_product_id?: string | null;
+      is_live?: boolean;
   };
   const [payLinks, setPayLinks] = useState<PayLinkItem[]>([]);
   const [payLinksLoading, setPayLinksLoading] = useState(false);
@@ -946,9 +950,9 @@ export default function DashboardClient({
   const [plTitle, setPlTitle] = useState("");
   const [plDescription, setPlDescription] = useState("");
   const [plPrice, setPlPrice] = useState("10");
-  const [plContentType, setPlContentType] = useState<"text" | "url" | "file">("text");
+  const [plContentType, setPlContentType] = useState<"text" | "file">("text");
   const [plContentValue, setPlContentValue] = useState("");
-  const [plWhopUrl, setPlWhopUrl] = useState("");
+  const [plFile, setPlFile] = useState<File | null>(null);
   const [plSaving, setPlSaving] = useState(false);
   const [plMsg, setPlMsg] = useState("");
   const [plCreatedId, setPlCreatedId] = useState<string | null>(null);
@@ -1287,10 +1291,24 @@ export default function DashboardClient({
     if (!plTitle.trim()) { setPlMsg("Title is required."); return; }
     const priceNum = Math.round(Number(plPrice) * 100);
     if (!Number.isFinite(priceNum) || priceNum < 50) { setPlMsg("Minimum price is $0.50."); return; }
-    if (!plWhopUrl.trim()) { setPlMsg("Whop checkout URL is required."); return; }
+    if (plContentType === "text" && !plContentValue.trim()) { setPlMsg("Text content is required."); return; }
+    if (plContentType === "file" && !plFile) { setPlMsg("Please select a file."); return; }
 
     setPlSaving(true);
     try {
+      let fileUrl: string | undefined;
+      if (plContentType === "file" && plFile) {
+        const formData = new FormData();
+        formData.append("file", plFile);
+        formData.append("folder", "payment-links");
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok || !uploadJson.url) {
+          throw new Error(uploadJson.error || "File upload failed.");
+        }
+        fileUrl = uploadJson.url as string;
+      }
+
       const res = await fetch("/api/payment-links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1299,8 +1317,8 @@ export default function DashboardClient({
           description: plDescription.trim() || undefined,
           price: priceNum,
           content_type: plContentType,
-          content_value: plContentValue.trim() || undefined,
-          whop_checkout_url: plWhopUrl.trim(),
+          content_value: plContentType === "text" ? plContentValue.trim() : undefined,
+          file_url: plContentType === "file" ? fileUrl : undefined,
         }),
       });
       const json = await res.json();
@@ -1310,7 +1328,7 @@ export default function DashboardClient({
       setPlCreatedId(json.id);
       setPlMsg("✓ Payment link created.");
       navigator.clipboard.writeText(generatedLink).catch(() => {});
-      setPlTitle(""); setPlDescription(""); setPlPrice("10"); setPlContentValue(""); setPlWhopUrl(""); setPlContentType("text");
+      setPlTitle(""); setPlDescription(""); setPlPrice("10"); setPlContentValue(""); setPlFile(null); setPlContentType("text");
       await loadPayLinks();
     } catch (err) {
       setPlMsg(err instanceof Error ? err.message : "Failed to create payment link.");
@@ -2176,7 +2194,7 @@ export default function DashboardClient({
                       <div style={{ ...disp, fontSize: "26px", color: "var(--gold)", lineHeight: 1.2, marginBottom: "8px" }}>Direct Sale Pages</div>
                       <div style={{ fontSize: "13px", color: "var(--dim)", lineHeight: 1.6, maxWidth: "480px" }}>
                         Generate a shareable <span style={{ color: "var(--muted)" }}>cipher.so/pay/[id]</span> URL.
-                        Visitors pay via your Whop checkout link, then unlock exclusive content using their access token.
+                        Upload content, set a price, click Generate Link, and sell instantly with Stripe checkout.
                       </div>
                     </div>
                     <div style={{ ...mono, fontSize: "10px", color: "var(--gold)", background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "6px", padding: "8px 14px", whiteSpace: "nowrap" }}>
@@ -2215,18 +2233,11 @@ export default function DashboardClient({
                     style={{ background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", resize: "vertical", outline: "none" }}
                   />
 
-                  <input
-                    value={plWhopUrl}
-                    onChange={e => setPlWhopUrl(e.target.value)}
-                    placeholder="Your Whop checkout URL (https://whop.com/checkout/...)"
-                    style={{ background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", outline: "none" }}
-                  />
-
                   {/* Content type selector */}
                   <div>
-                    <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.14em", color: "var(--dim)", marginBottom: "8px" }}>CONTENT TO UNLOCK AFTER PAYMENT</div>
+                    <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.14em", color: "var(--dim)", marginBottom: "8px" }}>CONTENT TYPE</div>
                     <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                      {(["text", "url", "file"] as const).map(type => (
+                      {(["text", "file"] as const).map(type => (
                         <button
                           key={type}
                           type="button"
@@ -2247,17 +2258,21 @@ export default function DashboardClient({
                         </button>
                       ))}
                     </div>
-                    <textarea
-                      value={plContentValue}
-                      onChange={e => setPlContentValue(e.target.value)}
-                      placeholder={
-                        plContentType === "text" ? "Paste the exclusive text, code, password, or note…"
-                        : plContentType === "url"  ? "https://link-to-unlock.com/…"
-                        : "https://file-download-url.com/file.pdf"
-                      }
-                      rows={3}
-                      style={{ width: "100%", background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", resize: "vertical", outline: "none" }}
-                    />
+                    {plContentType === "text" ? (
+                      <textarea
+                        value={plContentValue}
+                        onChange={e => setPlContentValue(e.target.value)}
+                        placeholder="Paste the premium text buyers get after payment"
+                        rows={4}
+                        style={{ width: "100%", background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", resize: "vertical", outline: "none" }}
+                      />
+                    ) : (
+                      <input
+                        type="file"
+                        onChange={e => setPlFile(e.target.files?.[0] ?? null)}
+                        style={{ width: "100%", background: "#070711", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.85)", borderRadius: "6px", padding: "10px 12px", fontSize: "13px", outline: "none" }}
+                      />
+                    )}
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -2272,14 +2287,14 @@ export default function DashboardClient({
                       disabled={plSaving}
                       style={{ ...mono, padding: "10px 22px", border: "none", borderRadius: "6px", background: "var(--gold)", color: "#120c00", fontSize: "11px", letterSpacing: "0.14em", cursor: "pointer", opacity: plSaving ? 0.6 : 1, marginLeft: "auto" }}
                     >
-                      {plSaving ? "GENERATING…" : "GENERATE LINK →"}
+                      {plSaving ? "GENERATING…" : "GENERATE LINK"}
                     </button>
                   </div>
 
                   {/* Generated link display */}
                   {plCreatedId && (
                     <div style={{ padding: "14px", background: "rgba(200,169,110,0.06)", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "8px" }}>
-                      <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.16em", color: "var(--gold-dim)", marginBottom: "8px" }}>YOUR PAYMENT LINK IS READY</div>
+                      <div style={{ ...mono, fontSize: "14px", letterSpacing: "0.08em", color: "var(--gold-dim)", marginBottom: "8px" }}>Your Payment Link is Ready</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                         <input
                           readOnly
@@ -2291,7 +2306,7 @@ export default function DashboardClient({
                           onClick={() => copyPayLinkUrl(plCreatedId)}
                           style={{ ...mono, padding: "9px 16px", border: "1px solid rgba(200,169,110,0.4)", borderRadius: "5px", background: plCopiedId === plCreatedId ? "rgba(200,169,110,0.15)" : "transparent", color: "var(--gold)", fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer", flexShrink: 0 }}
                         >
-                          {plCopiedId === plCreatedId ? "COPIED ✓" : "COPY LINK"}
+                          {plCopiedId === plCreatedId ? "COPIED ✓" : "COPY"}
                         </button>
                         <a
                           href={`/pay/${plCreatedId}`}
@@ -2299,7 +2314,7 @@ export default function DashboardClient({
                           rel="noopener noreferrer"
                           style={{ ...mono, padding: "9px 14px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "5px", background: "transparent", color: "var(--muted)", fontSize: "10px", letterSpacing: "0.12em", textDecoration: "none", flexShrink: 0 }}
                         >
-                          PREVIEW ↗
+                          OPEN
                         </a>
                       </div>
                     </div>
@@ -2365,6 +2380,11 @@ export default function DashboardClient({
                           <div style={{ ...mono, fontSize: "10px", color: "rgba(255,255,255,0.2)", marginTop: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             /pay/{pl.id}
                           </div>
+                            {pl.whop_product_id && (
+                              <div style={{ ...mono, fontSize: "9px", color: "rgba(80,212,138,0.5)", marginTop: "2px", letterSpacing: "0.1em" }}>
+                                ✓ WHOP
+                              </div>
+                            )}
                         </div>
 
                         {/* Actions */}
@@ -2376,6 +2396,14 @@ export default function DashboardClient({
                           >
                             {plCopiedId === pl.id ? "COPIED ✓" : "COPY"}
                           </button>
+                            <a
+                              href={`/pay/${pl.slug ?? pl.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ ...mono, padding: "7px 12px", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "5px", background: "transparent", color: "rgba(200,169,110,0.6)", fontSize: "9px", letterSpacing: "0.1em", cursor: "pointer", textDecoration: "none" }}
+                            >
+                              OPEN ↗
+                            </a>
                           <button
                             type="button"
                             onClick={() => togglePayLink(pl.id, !pl.is_active)}
@@ -2407,9 +2435,9 @@ export default function DashboardClient({
                   <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>HOW IT WORKS</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
                     {[
-                      { n: "01", title: "Create a link", body: "Set a title, price, and the content to unlock. Paste your Whop checkout URL." },
-                      { n: "02", title: "Share the link", body: "Copy your /pay/[id] URL and share it anywhere — posts, stories, DMs, bios." },
-                      { n: "03", title: "Buyer unlocks", body: "After paying, the buyer receives an access token that reveals your content instantly." },
+                      { n: "01", title: "Upload + price", body: "Choose text or file content, set your price, then click Generate Link." },
+                      { n: "02", title: "Share", body: "Copy your /pay/[id] URL and share it anywhere — posts, stories, DMs, bios." },
+                      { n: "03", title: "Instant checkout", body: "Buyers unlock instantly with Stripe Checkout and are redirected back to the pay page." },
                     ].map(step => (
                       <div key={step.n} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px", padding: "14px" }}>
                         <div style={{ ...mono, fontSize: "18px", color: "rgba(200,169,110,0.35)", marginBottom: "8px" }}>{step.n}</div>
@@ -2417,9 +2445,6 @@ export default function DashboardClient({
                         <div style={{ fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>{step.body}</div>
                       </div>
                     ))}
-                  </div>
-                  <div style={{ marginTop: "14px", padding: "10px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "6px", fontSize: "12px", color: "var(--dim)", lineHeight: 1.6 }}>
-                    <strong style={{ color: "var(--muted)" }}>Webhook integration:</strong> To auto-deliver tokens, configure your Whop product with <span style={{ ...mono, color: "rgba(200,169,110,0.5)" }}>metadata.payment_link_id = [id]</span> — the webhook handler will create the access record and the token URL appears in the buyer&apos;s confirmation.
                   </div>
                 </div>
               </div>

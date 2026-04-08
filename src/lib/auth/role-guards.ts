@@ -4,7 +4,7 @@ export const PUBLIC_ROUTES = new Set(["/", "/login", "/apply"]);
 
 const ADMIN_PREFIXES = ["/admin", "/setup-admin"];
 const DEBUG_PREFIXES = ["/debug"];
-const CREATOR_PREFIXES = ["/dashboard"];
+const CREATOR_PREFIXES = ["/dashboard", "/onboarding"];
 
 export function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.has(pathname);

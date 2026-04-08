@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: HandleParams): Promise<Metada
 
   const { data: creator } = await supabase
     .from("creator_applications")
-    .select("name, bio, category")
+    .select("name, bio, category, avatar_url")
     .eq("handle", clean)
     .eq("status", "approved")
     .single();
@@ -52,6 +52,7 @@ export async function generateMetadata({ params }: HandleParams): Promise<Metada
       title: `@${clean} on CIPHER`,
       description: creator.bio || "Exclusive content on CIPHER",
       url: `https://cipher.co/@${clean}`,
+      ...(creator.avatar_url && { images: [{ url: creator.avatar_url }] }),
     },
   };
 }
@@ -71,7 +72,7 @@ export default async function HandlePage({
 
   const { data: creator } = await supabase
     .from("creator_applications")
-    .select("user_id, name, handle, bio, category, tier, phantom_mode, created_at")
+    .select("user_id, name, handle, bio, category, tier, phantom_mode, created_at, avatar_url, banner_url, website, location")
     .eq("handle", clean)
     .eq("status", "approved")
     .single();
@@ -118,6 +119,10 @@ export default async function HandlePage({
         tier: creator.tier ?? "cipher",
         phantom_mode: Boolean(creator.phantom_mode),
         created_at: creator.created_at,
+        avatar_url: creator.avatar_url ?? null,
+        banner_url: creator.banner_url ?? null,
+        website: creator.website ?? null,
+        location: creator.location ?? null,
       }}
       contentItems={(contentItems ?? []).map((item) => ({
         id: item.id,

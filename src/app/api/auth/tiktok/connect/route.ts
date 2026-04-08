@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appBaseUrl, dashboardUrl, randomToken, sha256Base64Url } from "@/app/api/auth/_utils";
+import { appBaseUrl, dashboardUrl, randomToken, sanitizeOAuthRedirect, sha256Base64Url } from "@/app/api/auth/_utils";
 
 export async function GET(req: NextRequest) {
   const clientKey = process.env.TIKTOK_CLIENT_KEY;
   const callback = `${appBaseUrl(req)}/api/auth/tiktok/callback`;
-  const redirect = req.nextUrl.searchParams.get("redirect") || "";
+  const allowlist = (process.env.OAUTH_REDIRECT_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const redirect = sanitizeOAuthRedirect(req, req.nextUrl.searchParams.get("redirect"), {
+    allowOnboardingToken: true,
+    allowedOrigins: allowlist,
+  });
 
   if (!clientKey) {
     return NextResponse.redirect(dashboardUrl(req, {
@@ -30,7 +37,7 @@ export async function GET(req: NextRequest) {
   const res = NextResponse.redirect(authUrl);
   res.cookies.set("tiktok_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
   res.cookies.set("tiktok_oauth_verifier", verifier, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
-  if (redirect) {
+  if (redirect && redirect !== "/") {
     res.cookies.set("tiktok_oauth_redirect", redirect, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
   }
   return res;

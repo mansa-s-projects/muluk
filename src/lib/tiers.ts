@@ -167,13 +167,24 @@ export async function getUserTier(
   const tierSlug: TierSlug = ((sub?.tier_slug as TierSlug | null) ?? "cipher");
 
   // 2. Fetch full tier details from the reference table
-  const { data: tier } = await supabase
+  const { data: tier, error: tierError } = await supabase
     .from("subscription_tiers")
     .select("*")
     .eq("slug", tierSlug)
     .maybeSingle();
 
-  return (tier as SubscriptionTier | null) ?? { ...DEFAULT_CIPHER_TIER, slug: tierSlug };
+  if (!tier) {
+    if (tierSlug !== "cipher") {
+      console.warn("[tiers] Falling back to cipher tier due to missing tier row", {
+        userId,
+        requestedTier: tierSlug,
+        error: tierError?.message,
+      });
+    }
+    return { ...DEFAULT_CIPHER_TIER, slug: "cipher" };
+  }
+
+  return tier as SubscriptionTier;
 }
 
 /**

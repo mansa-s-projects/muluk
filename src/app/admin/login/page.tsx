@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
 
       if (adminError || !adminData) {
         await supabase.auth.signOut();
-        throw new Error("Access denied. You are not an admin.");
+        throw new Error("Invalid credentials or insufficient permissions");
       }
 
       // 3. Redirect to command center
@@ -67,8 +67,9 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Email</label>
+            <label htmlFor="admin-email" className="block text-sm text-gray-400 mb-1">Email</label>
             <input
+              id="admin-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -79,8 +80,9 @@ export default function AdminLoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Password</label>
+            <label htmlFor="admin-password" className="block text-sm text-gray-400 mb-1">Password</label>
             <input
+              id="admin-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -100,7 +102,7 @@ export default function AdminLoginPage() {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>First time? <a href="/admin/setup" className="text-[#d4af37] hover:underline">Create admin account</a></p>
+          <p>Admin access is restricted.</p>
         </div>
       </div>
     </div>

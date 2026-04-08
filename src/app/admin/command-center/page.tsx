@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -129,19 +129,66 @@ function Spinner() {
     </div>
   );
 }
+
+async function fetchJsonOrThrow<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init);
+  let payload: unknown = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' && payload && 'error' in payload
+        ? String((payload as { error?: unknown }).error ?? `HTTP ${response.status}`)
+        : `HTTP ${response.status}`;
+    throw new Error(message);
+  }
+
+  if (payload === null) {
+    throw new Error(`Invalid or empty JSON response (status ${response.status}) for ${url}`);
+  }
+
+  return payload as T;
+}
+
 function GMVTicker({ value }: { value: number }) {
   const [display, setDisplay] = useState(0);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+  const ref = useRef<number | null>(null);
   useEffect(() => {
-    if (value === 0) return;
+    if (ref.current !== null) {
+      clearInterval(ref.current);
+      ref.current = null;
+    }
+
+    if (value === 0) {
+      setDisplay(0);
+      return;
+    }
+
     let curr = 0;
     const step = value / 60;
     ref.current = setInterval(() => {
       curr += step;
-      if (curr >= value) { setDisplay(value); clearInterval(ref.current!); return; }
+      if (curr >= value) {
+        setDisplay(value);
+        if (ref.current !== null) {
+          clearInterval(ref.current);
+          ref.current = null;
+        }
+        return;
+      }
       setDisplay(Math.floor(curr));
-    }, 16);
-    return () => clearInterval(ref.current!);
+    }, 16) as unknown as number;
+
+    return () => {
+      if (ref.current !== null) {
+        clearInterval(ref.current);
+        ref.current = null;
+      }
+    };
   }, [value]);
   return <span style={{ fontFamily: t.serif, fontSize: 42, fontWeight: 300, color: t.goldBright, letterSpacing: '-0.02em', lineHeight: 1 }}>{$f(display)}</span>;
 }
@@ -151,30 +198,50 @@ function ActionModal({ modal, onClose, onSuccess }: { modal: any; onClose: () =>
   const [reason, setReason] = useState('');
   const [tier, setTier] = useState('cipher');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // force_withdrawal is instant — no reason required
   const isInstant = modal.type === 'unban_creator' || modal.type === 'force_withdrawal';
 
   const execute = async () => {
     if (!isInstant && !reason.trim()) return;
+    setErrorMessage('');
     setLoading(true);
     try {
-      const body: any = { action: modal.type, targetType: 'creator', targetId: modal.target.user_id, reason: reason || 'Admin action' };
+      const body: any = { action: modal.type, targetType: 'creator', targetId: modal.target?.user_id, reason: reason || 'Admin action' };
       if (modal.type === 'ban_creator') body.details = { duration_days: 30 };
       if (modal.type === 'change_tier') body.details = { tier };
       if (modal.type === 'force_withdrawal') body.details = { amount: modal.amount, method: 'manual' };
+      if (modal.type === 'ban_creators_bulk') {
+        body.details = { duration_days: 30, targets: (modal.targets || []).map((x: any) => x.user_id) };
+      }
+
       const r = await fetch('/api/admin/actions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (r.ok) { onSuccess(); onClose(); }
-    } catch {}
-    setLoading(false);
+      if (!r.ok) {
+        let msg = `Request failed (${r.status})`;
+        try {
+          const errJson = await r.json();
+          if (errJson?.error) msg = String(errJson.error);
+        } catch {}
+        throw new Error(msg);
+      }
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Action failed';
+      console.error('Admin action failed:', { action: modal.type, error: message, modal });
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const titles: Record<string, string> = {
     ban_creator: 'Ban Creator', unban_creator: 'Lift Ban', add_note: 'Admin Note',
-    change_tier: 'Change Tier', force_withdrawal: 'Process Withdrawal',
+    change_tier: 'Change Tier', force_withdrawal: 'Process Withdrawal', ban_creators_bulk: 'Bulk Ban Creators',
   };
-  const accentColor = modal.type === 'ban_creator' ? t.red : modal.type === 'unban_creator' ? t.green : modal.type === 'force_withdrawal' ? t.green : t.gold;
-  const accentBg = modal.type === 'ban_creator' ? t.redD : modal.type === 'unban_creator' ? t.greenD : modal.type === 'force_withdrawal' ? t.greenD : t.goldGlow;
+  const accentColor = modal.type === 'ban_creator' || modal.type === 'ban_creators_bulk' ? t.red : modal.type === 'unban_creator' ? t.green : modal.type === 'force_withdrawal' ? t.green : t.gold;
+  const accentBg = modal.type === 'ban_creator' || modal.type === 'ban_creators_bulk' ? t.redD : modal.type === 'unban_creator' ? t.greenD : modal.type === 'force_withdrawal' ? t.greenD : t.goldGlow;
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2,2,3,0.88)', backdropFilter: 'blur(8px)' }}>
@@ -183,7 +250,15 @@ function ActionModal({ modal, onClose, onSuccess }: { modal: any; onClose: () =>
           <span style={{ fontFamily: t.serif, fontSize: 20, fontWeight: 300 }}>{titles[modal.type] || modal.type}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: t.muted, cursor: 'pointer', padding: 4 }}><X size={16} /></button>
         </div>
-        <div style={{ fontFamily: t.mono, fontSize: 11, color: t.muted, marginBottom: 16 }}>Target: <span style={{ color: t.white }}>{modal.target.display_name}</span> <span style={{ color: t.goldDim }}>@{modal.target.handle}</span></div>
+        <div style={{ fontFamily: t.mono, fontSize: 11, color: t.muted, marginBottom: 16 }}>
+          Target:{' '}
+          {modal.type === 'ban_creators_bulk'
+            ? <span style={{ color: t.white }}>{(modal.targets || []).length} creators</span>
+            : <>
+                <span style={{ color: t.white }}>{modal.target?.display_name ?? 'Unknown creator'}</span>{' '}
+                <span style={{ color: t.goldDim }}>@{modal.target?.handle ?? 'unknown'}</span>
+              </>}
+        </div>
         {modal.type === 'change_tier' && (
           <select value={tier} onChange={e => setTier(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: t.ink, border: `1px solid ${t.rim2}`, borderRadius: 6, color: t.white, fontFamily: t.mono, fontSize: 12, marginBottom: 12, outline: 'none' }}>
             <option value="cipher">Cipher — 12% fee</option>
@@ -204,6 +279,11 @@ function ActionModal({ modal, onClose, onSuccess }: { modal: any; onClose: () =>
         )}
         {!isInstant && (
           <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder={modal.type === 'ban_creator' ? 'Reason for ban...' : modal.type === 'add_note' ? 'Admin note...' : 'Reason...'} style={{ width: '100%', height: 100, padding: '10px 14px', background: t.ink, border: `1px solid ${t.rim2}`, borderRadius: 6, color: t.white, fontFamily: t.sans, fontSize: 13, resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 16 }} />
+        )}
+        {errorMessage && (
+          <div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 6, background: t.redD, border: `1px solid ${t.red}33`, color: t.red, fontFamily: t.sans, fontSize: 12 }}>
+            {errorMessage}
+          </div>
         )}
         <div style={{ display: 'flex', gap: 10, marginTop: isInstant ? 8 : 0 }}>
           <button onClick={onClose} style={{ flex: 1, padding: '10px 0', background: t.faint, border: `1px solid ${t.rim}`, borderRadius: 6, color: t.muted, fontFamily: t.mono, fontSize: 11, letterSpacing: '0.12em', cursor: 'pointer' }}>CANCEL</button>
@@ -351,14 +431,39 @@ function CreatorIntelligenceSystem({ onAction }: { onAction: (m: any) => void })
   const [filter, setFilter] = useState<'all' | 'at_risk' | 'dormant' | 'no_conversion'>('all');
   const [selected, setSelected] = useState<Creator | null>(null);
   const [details, setDetails] = useState<any>(null);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   useEffect(() => {
-    fetch('/api/admin/creators?limit=100').then(r => r.json()).then(d => { setCreators(d.creators || []); setLoading(false); }).catch(() => setLoading(false));
+    (async () => {
+      try {
+        setListError(null);
+        const d = await fetchJsonOrThrow<{ creators?: Creator[] }>('/api/admin/creators?limit=100');
+        setCreators(d.creators || []);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load creators';
+        console.error('Failed to load creators:', message);
+        setListError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
   const viewDetails = async (c: Creator) => {
-    setSelected(c); setDetails(null);
-    const r = await fetch(`/api/admin/creators/${c.user_id}`);
-    const d = await r.json();
-    if (d.success) setDetails(d.profile);
+    setSelected(c);
+    setDetails(null);
+    setDetailsError(null);
+    try {
+      const d = await fetchJsonOrThrow<{ success?: boolean; profile?: unknown }>(`/api/admin/creators/${c.user_id}`);
+      if (d.success && d.profile) {
+        setDetails(d.profile);
+      } else {
+        setDetailsError('Failed to load creator details');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load creator details';
+      console.error('viewDetails failed:', { creatorId: c.user_id, error: message });
+      setDetailsError(message);
+    }
   };
   const scored = useMemo(() => creators.map(c => ({ ...c, intel: scoreCreator(c) })), [creators]);
   const filtered = useMemo(() => {
@@ -392,7 +497,11 @@ function CreatorIntelligenceSystem({ onAction }: { onAction: (m: any) => void })
           <option value="churn">Sort: Churn Risk</option><option value="revenue">Sort: Revenue</option><option value="engagement">Sort: Engagement</option><option value="health">Sort: Health</option>
         </select>
       </div>
-      {loading ? <Spinner /> : (
+      {loading ? <Spinner /> : listError ? (
+        <Card>
+          <div style={{ color: t.red, fontFamily: t.sans, fontSize: 13 }}>Failed to load creators: {listError}</div>
+        </Card>
+      ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
           {filtered.map(creator => {
             const { engagement, churnRisk, health, revTrend, lifecycle, anomaly } = creator.intel;
@@ -443,7 +552,12 @@ function CreatorIntelligenceSystem({ onAction }: { onAction: (m: any) => void })
               <span style={{ fontFamily: t.serif, fontSize: 22, fontWeight: 300 }}>{selected.display_name}</span>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: t.muted, cursor: 'pointer', padding: 4 }}><X size={16} /></button>
             </div>
-            {!details ? <Spinner /> : (
+            {detailsError ? (
+              <Card style={{ padding: 14 }}>
+                <div style={{ color: t.red, fontFamily: t.sans, fontSize: 13, marginBottom: 10 }}>{detailsError}</div>
+                <button onClick={() => selected && viewDetails(selected)} style={{ padding: '8px 12px', background: t.faint, border: `1px solid ${t.rim}`, borderRadius: 6, color: t.muted, fontFamily: t.mono, fontSize: 10, letterSpacing: '0.12em', cursor: 'pointer' }}>RETRY</button>
+              </Card>
+            ) : !details ? <Spinner /> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {/* Email + Referral */}
                 <Card style={{ padding: 14 }}>
@@ -865,9 +979,22 @@ function CreatorsTableSystem({ onAction }: { onAction: (m: any) => void }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [tierFilter, setTierFilter] = useState('all');
   const [selected, setSelected] = useState<string[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
   useEffect(() => {
     const params = new URLSearchParams({ limit: '200', ...(statusFilter !== 'all' && { status: statusFilter }), ...(tierFilter !== 'all' && { tier: tierFilter }) });
-    fetch(`/api/admin/creators?${params}`).then(r => r.json()).then(d => { setCreators(d.creators || []); setLoading(false); }).catch(() => setLoading(false));
+    (async () => {
+      try {
+        setListError(null);
+        const d = await fetchJsonOrThrow<{ creators?: Creator[] }>(`/api/admin/creators?${params}`);
+        setCreators(d.creators || []);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load creators';
+        console.error('Failed to load creators table:', message);
+        setListError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [statusFilter, tierFilter]);
   const filtered = useMemo(() => {
     if (!search) return creators;
@@ -879,9 +1006,14 @@ function CreatorsTableSystem({ onAction }: { onAction: (m: any) => void }) {
   const exportCSV = () => {
     const rows = [['Name', 'Handle', 'Email', 'Tier', 'Status', 'Fans', 'Sales', 'Revenue', 'Referral Handle', 'Joined']];
     filtered.forEach(c => rows.push([c.display_name, c.handle, c.email, c.tier, c.status, String(c.stats.fan_count), String(c.stats.transaction_count), String(c.stats.total_volume / 100), c.referral_handle || '', c.created_at?.slice(0, 10)]));
-    const csv = rows.map(r => r.map(f => `"${f}"`).join(',')).join('\n');
+    const escapeCsv = (value: unknown) => {
+      const s = value == null ? '' : String(value);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const csv = rows.map(r => r.map(f => escapeCsv(f)).join(',')).join('\n');
     const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'creators.csv'; a.click();
   };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Toolbar */}
@@ -901,7 +1033,15 @@ function CreatorsTableSystem({ onAction }: { onAction: (m: any) => void }) {
         </button>
         {selected.length > 0 && (
           <>
-            <button onClick={() => { /* bulk ban */ selected.forEach(id => { const c = creators.find(x => x.user_id === id); if (c) onAction({ type: 'ban_creator', target: c }); }); setSelected([]); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: t.redD, border: `1px solid ${t.red}22`, borderRadius: 6, color: t.red, fontFamily: t.mono, fontSize: 10, letterSpacing: '0.12em', cursor: 'pointer' }}>
+            <button onClick={() => {
+              const targets = selected
+                .map(id => creators.find(x => x.user_id === id))
+                .filter(Boolean);
+              if (targets.length > 0) {
+                onAction({ type: 'ban_creators_bulk', targets });
+              }
+              setSelected([]);
+            }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: t.redD, border: `1px solid ${t.red}22`, borderRadius: 6, color: t.red, fontFamily: t.mono, fontSize: 10, letterSpacing: '0.12em', cursor: 'pointer' }}>
               <Ban size={12} /> BAN {selected.length}
             </button>
             <span style={{ fontFamily: t.mono, fontSize: 10, color: t.muted }}>{selected.length} selected</span>
@@ -909,7 +1049,11 @@ function CreatorsTableSystem({ onAction }: { onAction: (m: any) => void }) {
         )}
       </div>
       {/* Table */}
-      {loading ? <Spinner /> : (
+      {loading ? <Spinner /> : listError ? (
+        <Card>
+          <div style={{ color: t.red, fontFamily: t.sans, fontSize: 13 }}>Failed to load creators: {listError}</div>
+        </Card>
+      ) : (
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>

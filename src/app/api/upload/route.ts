@@ -44,7 +44,10 @@ export async function POST(req: Request) {
         upsert: false,
       });
 
-    if (uploadError) throw new Error(uploadError.message ?? "Storage upload failed");
+    if (uploadError) {
+      console.error("Upload storage error:", uploadError);
+      throw new Error("File upload failed");
+    }
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
@@ -60,8 +63,7 @@ export async function POST(req: Request) {
       type: file.type,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Upload failed";
-    console.error("Upload error:", msg, error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("Upload error:", error);
+    return NextResponse.json({ error: "File upload failed" }, { status: 500 });
   }
 }

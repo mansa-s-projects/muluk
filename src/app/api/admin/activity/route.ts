@@ -18,15 +18,22 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-activity-get] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const { searchParams } = new URL(request.url);
     const eventType = searchParams.get("eventType");
     const severity = searchParams.get("severity");
     const since = searchParams.get("since"); // ISO timestamp for polling
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const rawLimit = Number(searchParams.get("limit"));
+    const normalizedLimit = Number.isFinite(rawLimit) ? Math.trunc(rawLimit) : 50;
+    const limit = Math.min(100, Math.max(1, normalizedLimit || 50));
 
     let query = supabase
       .from("admin_realtime_events")
@@ -50,15 +57,25 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Also get some key platform stats for context
-    const [
-      { count: totalCreators },
-      { count: totalFans },
-      { count: activeBans }
-    ] = await Promise.all([
+    const [creatorsCountResult, fansCountResult, activeBansResult] = await Promise.all([
       supabase.from("creator_applications").select("id", { count: "exact", head: true }),
       supabase.from("fan_codes").select("id", { count: "exact", head: true }),
       supabase.from("creator_bans").select("id", { count: "exact", head: true }).eq("is_active", true)
     ]);
+
+    if (creatorsCountResult.error) {
+      console.error("[admin-activity] creator count query failed:", creatorsCountResult.error.message);
+    }
+    if (fansCountResult.error) {
+      console.error("[admin-activity] fan count query failed:", fansCountResult.error.message);
+    }
+    if (activeBansResult.error) {
+      console.error("[admin-activity] active ban count query failed:", activeBansResult.error.message);
+    }
+
+    const totalCreators = creatorsCountResult.count ?? 0;
+    const totalFans = fansCountResult.count ?? 0;
+    const activeBans = activeBansResult.count ?? 0;
 
     return NextResponse.json({
       events: events || [],
@@ -97,12 +114,37 @@ export async function POST(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-activity-post] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const body = await request.json();
-    const { event_type, user_id, user_type, metadata, severity = "info" } = body;
+    const { event_type, user_id, user_type, metadata } = body;
+
+    if (!event_type || typeof event_type !== "string") {
+      return NextResponse.json({ error: "event_type is required and must be a string" }, { status: 400 });
+    }
+
+    if (user_id != null && typeof user_id !== "string") {
+      return NextResponse.json({ error: "user_id must be a string when provided" }, { status: 400 });
+    }
+
+    if (user_type != null && typeof user_type !== "string") {
+      return NextResponse.json({ error: "user_type must be a string when provided" }, { status: 400 });
+    }
+
+    if (metadata != null && (typeof metadata !== "object" || Array.isArray(metadata))) {
+      return NextResponse.json({ error: "metadata must be an object when provided" }, { status: 400 });
+    }
+
+    const allowedSeverities = new Set(["info", "warning", "critical"]);
+    const parsedSeverity = typeof body.severity === "string" ? body.severity : "info";
+    const severity = allowedSeverities.has(parsedSeverity) ? parsedSeverity : "info";
 
     const { data, error } = await supabase
       .from("admin_realtime_events")

@@ -18,14 +18,21 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-applications] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "all";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const parsedPage = parseInt(searchParams.get("page") || "1", 10);
+    const parsedLimit = parseInt(searchParams.get("limit") || "20", 10);
+    const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const limit = Math.min(100, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 20));
     const offset = (page - 1) * limit;
 
     // Build query

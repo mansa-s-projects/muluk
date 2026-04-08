@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function escapeLike(input: string): string {
+  return input.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 // View all messages or filter by creator/fan
 export async function GET(request: NextRequest) {
   try {
@@ -18,16 +22,25 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-messages] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const { searchParams } = new URL(request.url);
     const creatorId = searchParams.get("creatorId");
     const fanCode = searchParams.get("fanCode");
     const search = searchParams.get("search");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const rawPage = Number(searchParams.get("page"));
+    const rawLimit = Number(searchParams.get("limit"));
+    const page = Number.isFinite(rawPage) ? Math.max(1, Math.trunc(rawPage)) : 1;
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(100, Math.max(1, Math.trunc(rawLimit)))
+      : 50;
     const offset = (page - 1) * limit;
 
     let query = supabase
@@ -48,7 +61,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.ilike("content", `%${search}%`);
+      const escaped = escapeLike(search);
+      query = query.ilike("content", `%${escaped}%`);
     }
 
     const { data: messages, error, count } = await query

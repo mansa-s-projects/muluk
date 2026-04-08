@@ -11,6 +11,10 @@ type Creator = {
   tier: string;
   phantom_mode: boolean;
   created_at: string;
+  avatar_url: string | null;
+  banner_url: string | null;
+  website: string | null;
+  location: string | null;
 };
 
 type ContentItem = {

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function sanitizeSearchTerm(input: string): string {
+  return input.replace(/[^a-zA-Z0-9@._\s-]/g, "").trim();
+}
+
 // List all creators with search and filters
 export async function GET(request: NextRequest) {
   try {
@@ -18,18 +22,29 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-creators] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id });
     }
 
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
+    const search = sanitizeSearchTerm(searchParams.get("search") || "");
     const status = searchParams.get("status") || "all";
     const tier = searchParams.get("tier") || "all";
-    const sortBy = searchParams.get("sortBy") || "created_at";
-    const sortOrder = searchParams.get("sortOrder") || "desc";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const rawSortBy = searchParams.get("sortBy") || "created_at";
+    const rawSortOrder = searchParams.get("sortOrder") || "desc";
+    const rawPage = Number(searchParams.get("page"));
+    const rawLimit = Number(searchParams.get("limit"));
+
+    const sortableColumns = new Set(["created_at", "display_name", "handle", "status", "tier"]);
+    const sortBy = sortableColumns.has(rawSortBy) ? rawSortBy : "created_at";
+    const sortOrder = rawSortOrder === "asc" ? "asc" : "desc";
+    const page = Number.isFinite(rawPage) ? Math.max(1, Math.trunc(rawPage)) : 1;
+    const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(1, Math.trunc(rawLimit))) : 20;
     const offset = (page - 1) * limit;
 
     // Build base query
@@ -62,49 +77,81 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Check ban status for each creator
-    const creatorsWithBans = await Promise.all(
-      (creators || []).map(async (creator) => {
-        const { data: banData } = await supabase
+    const creatorIds = (creators || []).map((c) => c.user_id).filter(Boolean);
+
+    let creatorsWithBans = creators || [];
+    if (creatorIds.length > 0) {
+      const [bansResult, contentResult, fansResult, transactionsResult] = await Promise.all([
+        supabase
           .from("creator_bans")
-          .select("is_active, ban_type, expires_at, reason")
-          .eq("creator_id", creator.user_id)
+          .select("creator_id, is_active, ban_type, expires_at, reason, created_at")
+          .in("creator_id", creatorIds)
           .eq("is_active", true)
-          .maybeSingle();
-
-        // Get content count
-        const { count: contentCount } = await supabase
+          .order("created_at", { ascending: false }),
+        supabase
           .from("content_items_v2")
-          .select("id", { count: "exact" })
-          .eq("creator_id", creator.user_id);
-
-        // Get fan count
-        const { count: fanCount } = await supabase
+          .select("creator_id")
+          .in("creator_id", creatorIds),
+        supabase
           .from("fan_codes")
-          .select("id", { count: "exact" })
-          .eq("creator_id", creator.user_id);
-
-        // Get transaction count and volume
-        const { data: transactions } = await supabase
+          .select("creator_id")
+          .in("creator_id", creatorIds),
+        supabase
           .from("transactions_v2")
-          .select("amount, status")
-          .eq("creator_id", creator.user_id);
+          .select("creator_id, amount")
+          .in("creator_id", creatorIds)
+          .eq("status", "success"),
+      ]);
 
-        const successfulTransactions = (transactions || []).filter(t => t.status === "success");
-        const totalVolume = successfulTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      if (bansResult.error) console.error("[admin-creators] bans query failed:", bansResult.error.message);
+      if (contentResult.error) console.error("[admin-creators] content query failed:", contentResult.error.message);
+      if (fansResult.error) console.error("[admin-creators] fan codes query failed:", fansResult.error.message);
+      if (transactionsResult.error) console.error("[admin-creators] transactions query failed:", transactionsResult.error.message);
 
+      const banMap = new Map<string, { is_active: boolean; ban_type: string; expires_at: string | null; reason: string | null }>();
+      for (const row of bansResult.data || []) {
+        if (!banMap.has(row.creator_id)) {
+          banMap.set(row.creator_id, {
+            is_active: row.is_active,
+            ban_type: row.ban_type,
+            expires_at: row.expires_at,
+            reason: row.reason,
+          });
+        }
+      }
+
+      const contentCountMap = new Map<string, number>();
+      for (const row of contentResult.data || []) {
+        contentCountMap.set(row.creator_id, (contentCountMap.get(row.creator_id) || 0) + 1);
+      }
+
+      const fanCountMap = new Map<string, number>();
+      for (const row of fansResult.data || []) {
+        fanCountMap.set(row.creator_id, (fanCountMap.get(row.creator_id) || 0) + 1);
+      }
+
+      const txnStatsMap = new Map<string, { transaction_count: number; total_volume: number }>();
+      for (const row of transactionsResult.data || []) {
+        const current = txnStatsMap.get(row.creator_id) || { transaction_count: 0, total_volume: 0 };
+        current.transaction_count += 1;
+        current.total_volume += row.amount || 0;
+        txnStatsMap.set(row.creator_id, current);
+      }
+
+      creatorsWithBans = (creators || []).map((creator) => {
+        const txn = txnStatsMap.get(creator.user_id) || { transaction_count: 0, total_volume: 0 };
         return {
           ...creator,
-          ban_status: banData || null,
+          ban_status: banMap.get(creator.user_id) || null,
           stats: {
-            content_count: contentCount || 0,
-            fan_count: fanCount || 0,
-            transaction_count: successfulTransactions.length,
-            total_volume: totalVolume,
-          }
+            content_count: contentCountMap.get(creator.user_id) || 0,
+            fan_count: fanCountMap.get(creator.user_id) || 0,
+            transaction_count: txn.transaction_count,
+            total_volume: txn.total_volume,
+          },
         };
-      })
-    );
+      });
+    }
 
     // Log admin action
     await supabase.from("admin_audit_logs").insert({

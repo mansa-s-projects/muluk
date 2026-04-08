@@ -1,5 +1,6 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/utils/getBaseUrl";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -13,30 +14,74 @@ function getDb() {
 /**
  * GET /api/pay/[id]
  * Public — returns metadata for the payment link (no content_value).
+ * Also returns the Whop checkout URL for client-side redirect.
  * Increments view_count as a side-effect.
  */
 export async function GET(_req: Request, { params }: Params) {
   const { id } = await params;
   const db = getDb();
 
-  const { data, error } = await db
+  // Support lookup by slug OR uuid
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  let query = db
     .from("payment_links")
     .select(
-      "id, title, description, price, content_type, cover_image_url, whop_checkout_url, view_count, purchase_count, created_at"
+      // file_url is intentionally excluded — it is paid/download content and must
+      // only be returned via the authenticated /verify endpoint after purchase.
+      "id, title, description, price, content_type, view_count, purchase_count, created_at, whop_checkout_url, slug"
     )
-    .eq("id", id)
-    .eq("is_active", true)
-    .single();
+    .eq("is_active", true);
+
+  query = isUuid ? query.eq("id", id) : query.eq("slug", id);
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data) {
     return NextResponse.json({ error: "Payment link not found" }, { status: 404 });
   }
 
-  // Fire-and-forget view increment
-  db.from("payment_links")
-    .update({ view_count: (data.view_count ?? 0) + 1 })
-    .eq("id", id)
-    .then(() => {});
+  // Atomic view count increment
+  const { error: incrementError } = await db.rpc(
+    "increment_payment_link_view_count",
+    { payment_link_id: data.id }
+  );
 
-  return NextResponse.json({ link: data });
+  if (incrementError) {
+    console.warn("Failed to increment view count:", incrementError);
+    // Continue despite view count failure
+  }
+  const effectiveViewCount = incrementError ? data.view_count : (data.view_count ?? 0) + 1;
+
+  // Build Whop checkout URL with success redirect
+  const baseUrl = getBaseUrl();
+  const returnUrl = `${baseUrl}/pay/${data.slug ?? data.id}?success=1`;
+  let checkoutUrl: string | null = null;
+
+  if (data.whop_checkout_url) {
+    // Inject redirect_url if not already present
+    try {
+      const u = new URL(data.whop_checkout_url);
+      if (!u.searchParams.has("redirect_url")) {
+        u.searchParams.set("redirect_url", returnUrl);
+      }
+      checkoutUrl = u.toString();
+    } catch {
+      checkoutUrl = data.whop_checkout_url;
+    }
+  }
+
+  return NextResponse.json({
+    link: {
+      id:             data.id,
+      title:          data.title,
+      description:    data.description,
+      price:          data.price,
+      content_type:   data.content_type,
+      view_count:     effectiveViewCount,
+      purchase_count: data.purchase_count,
+      created_at:     data.created_at,
+      slug:           data.slug,
+    },
+    checkout_url: checkoutUrl,
+  });
 }

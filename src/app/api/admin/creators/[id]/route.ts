@@ -23,8 +23,13 @@ export async function GET(
       .eq("user_id", user.id)
       .single();
 
-    if (!adminCheck && process.env.NODE_ENV !== "development") {
+    const ALLOW_DEV_ADMIN_BYPASS =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+    if (!adminCheck && !ALLOW_DEV_ADMIN_BYPASS) {
       return NextResponse.json({ error: "Forbidden - Admin only" }, { status: 403 });
+    }
+    if (!adminCheck && ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-creator-details] ALLOW_DEV_ADMIN_BYPASS enabled", { userId: user.id, creatorId: id });
     }
 
     // Get creator profile
@@ -38,81 +43,137 @@ export async function GET(
       return NextResponse.json({ error: "Creator not found" }, { status: 404 });
     }
 
-    // Get wallet info
-    const { data: wallet } = await supabase
+    const walletPromise = supabase
       .from("creator_wallets")
       .select("*")
       .eq("creator_id", id)
       .single();
 
-    // Get social connections
-    const { data: socials } = await supabase
+    const socialsPromise = supabase
       .from("social_connections")
       .select("platform, platform_username, follower_count, connected_at")
       .eq("creator_id", id);
 
-    // Get ban history
-    const { data: bans } = await supabase
+    const bansPromise = supabase
       .from("creator_bans")
       .select("*, admin:admin_id(display_name)")
       .eq("creator_id", id)
       .order("created_at", { ascending: false });
 
-    // Get admin notes
-    const { data: notes } = await supabase
+    const notesPromise = supabase
       .from("admin_notes")
       .select("*, admin:admin_id(display_name)")
       .eq("target_type", "creator")
       .eq("target_id", id)
       .order("created_at", { ascending: false });
 
-    // Get recent content
-    const { data: content } = await supabase
+    const contentPromise = supabase
       .from("content_items_v2")
       .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false })
       .limit(20);
 
-    // Get recent transactions
-    const { data: transactions } = await supabase
+    const transactionsPromise = supabase
       .from("transactions_v2")
       .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // Get recent fan codes
-    const { data: fanCodes } = await supabase
+    const fanCodesPromise = supabase
       .from("fan_codes")
       .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // Get recent messages sent
-    const { data: messages } = await supabase
+    const messagesPromise = supabase
       .from("fan_messages")
       .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // Get activity log
-    const { data: activity } = await supabase
+    const activityPromise = supabase
       .from("activity_log")
       .select("*")
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(100);
 
-    // Get AI usage
-    const { data: aiUsage } = await supabase
+    const aiUsagePromise = supabase
       .from("daily_briefs")
       .select("*")
       .eq("creator_id", id)
       .order("date", { ascending: false })
       .limit(30);
+
+    const [
+      walletResult,
+      socialsResult,
+      bansResult,
+      notesResult,
+      contentResult,
+      transactionsResult,
+      fanCodesResult,
+      messagesResult,
+      activityResult,
+      aiUsageResult,
+    ] = await Promise.all([
+      walletPromise,
+      socialsPromise,
+      bansPromise,
+      notesPromise,
+      contentPromise,
+      transactionsPromise,
+      fanCodesPromise,
+      messagesPromise,
+      activityPromise,
+      aiUsagePromise,
+    ]);
+
+    if (walletResult.error) {
+      console.warn("[admin-creator-details] wallet query failed", { creatorId: id, error: walletResult.error.message });
+    }
+    if (socialsResult.error) {
+      console.warn("[admin-creator-details] socials query failed", { creatorId: id, error: socialsResult.error.message });
+    }
+    if (bansResult.error) {
+      console.warn("[admin-creator-details] bans query failed", { creatorId: id, error: bansResult.error.message });
+    }
+    if (notesResult.error) {
+      console.warn("[admin-creator-details] notes query failed", { creatorId: id, error: notesResult.error.message });
+    }
+    if (contentResult.error) {
+      console.warn("[admin-creator-details] content query failed", { creatorId: id, error: contentResult.error.message });
+    }
+    if (transactionsResult.error) {
+      console.warn("[admin-creator-details] transactions query failed", { creatorId: id, error: transactionsResult.error.message });
+    }
+    if (fanCodesResult.error) {
+      console.warn("[admin-creator-details] fanCodes query failed", { creatorId: id, error: fanCodesResult.error.message });
+    }
+    if (messagesResult.error) {
+      console.warn("[admin-creator-details] messages query failed", { creatorId: id, error: messagesResult.error.message });
+    }
+    if (activityResult.error) {
+      console.warn("[admin-creator-details] activity query failed", { creatorId: id, error: activityResult.error.message });
+    }
+    if (aiUsageResult.error) {
+      console.warn("[admin-creator-details] aiUsage query failed", { creatorId: id, error: aiUsageResult.error.message });
+    }
+
+    const wallet = walletResult.data;
+    const socials = socialsResult.data;
+    const bans = bansResult.data;
+    const notes = notesResult.data;
+    const content = contentResult.data;
+    const transactions = transactionsResult.data;
+    const fanCodes = fanCodesResult.data;
+    const messages = messagesResult.data;
+    const activity = activityResult.data;
+    const aiUsage = aiUsageResult.data;
 
     // Compile profile
     const profile = {
@@ -136,14 +197,18 @@ export async function GET(
       }
     };
 
-    // Log admin action
-    await supabase.from("admin_audit_logs").insert({
-      admin_id: user.id,
-      action: "view_creator_details",
-      target_type: "creator",
-      target_id: id,
-      details: { creator_handle: creator.handle }
-    });
+    // Log admin action; avoid non-admin FK issues when bypass mode is used.
+    if (adminCheck) {
+      await supabase.from("admin_audit_logs").insert({
+        admin_id: user.id,
+        action: "view_creator_details",
+        target_type: "creator",
+        target_id: id,
+        details: { creator_handle: creator.handle }
+      });
+    } else if (ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-creator-details] skipped admin_audit_logs insert in bypass mode", { creatorId: id });
+    }
 
     return NextResponse.json({ success: true, profile });
 

@@ -22,19 +22,28 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const allowed: Record<string, unknown> = {};
   if (typeof body.is_active === "boolean") allowed.is_active = body.is_active;
-  if (typeof body.title === "string")      allowed.title = body.title.trim();
+  if (typeof body.title === "string") {
+    const trimmed = body.title.trim();
+    if (trimmed.length > 0) {
+      allowed.title = trimmed;
+    }
+  }
   if (Object.keys(allowed).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }
   allowed.updated_at = new Date().toISOString();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("payment_links")
     .update(allowed)
     .eq("id", id)
-    .eq("creator_id", user.id);
+    .eq("creator_id", user.id)
+    .select("id");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "Payment link not found" }, { status: 404 });
+  }
   return NextResponse.json({ success: true });
 }
 
@@ -48,12 +57,16 @@ export async function DELETE(_req: Request, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("payment_links")
     .delete()
     .eq("id", id)
-    .eq("creator_id", user.id);
+    .eq("creator_id", user.id)
+    .select("id");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "Payment link not found" }, { status: 404 });
+  }
   return NextResponse.json({ success: true });
 }

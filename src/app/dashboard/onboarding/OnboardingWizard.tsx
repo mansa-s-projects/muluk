@@ -20,7 +20,13 @@ type SocialConnection = {
   dmSignals?: number;
 };
 
-type OnboardingData = {
+// Draft key — bump suffix to invalidate stale drafts
+const DRAFT_KEY = "cipher_onboarding_draft_v1";
+
+type OnboardingDraft = {
+  // Step 1: Primary goal
+  goal: string;
+
   // Step 2: Niche
   niche: string;
   subNiche: string;
@@ -30,10 +36,10 @@ type OnboardingData = {
   experience: "beginner" | "intermediate" | "advanced";
   currentRevenue: string;
   
-  // Step 4: Social connections (fetched)
+  // Step 4: Social connections (fetched — not persisted)
   socialConnections: SocialConnection[];
   
-  // Step 5: Profile identity (built from social data)
+  // Step 5: Profile identity (built from social data + existingProfile)
   profileIdentity: ProfileIdentity | null;
 
   // Step 6: Signal analysis (generated)
@@ -45,6 +51,9 @@ type OnboardingData = {
   // Step 8: First drop (generated/edited)
   firstDrop: FirstDrop | null;
 };
+
+// Alias kept so internal helpers don’t need mass-renaming
+type OnboardingData = OnboardingDraft;
 
 type SignalAnalysis = {
   strongestPlatform: string;
@@ -92,6 +101,7 @@ type ProfileIdentity = {
   website: string;
   location: string;
   specialty: string;
+  ctaLabel: string;
   cta: string;
 };
 
@@ -345,10 +355,13 @@ type FirstSaleEngineProps = {
   strongestPlatform: string;
   dmOpportunities: number;
   fanPageUrl: string;
+  paymentLinkUrl?: string | null;
+  redirectCountdown: number | null;
   onDashboard: () => void;
+  onCancelRedirect: () => void;
 };
 
-function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportunities, fanPageUrl, onDashboard }: FirstSaleEngineProps) {
+  function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportunities, fanPageUrl, paymentLinkUrl, redirectCountdown, onDashboard, onCancelRedirect }: FirstSaleEngineProps) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [views, setViews] = useState(0);
@@ -476,6 +489,42 @@ function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportun
         </div>
       )}
 
+        {/* ── Pay link bar ── */}
+        {paymentLinkUrl && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'rgba(80,212,138,0.06)', border: '1px solid rgba(80,212,138,0.2)',
+            borderRadius: 8, padding: '12px 16px', marginBottom: 10,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(80,212,138,0.6)', letterSpacing: '0.2em', marginBottom: 3 }}>PAY PAGE</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#50d48a', wordBreak: 'break-all' }}>
+                {typeof window !== 'undefined' ? window.location.origin : ''}{paymentLinkUrl}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button onClick={() => copy('paylink', (typeof window !== 'undefined' ? window.location.origin : '') + paymentLinkUrl)} style={{
+                padding: '8px 14px', background: copied.paylink ? 'rgba(80,212,138,0.12)' : 'rgba(80,212,138,0.08)',
+                border: `1px solid ${copied.paylink ? 'rgba(80,212,138,0.4)' : 'rgba(80,212,138,0.25)'}`,
+                borderRadius: 5, color: '#50d48a',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', cursor: 'pointer',
+                transition: 'all 0.2s', whiteSpace: 'nowrap',
+              }}>
+                {copied.paylink ? '✓ COPIED' : 'COPY'}
+              </button>
+              <a href={paymentLinkUrl} target="_blank" rel="noopener noreferrer" style={{
+                padding: '8px 14px', background: 'transparent',
+                border: '1px solid rgba(80,212,138,0.25)',
+                borderRadius: 5, color: '#50d48a',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em', cursor: 'pointer',
+                textDecoration: 'none', whiteSpace: 'nowrap',
+              }}>
+                OPEN ↗
+              </a>
+            </div>
+          </div>
+        )}
+
       {/* ── Progress toward first sale ── */}
       <div style={{
         background: 'var(--card)', border: '1px solid var(--rim)',
@@ -598,25 +647,118 @@ function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportun
         })}
       </div>
 
-      {/* ── Dashboard CTA ── */}
+      {/* ── Navigation — always visible, links never lost ── */}
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-        paddingTop: 8, paddingBottom: 40,
+        marginTop: 8,
+        paddingBottom: 48,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
       }}>
-        <button onClick={onDashboard} style={{
-          padding: '14px 40px',
-          background: completedCount >= 2 ? 'var(--gold)' : 'rgba(200,169,110,0.1)',
-          border: `1px solid ${completedCount >= 2 ? 'var(--gold)' : 'rgba(200,169,110,0.25)'}`,
-          borderRadius: 4,
-          color: completedCount >= 2 ? '#0a0800' : 'var(--gold)',
-          fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em',
-          cursor: 'pointer', transition: 'all 0.3s',
-        }}>
-          {completedCount >= 2 ? 'VIEW MY DASHBOARD →' : 'SKIP TO DASHBOARD'}
-        </button>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--dim)', letterSpacing: '0.1em' }}>
-          {completedCount < 2 ? 'Finish the checklist first — your first sale is closer than you think' : 'Your drop is live. We\'ll notify you the moment a fan pays.'}
+        {/* Primary CTA row */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={onDashboard} style={{
+            flex: 1,
+            minWidth: 160,
+            padding: '13px 24px',
+            background: 'var(--gold)',
+            border: 'none',
+            borderRadius: 4,
+            color: '#0a0800',
+            fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em',
+            cursor: 'pointer', fontWeight: 600,
+          }}>
+            GO TO DASHBOARD →
+          </button>
+
+          {(paymentLinkUrl || fanPageUrl) && (
+            <a
+              href={(() => { const u = paymentLinkUrl || fanPageUrl; return u.startsWith('http') ? u : (typeof window !== 'undefined' ? window.location.origin : '') + u; })()}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                flex: 1,
+                minWidth: 160,
+                padding: '13px 24px',
+                background: 'transparent',
+                border: '1px solid rgba(200,169,110,0.35)',
+                borderRadius: 4,
+                color: 'var(--gold)',
+                fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                textAlign: 'center' as const,
+              }}
+            >
+              VIEW DROP ↗
+            </a>
+          )}
+
+          {(paymentLinkUrl || fanPageUrl) && (
+            <button
+              onClick={() => {
+                const u = paymentLinkUrl || fanPageUrl;
+                const full = u.startsWith('http') ? u : (typeof window !== 'undefined' ? window.location.origin : '') + u;
+                navigator.clipboard.writeText(full);
+              }}
+              style={{
+                padding: '13px 18px',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 4,
+                color: 'rgba(255,255,255,0.6)',
+                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.15em',
+                cursor: 'pointer',
+              }}
+            >
+              COPY LINK
+            </button>
+          )}
         </div>
+
+        {/* Link display — always readable */}
+        {(paymentLinkUrl || fanPageUrl) && (
+          <div style={{
+            padding: '10px 14px',
+            background: 'rgba(200,169,110,0.05)',
+            border: '1px solid rgba(200,169,110,0.12)',
+            borderRadius: 6,
+          }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--gold-dim)', letterSpacing: '0.18em', marginBottom: 4 }}>YOUR DROP LINK</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--gold)', wordBreak: 'break-all' }}>
+              {typeof window !== 'undefined' ? window.location.origin : ''}{paymentLinkUrl || fanPageUrl}
+            </div>
+          </div>
+        )}
+
+        {/* Soft redirect countdown */}
+        {redirectCountdown !== null && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 14px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 6,
+          }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--dim)', letterSpacing: '0.1em' }}>
+              Redirecting to dashboard in {redirectCountdown}s…
+            </div>
+            <button
+              onClick={onCancelRedirect}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 4,
+                padding: '4px 12px',
+                color: 'rgba(255,255,255,0.45)',
+                fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em',
+                cursor: 'pointer',
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -626,23 +768,41 @@ function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportun
 // COMPONENT
 // ============================================================================
 
+export type ExistingProfile = {
+  displayName: string;
+  handle: string;
+  bio: string;
+  avatarUrl: string | null;
+  bannerUrl: string | null;
+  websiteUrl: string;
+  location: string;
+  specialty: string;
+  ctaUrl: string;
+};
+
 type Props = {
   creatorName: string;
   existingSocialConnections: SocialConnection[];
   existingAnalysis: Record<string, unknown> | null;
+  existingProfile?: ExistingProfile | null;
 };
 
-export default function OnboardingWizard({ creatorName, existingSocialConnections, existingAnalysis }: Props) {
+export default function OnboardingWizard({ creatorName, existingSocialConnections, existingAnalysis, existingProfile }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [editingDrop, setEditingDrop] = useState(false);
   const [launched, setLaunched] = useState(false);
+  // null = no countdown active; number = seconds remaining
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [fanPageUrl, setFanPageUrl] = useState("");
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null);
   const [isDemoMode, setIsDemoMode] = useState(false);
-  
-  const [data, setData] = useState<OnboardingData>({
+
+  const defaultData: OnboardingData = {
+    goal: "",
     niche: "",
     subNiche: "",
     contentTypes: [],
@@ -653,10 +813,140 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
     signalAnalysis: null,
     launchBlueprint: null,
     firstDrop: null,
-  });
+  };
+
+  const [data, setData] = useState<OnboardingData>(defaultData);
+  // Guards so we don't overwrite a real draft with defaults on first render
+  const draftRestoredRef = useRef(false);
+  // Debounce timer for DB saves
+  const dbSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Builds a ProfileIdentity from server-fetched existingProfile + social fallback
+  const seedProfileIdentity = useCallback((): ProfileIdentity | null => {
+    if (!existingProfile && existingSocialConnections.length === 0) return null;
+    const ep = existingProfile;
+    const best = existingSocialConnections.length > 0
+      ? existingSocialConnections.reduce((a, b) => (a.followers || 0) > (b.followers || 0) ? a : b)
+      : null;
+    return {
+      displayName: ep?.displayName || best?.username?.replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()) || creatorName || "",
+      handle: ep?.handle || best?.username?.toLowerCase().replace(/[^a-z0-9_]/g, "") || "",
+      bio: ep?.bio || "",
+      avatarUrl: ep?.avatarUrl || null,
+      avatarPreview: null,
+      bannerUrl: ep?.bannerUrl || null,
+      bannerPreview: null,
+      website: ep?.websiteUrl || "",
+      location: ep?.location || "",
+      specialty: ep?.specialty || "",
+      ctaLabel: "",
+      cta: ep?.ctaUrl || "",
+    };
+  }, [existingProfile, existingSocialConnections, creatorName]);
+
+  // ── Serialise draft (strips non-serialisable fields) ─────────────────────
+  const serialiseDraft = useCallback((s: number, d: OnboardingData) => ({
+    step: s,
+    data: {
+      ...d,
+      socialConnections: [],          // always fresh from server
+      profileIdentity: d.profileIdentity
+        ? { ...d.profileIdentity, avatarPreview: null, bannerPreview: null }
+        : null,
+    },
+  }), []);
+
+  // ── Rehydrate from a saved draft payload ──────────────────────────────────
+  const applyDraft = useCallback((saved: { step?: number; data?: Partial<OnboardingData> }) => {
+    setStep(saved.step ?? 1);
+    setData(prev => ({
+      ...prev,
+      ...saved.data,
+      socialConnections:
+        existingSocialConnections.length > 0
+          ? existingSocialConnections
+          : (saved.data?.socialConnections ?? []),
+      profileIdentity: saved.data?.profileIdentity
+        ? { ...saved.data.profileIdentity, avatarPreview: null, bannerPreview: null }
+        : seedProfileIdentity(),
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingSocialConnections]);
+
+  // ── Clear both persistence layers ─────────────────────────────────────────
+  const clearDraft = useCallback(() => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    fetch("/api/onboarding/draft", { method: "DELETE" }).catch(() => { /* best-effort */ });
+  }, []);
+
+  // ── Restore draft on mount: DB first, localStorage fallback ───────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restore() {
+      // ── 1. Try DB ──
+      try {
+        const res = await fetch("/api/onboarding/draft");
+        if (!cancelled && res.ok) {
+          const { draft } = await res.json() as { draft: { step: number; data: Partial<OnboardingData> } | null };
+          if (draft?.data && (draft.data.goal || draft.data.niche || (draft.data.contentTypes?.length ?? 0) > 0)) {
+            applyDraft(draft);
+            draftRestoredRef.current = true;
+            return;
+          }
+        }
+      } catch { /* network error — fall through */ }
+
+      if (cancelled) return;
+
+      // ── 2. Fall back to localStorage ──
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw) as { step?: number; data?: Partial<OnboardingData> };
+          if (saved.data?.goal || saved.data?.niche || (saved.data?.contentTypes?.length ?? 0) > 0) {
+            applyDraft(saved);
+            draftRestoredRef.current = true;
+            return;
+          }
+        }
+      } catch {
+        localStorage.removeItem(DRAFT_KEY);
+      }
+
+      // ── 3. Nothing saved — seed from server profile ──
+      const seeded = seedProfileIdentity();
+      if (seeded) setData(prev => ({ ...prev, profileIdentity: seeded }));
+      draftRestoredRef.current = true;
+    }
+
+    restore();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Persist whenever step or data changes ─────────────────────────────────
+  useEffect(() => {
+    if (!draftRestoredRef.current) return;
+    if (!data.goal && !data.niche && data.contentTypes.length === 0) return;
+
+    const payload = serialiseDraft(step, data);
+
+    // localStorage — synchronous, immediate
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(payload)); } catch { /* ignore */ }
+
+    // DB — debounced 800 ms to avoid hammering on rapid state changes
+    if (dbSaveTimerRef.current) clearTimeout(dbSaveTimerRef.current);
+    dbSaveTimerRef.current = setTimeout(() => {
+      fetch("/api/onboarding/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => { /* best-effort — localStorage already covers it */ });
+    }, 800);
+  }, [step, data, serialiseDraft]);
 
   // Detect OAuth callback (e.g., ?connected=youtube)
-  // File refs for profile identity step (not stored in serializable state)
   const profileAvatarRef = useRef<HTMLInputElement>(null);
   const profileBannerRef = useRef<HTMLInputElement>(null);
   const profileAvatarFileRef = useRef<File | null>(null);
@@ -704,7 +994,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
 
   const canProceed = useCallback(() => {
     switch (step) {
-      case 1: return true;
+      case 1: return !!data.goal;
       case 2: return !!data.niche;
       case 3: return data.contentTypes.length > 0;
       case 4: return true; // Social is optional but encouraged
@@ -719,29 +1009,11 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
   const handleNext = async () => {
     setError("");
     
-    // Step 4 -> 5: Auto-build profile identity from social connections
+    // Step 4 -> 5: Ensure profile identity is seeded (from server data or social best-match)
     if (step === 4) {
       if (!data.profileIdentity) {
-        const connected = data.socialConnections.filter(s => s.connected);
-        const best = connected.length > 0
-          ? connected.reduce((a, b) => (a.followers || 0) > (b.followers || 0) ? a : b)
-          : null;
-        const nicheLabel = NICHES.find(n => n.id === data.niche)?.label || data.niche;
-        updateData("profileIdentity", {
-          displayName: best?.username
-            ? best.username.replace(/[._]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
-            : creatorName || "",
-          handle: best?.username?.toLowerCase().replace(/[^a-z0-9_]/g, "") || "",
-          bio: "",
-          avatarUrl: null,
-          avatarPreview: null,
-          bannerUrl: null,
-          bannerPreview: null,
-          website: "",
-          location: "",
-          specialty: data.subNiche || nicheLabel,
-          cta: "",
-        });
+        const seeded = seedProfileIdentity();
+        if (seeded) updateData("profileIdentity", seeded);
       }
     }
 
@@ -1004,29 +1276,50 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
       if (res.ok) {
         const result = await res.json();
         pageUrl = result.fanPageUrl || "";
+          if (result.paymentLinkUrl) setPaymentLinkUrl(result.paymentLinkUrl);
       }
       
       setFanPageUrl(pageUrl);
       setLaunched(true);
       setLoading(false);
+      // Clear both persistence layers — onboarding is complete
+      clearDraft();
       track.firstDropLaunched({
         price: data.firstDrop?.price ?? 0,
         niche: data.niche,
         hasPageUrl: !!pageUrl,
       });
+      startRedirectCountdown("/dashboard?onboarding=complete&drop=created");
       
-      // Auto-redirect after 8 seconds
-      setTimeout(() => {
-        router.push("/dashboard?onboarding=complete&drop=created");
-      }, 8000);
     } catch {
       // Still show success and navigate
       setLaunched(true);
       setLoading(false);
-      setTimeout(() => {
-        router.push("/dashboard?onboarding=complete");
-      }, 8000);
+      clearDraft();
+      startRedirectCountdown("/dashboard?onboarding=complete");
     }
+  };
+
+  // Soft redirect: 10 s countdown the user can cancel at any time
+  const startRedirectCountdown = (url: string) => {
+    setRedirectCountdown(10);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setRedirectCountdown(prev => {
+        if (prev === null) { clearInterval(countdownRef.current!); return null; }
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          router.push(url);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const cancelRedirect = () => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    setRedirectCountdown(null);
   };
 
   const handleConnectSocial = (platform: SocialPlatform) => {
@@ -1049,14 +1342,17 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
       `width=${width},height=${height},left=${left},top=${top}`
     );
     
-    // Poll for completion
+    // Poll every 2 s while the popup is open for faster connection feedback,
+    // then do a final refresh once the popup closes.
     const checkClosed = setInterval(() => {
       if (popup?.closed) {
         clearInterval(checkClosed);
-        // Refresh connections
+        fetchSocialConnections();
+      } else {
+        // Live refresh while popup is still open
         fetchSocialConnections();
       }
-    }, 1000);
+    }, 2000);
   };
 
   const fetchSocialConnections = async () => {
@@ -1081,63 +1377,105 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
   // RENDER STEPS
   // ============================================================================
 
-  const renderStep1 = () => (
-    <div style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto" }}>
-      <div style={{ 
-        fontSize: "72px", 
-        marginBottom: "28px",
-        background: "linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 100%)",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        animation: "pulse 3s ease-in-out infinite",
-      }}>
-        ✦
-      </div>
-      <h1 style={{ ...styles.headline, marginBottom: "16px", fontSize: "clamp(36px, 6vw, 56px)" }}>
-        {creatorName ? `${creatorName}, let's get you paid` : "Let's get you paid"}
-      </h1>
-      <p style={{ ...styles.subheadline, marginTop: 0, marginLeft: "auto", marginRight: "auto", marginBottom: "48px", textAlign: "center", fontSize: "16px", maxWidth: "520px" }}>
-        In 4 minutes, you&apos;ll have a launch-ready offer, a 7-day plan, and your first drop live. 
-        No guessing. No templates. Built from your actual audience.
-      </p>
-      
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(3, 1fr)", 
-        gap: "20px", 
-        marginBottom: "48px",
-        padding: "28px 32px",
-        background: "linear-gradient(135deg, rgba(200,169,110,0.06) 0%, rgba(200,169,110,0.02) 100%)",
-        borderRadius: "14px",
-        border: "1px solid rgba(200,169,110,0.15)",
-      }}>
-        {[
-          { num: "01", label: "Define your edge", time: "1 min" },
-          { num: "02", label: "Unlock your signals", time: "2 min" },
-          { num: "03", label: "Launch first drop", time: "1 min" },
-        ].map(item => (
-          <div key={item.num}>
-            <div style={{ 
-              fontFamily: "var(--font-mono)", 
-              fontSize: "11px", 
-              color: "var(--gold)", 
-              marginBottom: "8px",
-              letterSpacing: "0.15em",
-              fontWeight: 500,
-            }}>
-              {item.num}
-            </div>
-            <div style={{ fontSize: "15px", color: "rgba(255,255,255,0.85)", fontWeight: 500, marginBottom: "4px" }}>
-              {item.label}
-            </div>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-mono)" }}>
-              {item.time}
-            </div>
+  const renderStep1 = () => {
+    const GOALS = [
+      { id: "first_revenue",   icon: "◆", label: "Make my first $1K/mo",    sub: "I want proof the model works" },
+      { id: "replace_income",  icon: "✦", label: "Replace my day job",       sub: "Building toward full-time creator income" },
+      { id: "build_community", icon: "◎", label: "Build a loyal community",  sub: "Depth over scale — real fans, real access" },
+      { id: "test_market",     icon: "◇", label: "Test if my audience pays", sub: "I'm not sure yet — I want to find out" },
+    ];
+
+    return (
+      <div>
+        <div style={styles.stepBadge}>
+          <span style={{ width: "20px", height: "1px", background: "var(--gold-dim)" }} />
+          Step 1 of {totalSteps}
+        </div>
+        <h1 style={styles.headline}>
+          {creatorName ? `${creatorName}, what's the goal?` : "What's the goal?"}
+        </h1>
+        <p style={styles.subheadline}>
+          This shapes everything — your pricing, your offer, your 7-day plan.
+          Pick the outcome that matters most right now.
+        </p>
+
+        <div style={{ display: "grid", gap: "12px" }}>
+          {GOALS.map(g => {
+            const selected = data.goal === g.id;
+            return (
+              <div
+                key={g.id}
+                onClick={() => updateData("goal", g.id)}
+                style={{
+                  ...styles.card,
+                  ...(selected ? styles.cardSelected : {}),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  padding: "20px 24px",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{
+                  fontSize: "22px",
+                  width: "36px",
+                  flexShrink: 0,
+                  color: selected ? "var(--gold)" : "rgba(255,255,255,0.25)",
+                  transition: "color 0.2s",
+                  textAlign: "center",
+                }}>
+                  {g.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: "15px",
+                    fontWeight: 500,
+                    color: selected ? "var(--gold)" : "rgba(255,255,255,0.9)",
+                    marginBottom: "3px",
+                    transition: "color 0.2s",
+                  }}>
+                    {g.label}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
+                    {g.sub}
+                  </div>
+                </div>
+                <div style={{
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  border: `2px solid ${selected ? "var(--gold)" : "rgba(255,255,255,0.12)"}`,
+                  background: selected ? "var(--gold)" : "transparent",
+                  flexShrink: 0,
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  {selected && <span style={{ color: "#0a0800", fontSize: "10px", fontWeight: 700 }}>✓</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {data.goal && (
+          <div style={{
+            marginTop: "20px",
+            padding: "12px 16px",
+            background: "rgba(200,169,110,0.06)",
+            border: "1px solid rgba(200,169,110,0.15)",
+            borderRadius: "8px",
+            fontSize: "12px",
+            color: "rgba(255,255,255,0.55)",
+            lineHeight: 1.6,
+          }}>
+            ✦ We&apos;ll calibrate your pricing, blueprint, and first drop specifically for this goal.
           </div>
-        ))}
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStep2 = () => (
     <div>
@@ -1467,6 +1805,84 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
 
     const hasAvatar = !!(pi.avatarPreview || pi.avatarUrl);
     const hasBanner = !!(pi.bannerPreview || pi.bannerUrl);
+    const avatarSrc = pi.avatarPreview || pi.avatarUrl;
+    const bannerSrc = pi.bannerPreview || pi.bannerUrl;
+
+    const preview = (
+      <div style={{
+        background: "#0f0f1e",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: "14px",
+        overflow: "hidden",
+        width: "100%",
+      }}>
+        {/* Banner */}
+        <div style={{
+          height: "100px",
+          background: bannerSrc ? "transparent" : "linear-gradient(135deg, rgba(200,169,110,0.12), rgba(200,169,110,0.03))",
+          position: "relative", overflow: "hidden",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {bannerSrc
+            ? <img src={bannerSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <span style={{ color: "rgba(200,169,110,0.2)", fontSize: "22px" }}>✦</span>
+          }
+        </div>
+        {/* Identity */}
+        <div style={{ padding: "0 16px 16px" }}>
+          <div style={{ marginTop: "-24px", marginBottom: "10px" }}>
+            <div style={{
+              width: "52px", height: "52px", borderRadius: "50%",
+              border: "3px solid #0f0f1e", background: "#1a1a30",
+              overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {avatarSrc
+                ? <img src={avatarSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: "20px", opacity: 0.35 }}>👤</span>
+              }
+            </div>
+          </div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "17px", color: "var(--gold)", lineHeight: 1.1, marginBottom: "2px" }}>
+            {pi.displayName || "Display Name"}
+          </div>
+          {pi.handle && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>
+              @{pi.handle}
+            </div>
+          )}
+          {pi.specialty && (
+            <div style={{
+              display: "inline-flex",
+              background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.18)",
+              borderRadius: "3px", padding: "2px 8px",
+              fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.15em",
+              color: "var(--gold-dim)", textTransform: "uppercase" as const, marginBottom: "8px",
+            }}>
+              {pi.specialty}
+            </div>
+          )}
+          {pi.bio && (
+            <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", lineHeight: 1.5, marginBottom: "10px" }}>
+              {pi.bio}
+            </div>
+          )}
+          {pi.location && (
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "rgba(255,255,255,0.28)", marginBottom: "8px" }}>
+              📍 {pi.location}
+            </div>
+          )}
+          {(pi.ctaLabel || pi.cta) && (
+            <div style={{
+              padding: "8px 14px", background: "var(--gold)", borderRadius: "4px",
+              textAlign: "center" as const, fontFamily: "var(--font-mono)",
+              fontSize: "10px", letterSpacing: "0.14em", color: "#0a0800", fontWeight: 500,
+            }}>
+              {pi.ctaLabel || "Visit Website"}
+            </div>
+          )}
+        </div>
+      </div>
+    );
 
     return (
       <div>
@@ -1477,16 +1893,15 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         <h1 style={styles.headline}>Build your public identity</h1>
         <p style={styles.subheadline}>
           This is your profile — what fans see before they pay.
-          {best ? " We pre-filled from your social account. Edit anything." : " Fill in your public details below."}
+          {best ? " Pre-filled from your social account. Edit anything." : " Fill in your public details below."}
         </p>
 
-        {/* Social import badge */}
         {best && (
           <div style={{
             display: "flex", alignItems: "center", gap: "10px",
             padding: "10px 14px",
             background: "rgba(80,212,138,0.06)", border: "1px solid rgba(80,212,138,0.2)",
-            borderRadius: "8px", marginBottom: "24px",
+            borderRadius: "8px", marginBottom: "20px",
           }}>
             <span style={{ color: "var(--green)", fontSize: "14px" }}>✓</span>
             <div>
@@ -1494,199 +1909,181 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
                 AUTO-FILLED FROM @{best.username?.toUpperCase()} · {best.platform.toUpperCase()}
               </span>
               <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", marginTop: "2px" }}>
-                Review and edit everything below — you're in full control.
+                Review and edit below — you&apos;re in full control.
               </div>
             </div>
           </div>
         )}
 
-        {/* Banner */}
-        <div style={{ position: "relative", marginBottom: "8px" }}>
-          <div style={{
-            height: "150px", borderRadius: "10px",
-            background: hasBanner ? "transparent" : "linear-gradient(135deg, rgba(200,169,110,0.06), rgba(200,169,110,0.02))",
-            border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            position: "relative",
-          }}>
-            {hasBanner ? (
-              <img
-                src={pi.bannerPreview || pi.bannerUrl!}
-                alt="Banner"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "20px", marginBottom: "6px", opacity: 0.3 }}>✦</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "rgba(255,255,255,0.22)", letterSpacing: "0.15em" }}>
-                  BANNER IMAGE (OPTIONAL)
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "32px", alignItems: "start" }}>
+          {/* ── Left: form ── */}
+          <div>
+            {/* Banner */}
+            <div style={{ position: "relative", marginBottom: "8px" }}>
+              <div style={{
+                height: "140px", borderRadius: "10px",
+                background: hasBanner ? "transparent" : "linear-gradient(135deg, rgba(200,169,110,0.06), rgba(200,169,110,0.02))",
+                border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden",
+                display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
+              }}>
+                {hasBanner
+                  ? <img src={bannerSrc!} alt="Banner" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "20px", marginBottom: "6px", opacity: 0.3 }}>✦</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "rgba(255,255,255,0.22)", letterSpacing: "0.15em" }}>BANNER (OPTIONAL)</div>
+                    </div>
+                }
+                <div style={{ position: "absolute", bottom: "10px", right: "10px", display: "flex", gap: "8px" }}>
+                  <button onClick={() => profileBannerRef.current?.click()} style={{
+                    padding: "6px 12px", background: "rgba(0,0,0,0.72)",
+                    border: "1px solid rgba(255,255,255,0.18)", borderRadius: "5px",
+                    color: "rgba(255,255,255,0.85)", fontFamily: "var(--font-mono)",
+                    fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer",
+                  }}>
+                    {hasBanner ? "CHANGE" : "ADD BANNER"}
+                  </button>
+                  {hasBanner && (
+                    <button onClick={() => { profileBannerFileRef.current = null; updatePi({ bannerPreview: null, bannerUrl: null }); }} style={{
+                      padding: "6px 12px", background: "rgba(224,85,85,0.12)",
+                      border: "1px solid rgba(224,85,85,0.28)", borderRadius: "5px",
+                      color: "#e05555", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer",
+                    }}>REMOVE</button>
+                  )}
                 </div>
               </div>
-            )}
-            <div style={{ position: "absolute", bottom: "10px", right: "10px", display: "flex", gap: "8px" }}>
-              <button
-                onClick={() => profileBannerRef.current?.click()}
-                style={{
-                  padding: "6px 12px", background: "rgba(0,0,0,0.72)",
-                  border: "1px solid rgba(255,255,255,0.18)", borderRadius: "5px",
-                  color: "rgba(255,255,255,0.85)", fontFamily: "var(--font-mono)",
-                  fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer",
-                }}
-              >
-                {hasBanner ? "CHANGE" : "ADD BANNER"}
-              </button>
-              {hasBanner && (
-                <button
-                  onClick={() => { profileBannerFileRef.current = null; updatePi({ bannerPreview: null, bannerUrl: null }); }}
-                  style={{
-                    padding: "6px 12px", background: "rgba(224,85,85,0.12)",
-                    border: "1px solid rgba(224,85,85,0.28)", borderRadius: "5px",
-                    color: "#e05555", fontFamily: "var(--font-mono)",
-                    fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer",
-                  }}
-                >
-                  REMOVE
-                </button>
-              )}
+              <input ref={profileBannerRef} type="file" accept="image/*" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) { profileBannerFileRef.current = file; updatePi({ bannerPreview: URL.createObjectURL(file) }); }
+              }} style={{ display: "none" }} />
             </div>
-          </div>
-          <input
-            ref={profileBannerRef} type="file" accept="image/*"
-            onChange={e => {
-              const file = e.target.files?.[0];
-              if (file) { profileBannerFileRef.current = file; updatePi({ bannerPreview: URL.createObjectURL(file) }); }
-            }}
-            style={{ display: "none" }}
-          />
-        </div>
 
-        {/* Avatar row — overlaps banner */}
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", marginBottom: "24px", marginTop: "-28px", paddingLeft: "16px" }}>
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <div style={{
-              width: "72px", height: "72px", borderRadius: "50%",
-              border: "3px solid #09090f", background: "#111120",
-              overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              {hasAvatar ? (
-                <img src={pi.avatarPreview || pi.avatarUrl!} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <span style={{ fontSize: "26px", opacity: 0.4 }}>👤</span>
+            {/* Avatar row */}
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", marginBottom: "20px", marginTop: "-28px", paddingLeft: "16px" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <div style={{
+                  width: "72px", height: "72px", borderRadius: "50%",
+                  border: "3px solid #09090f", background: "#111120",
+                  overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {hasAvatar
+                    ? <img src={avatarSrc!} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: "26px", opacity: 0.4 }}>👤</span>
+                  }
+                </div>
+                <button onClick={() => profileAvatarRef.current?.click()} style={{
+                  position: "absolute", bottom: "-2px", right: "-2px",
+                  width: "22px", height: "22px", borderRadius: "50%",
+                  background: "var(--gold)", border: "2px solid #09090f",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px",
+                }}>📷</button>
+              </div>
+              {hasAvatar && (
+                <button onClick={() => { profileAvatarFileRef.current = null; updatePi({ avatarPreview: null, avatarUrl: null }); }} style={{
+                  padding: "4px 10px", background: "transparent",
+                  border: "1px solid rgba(224,85,85,0.3)", borderRadius: "4px",
+                  color: "#e05555", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer", marginBottom: "4px",
+                }}>REMOVE PHOTO</button>
               )}
+              <input ref={profileAvatarRef} type="file" accept="image/*" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) { profileAvatarFileRef.current = file; updatePi({ avatarPreview: URL.createObjectURL(file) }); }
+              }} style={{ display: "none" }} />
             </div>
-            <button
-              onClick={() => profileAvatarRef.current?.click()}
-              style={{
-                position: "absolute", bottom: "-2px", right: "-2px",
-                width: "22px", height: "22px", borderRadius: "50%",
-                background: "var(--gold)", border: "2px solid #09090f",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "11px",
-              }}
-            >📷</button>
-          </div>
-          {hasAvatar && (
-            <button
-              onClick={() => { profileAvatarFileRef.current = null; updatePi({ avatarPreview: null, avatarUrl: null }); }}
-              style={{
-                padding: "4px 10px", background: "transparent",
-                border: "1px solid rgba(224,85,85,0.3)", borderRadius: "4px",
-                color: "#e05555", fontFamily: "var(--font-mono)",
-                fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer", marginBottom: "4px",
-              }}
-            >
-              REMOVE PHOTO
-            </button>
-          )}
-          <input
-            ref={profileAvatarRef} type="file" accept="image/*"
-            onChange={e => {
-              const file = e.target.files?.[0];
-              if (file) { profileAvatarFileRef.current = file; updatePi({ avatarPreview: URL.createObjectURL(file) }); }
-            }}
-            style={{ display: "none" }}
-          />
-        </div>
 
-        {/* Form fields */}
-        <div style={{ display: "grid", gap: "14px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            <div>
-              <label style={styles.label}>DISPLAY NAME *</label>
-              <input
-                type="text"
-                value={pi.displayName}
-                onChange={e => updatePi({ displayName: e.target.value })}
-                placeholder="Your public name"
-                style={styles.input}
-              />
-            </div>
-            <div>
-              <label style={styles.label}>HANDLE</label>
-              <div style={{ position: "relative" }}>
-                <span style={{
-                  position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)",
-                  color: "rgba(255,255,255,0.28)", fontFamily: "var(--font-mono)", fontSize: "14px",
-                }}>@</span>
-                <input
-                  type="text"
-                  value={pi.handle}
-                  onChange={e => updatePi({ handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })}
-                  placeholder="yourhandle"
-                  style={{ ...styles.input, paddingLeft: "26px" }}
-                />
+            {/* Form fields */}
+            <div style={{ display: "grid", gap: "14px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={styles.label}>DISPLAY NAME *</label>
+                  <input type="text" value={pi.displayName}
+                    onChange={e => updatePi({ displayName: e.target.value })}
+                    placeholder="Your public name" style={styles.input} />
+                </div>
+                <div>
+                  <label style={styles.label}>HANDLE</label>
+                  <div style={{ position: "relative" }}>
+                    <span style={{
+                      position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)",
+                      color: "rgba(255,255,255,0.28)", fontFamily: "var(--font-mono)", fontSize: "14px",
+                    }}>@</span>
+                    <input type="text" value={pi.handle}
+                      onChange={e => updatePi({ handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })}
+                      placeholder="yourhandle" style={{ ...styles.input, paddingLeft: "26px" }} />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.label}>BIO</label>
+                <textarea value={pi.bio}
+                  onChange={e => updatePi({ bio: e.target.value.slice(0, 200) })}
+                  placeholder={`${NICHES.find(n => n.id === data.niche)?.label || "Creator"} sharing exclusive content you won't find anywhere else.`}
+                  rows={3} style={{ ...styles.input, resize: "vertical" as const, minHeight: "76px" }} />
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--dim)", marginTop: "4px", textAlign: "right" as const }}>
+                  {pi.bio.length}/200
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={styles.label}>MAIN SPECIALTY</label>
+                  <input type="text" value={pi.specialty}
+                    onChange={e => updatePi({ specialty: e.target.value })}
+                    placeholder="e.g. Streetwear Styling" style={styles.input} />
+                </div>
+                <div>
+                  <label style={styles.label}>LOCATION (OPTIONAL)</label>
+                  <input type="text" value={pi.location}
+                    onChange={e => updatePi({ location: e.target.value })}
+                    placeholder="Dubai, UAE" style={styles.input} />
+                </div>
+              </div>
+
+              <div>
+                <label style={styles.label}>WEBSITE / EXTRA LINK</label>
+                <input type="url" value={pi.website}
+                  onChange={e => updatePi({ website: e.target.value })}
+                  placeholder="https://yourwebsite.com" style={styles.input} />
+              </div>
+
+              <div style={{
+                padding: "16px 18px",
+                background: "rgba(200,169,110,0.04)",
+                border: "1px solid rgba(200,169,110,0.12)",
+                borderRadius: "8px", display: "grid", gap: "12px",
+              }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.15em", color: "var(--gold-dim)" }}>
+                  PRIMARY CTA BUTTON
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "12px" }}>
+                  <div>
+                    <label style={styles.label}>BUTTON LABEL</label>
+                    <input type="text" value={pi.ctaLabel}
+                      onChange={e => updatePi({ ctaLabel: e.target.value })}
+                      placeholder="Book a Call" style={styles.input} />
+                  </div>
+                  <div>
+                    <label style={styles.label}>URL</label>
+                    <input type="url" value={pi.cta}
+                      onChange={e => updatePi({ cta: e.target.value })}
+                      placeholder="https://yourwebsite.com" style={styles.input} />
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--dim)" }}>
+                  Shown as a button on your fan page. Leave blank to hide.
+                </div>
               </div>
             </div>
           </div>
 
-          <div>
-            <label style={styles.label}>BIO</label>
-            <textarea
-              value={pi.bio}
-              onChange={e => updatePi({ bio: e.target.value.slice(0, 200) })}
-              placeholder={`${NICHES.find(n => n.id === data.niche)?.label || "Creator"} sharing exclusive content you won't find anywhere else.`}
-              rows={3}
-              style={{ ...styles.input, resize: "vertical" as const, minHeight: "76px" }}
-            />
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--dim)", marginTop: "4px", textAlign: "right" as const }}>
-              {pi.bio.length}/200
+          {/* ── Right: live preview ── */}
+          <div style={{ position: "sticky", top: "32px" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.22)", marginBottom: "12px" }}>
+              LIVE PREVIEW
             </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            <div>
-              <label style={styles.label}>MAIN SPECIALTY</label>
-              <input
-                type="text"
-                value={pi.specialty}
-                onChange={e => updatePi({ specialty: e.target.value })}
-                placeholder="e.g. Streetwear Styling"
-                style={styles.input}
-              />
-            </div>
-            <div>
-              <label style={styles.label}>LOCATION (OPTIONAL)</label>
-              <input
-                type="text"
-                value={pi.location}
-                onChange={e => updatePi({ location: e.target.value })}
-                placeholder="Dubai, UAE"
-                style={styles.input}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label style={styles.label}>PRIMARY LINK / CTA</label>
-            <input
-              type="url"
-              value={pi.cta}
-              onChange={e => updatePi({ cta: e.target.value })}
-              placeholder="https://yourwebsite.com"
-              style={styles.input}
-            />
-            <div style={{ fontSize: "11px", color: "var(--dim)", marginTop: "4px" }}>
-              Shown on your fan page as a link button. Your Cipher profile URL is added separately.
+            {preview}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "rgba(255,255,255,0.18)", marginTop: "8px", textAlign: "center" as const }}>
+              Updates as you type
             </div>
           </div>
         </div>
@@ -1965,6 +2362,113 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
             </div>
           </div>
         </div>
+
+          {/* ── Action buttons ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "28px" }}>
+            {paymentLinkUrl ? (
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "12px 16px",
+                background: "rgba(80,212,138,0.06)",
+                border: "1px solid rgba(80,212,138,0.2)",
+                borderRadius: "8px",
+              }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "#50d48a", letterSpacing: "0.12em", flex: 1 }}>
+                  ✓ PAY PAGE READY — {typeof window !== "undefined" ? window.location.origin : ""}{paymentLinkUrl}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText((typeof window !== "undefined" ? window.location.origin : "") + paymentLinkUrl)}
+                  style={{
+                    padding: "7px 14px",
+                    background: "rgba(80,212,138,0.12)",
+                    border: "1px solid rgba(80,212,138,0.25)",
+                    borderRadius: "5px",
+                    color: "#50d48a",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "10px",
+                    letterSpacing: "0.14em",
+                    cursor: "pointer",
+                  }}
+                >
+                  COPY
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!data.firstDrop || !data.launchBlueprint) return;
+                  setLoading(true);
+                  try {
+                    const res = await fetch("/api/offers", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        title: data.firstDrop.title,
+                        description: data.firstDrop.description,
+                        price: Math.round(data.firstDrop.price * 100),
+                        billing_type: "one_time",
+                        offer_type: "premium_content",
+                        launch_angle: data.launchBlueprint.offerDescription,
+                      }),
+                    });
+                    
+                    if (!res.ok) {
+                      console.error("Offer creation failed:", res.status);
+                      throw new Error("Failed to create offer");
+                    }
+
+                    const offerData = await res.json();
+                    if (!offerData.offer?.id) {
+                      console.error("Offer response missing ID");
+                      throw new Error("Invalid offer response");
+                    }
+
+                    const launchRes = await fetch(`/api/offers/${offerData.offer.id}/launch`, { method: "POST" });
+                    
+                    if (!launchRes.ok) {
+                      console.error("Launch failed:", launchRes.status);
+                      throw new Error("Failed to launch offer");
+                    }
+
+                    const launchData = await launchRes.json();
+                    if (!launchData.pay_url) {
+                      console.error("Launch response missing pay_url");
+                      throw new Error("Invalid launch response");
+                    }
+
+                    setPaymentLinkUrl(launchData.pay_url);
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    console.error("Onboarding error:", message);
+                    setError(message || "Failed to complete onboarding");
+                    setLoading(false);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  padding: "14px",
+                  background: "var(--gold, #c8a96e)",
+                  border: "none",
+                  borderRadius: "8px",
+                  color: "#120c00",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "12px",
+                  letterSpacing: "0.18em",
+                  fontWeight: 600,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? "GENERATING LINK…" : "CREATE OFFER + GENERATE PAY LINK"}
+              </button>
+            )}
+          </div>
       </div>
     );
   };
@@ -1992,7 +2496,13 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         strongestPlatform={strongestPlatform}
         dmOpportunities={dmOpportunities}
         fanPageUrl={fanPageUrl}
-        onDashboard={() => router.push("/dashboard?onboarding=complete&drop=created")}
+        paymentLinkUrl={paymentLinkUrl}
+        redirectCountdown={redirectCountdown}
+        onDashboard={() => {
+          cancelRedirect();
+          router.push("/dashboard?onboarding=complete&drop=created");
+        }}
+        onCancelRedirect={cancelRedirect}
       />;
     }
     

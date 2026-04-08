@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div style={{
+    <div role="status" aria-live="polite" aria-busy="true" aria-label="Loading content" style={{
       minHeight: "100vh",
       background: "#020203",
       display: "flex",
@@ -9,13 +9,13 @@ export default function Loading() {
       justifyContent: "center",
       gap: "24px",
     }}>
-      <div style={{
+      <div aria-hidden="true" style={{
         width: "48px",
         height: "48px",
         border: "2px solid rgba(200,169,110,0.1)",
         borderTopColor: "#c8a96e",
         borderRadius: "50%",
-        animation: "spin 1s linear infinite",
+        animation: "spinLoadingAnimation 1s linear infinite",
       }} />
       
       <div style={{
@@ -28,8 +28,22 @@ export default function Loading() {
         Loading CIPHER
       </div>
 
+      <span style={{
+        border: 0,
+        clip: "rect(0 0 0 0)",
+        height: "1px",
+        margin: "-1px",
+        overflow: "hidden",
+        padding: 0,
+        position: "absolute",
+        width: "1px",
+        whiteSpace: "nowrap",
+      }}>
+        Loading CIPHER
+      </span>
+
       <style>{`
-        @keyframes spin {
+        @keyframes spinLoadingAnimation {
           to { transform: rotate(360deg); }
         }
       `}</style>

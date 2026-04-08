@@ -206,12 +206,14 @@ Make actions specific, urgent, and conversion-focused. No generic advice.`;
       blueprint = buildFallbackBlueprint(body);
     }
 
-    // Save to onboarding record
-    await supabase.from("creator_onboarding").upsert({
+    // Save to onboarding record (fire-and-forget — not used for gating)
+    supabase.from("creator_onboarding").upsert({
       user_id: user.id,
       launch_blueprint: blueprint,
       updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+    }, { onConflict: "user_id" }).then(({ error }) => {
+      if (error) console.error("creator_onboarding blueprint snapshot failed (non-fatal):", error);
+    });
 
     return NextResponse.json({ success: true, blueprint });
   } catch (error) {
