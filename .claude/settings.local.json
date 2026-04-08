@@ -13,7 +13,10 @@
       "mcp__ide__getDiagnostics",
       "Skill(update-config)",
       "Bash(grep -E '\\\\.\\(tsx?|css|json\\)$')",
-      "mcp__claude_ai_Supabase__execute_sql"
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__9623dff3-3ede-4cd1-8782-08ea293f9533__list_projects",
+      "mcp__9623dff3-3ede-4cd1-8782-08ea293f9533__list_tables",
+      "mcp__9623dff3-3ede-4cd1-8782-08ea293f9533__list_migrations"
     ]
   }
 }
