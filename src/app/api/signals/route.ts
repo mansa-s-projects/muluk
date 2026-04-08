@@ -19,7 +19,8 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const nicheParam = searchParams.get("niche");
-    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
+    const parsedLimit = parseInt(searchParams.get("limit") ?? "20", 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(parsedLimit, 50)) : 20;
     const source = searchParams.get("source"); // optional filter
 
     // Resolve niches: explicit param > creator preferences > creator_applications niche
@@ -83,7 +84,7 @@ export async function GET(req: Request) {
 
     // Load creator's engagement for these signals
     const signalIds = (signals ?? []).map((s) => s.id);
-    let engagementMap: Record<string, string[]> = {};
+    const engagementMap: Record<string, string[]> = {};
 
     if (signalIds.length > 0) {
       const { data: engagement } = await supabase
@@ -105,11 +106,18 @@ export async function GET(req: Request) {
       userActions: engagementMap[s.id] ?? [],
     }));
 
-    return NextResponse.json({
-      signals: enriched,
-      niches,
-      total: enriched.length,
-    });
+    return NextResponse.json(
+      {
+        signals: enriched,
+        niches,
+        total: enriched.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=30",
+        },
+      }
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ error: msg }, { status: 500 });

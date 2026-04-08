@@ -95,6 +95,23 @@ export async function POST(req: Request) {
 
   // ── payment.completed ─────────────────────────────────────────────────────
   if (eventType === "payment.completed") {
+    // Route by metadata priority: vault → commission → tip → fan_code
+    const paymentMeta = (data.metadata as Record<string, unknown>) ?? {};
+    if (paymentMeta.booking_id && paymentMeta.booking_payment === "true") {
+      return handleBookingPaymentCompleted(supabase, data, paymentMeta);
+    }
+    if (paymentMeta.vault_purchase_id) {
+      return handleVaultPurchaseCompleted(supabase, data);
+    }
+    if (paymentMeta.commission_id && paymentMeta.commission_payment === "true") {
+      return handleCommissionPaymentCompleted(supabase, data, paymentMeta);
+    }
+    if (paymentMeta.tip_id && paymentMeta.tip_payment === "true") {
+      return handleTipPaymentCompleted(supabase, data, paymentMeta);
+    }
+    if (paymentMeta.series_purchase_id && paymentMeta.series_payment === "true") {
+      return handleSeriesPurchaseCompleted(supabase, data, paymentMeta);
+    }
     return handlePaymentCompleted(supabase, data);
   }
 
@@ -558,4 +575,252 @@ async function handleMembershipValid(data: Record<string, unknown>) {
 
   console.info(`[whop-webhook] membership.went_valid — offer=${offerId} user=${userId} unlocked`);
   return NextResponse.json({ received: true, action: "offer_unlocked", offer_id: offerId });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Vault purchase — payment confirmed by Whop
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleVaultPurchaseCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>
+) {
+  const whopPaymentId   = String(data.id ?? "");
+  const metadata        = (data.metadata as Record<string, unknown>) ?? {};
+  const vaultPurchaseId = String(metadata.vault_purchase_id ?? "");
+  const amountCents     = Number(data.amount ?? data.amount_cents ?? 0);
+
+  if (!whopPaymentId || !vaultPurchaseId) {
+    return NextResponse.json({ error: "Missing vault payment data" }, { status: 400 });
+  }
+
+  // Idempotency: fetch existing purchase
+  const { data: purchase } = await supabase
+    .from("vault_purchases")
+    .select("id, status, vault_item_id")
+    .eq("id", vaultPurchaseId)
+    .maybeSingle();
+
+  if (!purchase) {
+    return NextResponse.json({ received: true, action: "vault_purchase_not_found" });
+  }
+  if (purchase.status === "paid") {
+    return NextResponse.json({ received: true, action: "vault_duplicate_skipped" });
+  }
+
+  // Mark as paid
+  await supabase
+    .from("vault_purchases")
+    .update({
+      status:          "paid",
+      whop_payment_id: whopPaymentId,
+      paid_at:         new Date().toISOString(),
+      ...(amountCents > 0 ? { amount_cents: amountCents } : {}),
+    })
+    .eq("id", vaultPurchaseId);
+
+  // Increment purchase_count on the vault item
+  if (purchase.vault_item_id) {
+    await supabase.rpc("increment_vault_purchase_count", {
+      item_id: purchase.vault_item_id,
+    });
+  }
+
+  console.info(
+    `[whop-webhook] vault purchase confirmed — purchase=${vaultPurchaseId} payment=${whopPaymentId}`
+  );
+  return NextResponse.json({ received: true, action: "vault_purchase_confirmed" });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Commission payment — mark commission as paid
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleCommissionPaymentCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>
+) {
+  const whopPaymentId  = String(data.id ?? "");
+  const commissionId   = String(metadata.commission_id ?? "");
+
+  if (!whopPaymentId || !commissionId) {
+    return NextResponse.json({ error: "Missing commission payment data" }, { status: 400 });
+  }
+
+  // Idempotency
+  const { data: existing } = await supabase
+    .from("commissions")
+    .select("id, status")
+    .eq("id", commissionId)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ received: true, action: "commission_not_found" });
+  }
+  if (existing.status === "paid" || existing.status === "delivered") {
+    return NextResponse.json({ received: true, action: "commission_duplicate_skipped" });
+  }
+
+  await supabase
+    .from("commissions")
+    .update({
+      status:          "paid",
+      whop_payment_id: whopPaymentId,
+      paid_at:         new Date().toISOString(),
+    })
+    .eq("id", commissionId);
+
+  console.info(
+    `[whop-webhook] commission paid — id=${commissionId} payment=${whopPaymentId}`
+  );
+  return NextResponse.json({ received: true, action: "commission_payment_confirmed" });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tip payment — mark tip as paid so it appears on the Wall of Love
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleTipPaymentCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>
+) {
+  const whopPaymentId = String(data.id ?? "");
+  const tipId         = String(metadata.tip_id ?? "");
+
+  if (!whopPaymentId || !tipId) {
+    return NextResponse.json({ error: "Missing tip payment data" }, { status: 400 });
+  }
+
+  // Idempotency
+  const { data: existing } = await supabase
+    .from("tips")
+    .select("id, status")
+    .eq("id", tipId)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ received: true, action: "tip_not_found" });
+  }
+  if (existing.status === "paid") {
+    return NextResponse.json({ received: true, action: "tip_duplicate_skipped" });
+  }
+
+  await supabase
+    .from("tips")
+    .update({
+      status:          "paid",
+      whop_payment_id: whopPaymentId,
+      paid_at:         new Date().toISOString(),
+    })
+    .eq("id", tipId);
+
+  console.info(
+    `[whop-webhook] tip paid — id=${tipId} payment=${whopPaymentId}`
+  );
+  return NextResponse.json({ received: true, action: "tip_payment_confirmed" });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Booking payment — mark booking as confirmed and lock availability slot
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleBookingPaymentCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>
+) {
+  const whopPaymentId = String(data.id ?? "");
+  const bookingId = String(metadata.booking_id ?? "");
+
+  if (!whopPaymentId || !bookingId) {
+    return NextResponse.json({ error: "Missing booking payment data" }, { status: 400 });
+  }
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, status, availability_id")
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (!booking) {
+    return NextResponse.json({ received: true, action: "booking_not_found" });
+  }
+
+  if (booking.status === "confirmed" || booking.status === "completed") {
+    return NextResponse.json({ received: true, action: "booking_duplicate_skipped" });
+  }
+
+  const { data: slot } = await supabase
+    .from("availability")
+    .select("meeting_link")
+    .eq("id", booking.availability_id)
+    .maybeSingle();
+
+  const { error: updateErr } = await supabase
+    .from("bookings")
+    .update({
+      status: "confirmed",
+      whop_payment_id: whopPaymentId,
+      paid_at: new Date().toISOString(),
+      meeting_link: slot?.meeting_link ?? null,
+    })
+    .eq("id", bookingId);
+
+  if (updateErr) {
+    console.error("[whop-webhook] booking update failed", updateErr);
+    return NextResponse.json({ error: "Failed to confirm booking" }, { status: 500 });
+  }
+
+  await supabase
+    .from("availability")
+    .update({ is_booked: true })
+    .eq("id", booking.availability_id);
+
+  return NextResponse.json({ received: true, action: "booking_payment_confirmed" });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Series purchase — mark series_purchases row as paid so fan can read content
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleSeriesPurchaseCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>
+) {
+  const whopPaymentId  = String(data.id ?? "");
+  const purchaseId     = String(metadata.series_purchase_id ?? "");
+
+  if (!whopPaymentId || !purchaseId) {
+    return NextResponse.json({ error: "Missing series payment data" }, { status: 400 });
+  }
+
+  // Idempotency — skip if already paid
+  const { data: existing } = await supabase
+    .from("series_purchases")
+    .select("id, status")
+    .eq("id", purchaseId)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ received: true, action: "series_purchase_not_found" });
+  }
+  if (existing.status === "paid") {
+    return NextResponse.json({ received: true, action: "series_purchase_duplicate_skipped" });
+  }
+
+  await supabase
+    .from("series_purchases")
+    .update({
+      status:          "paid",
+      whop_payment_id: whopPaymentId,
+      paid_at:         new Date().toISOString(),
+    })
+    .eq("id", purchaseId);
+
+  console.info(
+    `[whop-webhook] series purchase paid — id=${purchaseId} payment=${whopPaymentId}`
+  );
+  return NextResponse.json({ received: true, action: "series_purchase_confirmed" });
 }

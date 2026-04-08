@@ -24,6 +24,7 @@ type ContentItem = {
   price: number;
   currency: string;
   whop_checkout_url: string | null;
+  whop_product_id: string | null;
   preview_url: string | null;
   file_url: string | null;
   created_at: string;
@@ -120,6 +121,7 @@ export default function FanPageClient({
   const [verifiedCode, setVerifiedCode] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(lowestItem?.id ?? null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(lowestItem?.whop_checkout_url ?? null);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -143,8 +145,28 @@ export default function FanPageClient({
   }, [initialPaymentSuccess, initialCode]);
 
   useEffect(() => {
-    setPaymentUrl(lowestItem?.whop_checkout_url ?? null);
-  }, [lowestItem]);
+    if (!contentItems.length) {
+      setSelectedContentId(null);
+      setPaymentUrl(null);
+      return;
+    }
+
+    setSelectedContentId((prev) => {
+      if (prev && contentItems.some((item) => item.id === prev)) {
+        return prev;
+      }
+      return lowestItem?.id ?? contentItems[0]?.id ?? null;
+    });
+  }, [contentItems, lowestItem]);
+
+  const selectedItem = useMemo(() => {
+    if (!selectedContentId) return lowestItem;
+    return contentItems.find((item) => item.id === selectedContentId) ?? lowestItem;
+  }, [contentItems, lowestItem, selectedContentId]);
+
+  useEffect(() => {
+    setPaymentUrl(selectedItem?.whop_checkout_url ?? null);
+  }, [selectedItem]);
 
   const verifyCode = async (rawCode: string, source: "phantom" | "hero") => {
     const code = rawCode.trim().toUpperCase();
@@ -193,28 +215,37 @@ export default function FanPageClient({
     }
   };
 
-  const loadPaymentInit = async () => {
+  const loadPaymentInit = async (contentId: string | null) => {
+    if (!contentId) {
+      setPaymentUrl(null);
+      return;
+    }
+
     setPaymentLoading(true);
     try {
-      const res = await fetch("/api/v2/crypto/initiate", {
+      const res = await fetch("/api/whop-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fan_code: "FAN-PENDING" }),
+        body: JSON.stringify({ content_id: contentId }),
       });
-      const json = await res.json();
 
+      if (!res.ok) {
+        setPaymentUrl(selectedItem?.whop_checkout_url ?? null);
+        return;
+      }
+
+      const json = await res.json();
       const remoteUrl =
-        json?.data?.whop_checkout_url ||
-        json?.data?.whopCheckoutUrl ||
+        json?.checkout_url ||
         json?.data?.checkout_url ||
-        json?.data?.checkoutUrl ||
+        json?.whop_checkout_url ||
         null;
 
       if (remoteUrl && typeof remoteUrl === "string") {
         setPaymentUrl(remoteUrl);
       }
     } catch {
-      // Fallback to existing whop URL from content item
+      setPaymentUrl(selectedItem?.whop_checkout_url ?? null);
     } finally {
       setPaymentLoading(false);
     }
@@ -658,7 +689,8 @@ export default function FanPageClient({
                   <button
                     onClick={() => {
                       setShowPaymentModal(true);
-                      void loadPaymentInit();
+                      setSelectedContentId(lowestItem?.id ?? null);
+                      void loadPaymentInit(lowestItem?.id ?? null);
                     }}
                     style={{
                       marginTop: 16,
@@ -914,7 +946,8 @@ export default function FanPageClient({
                                 return;
                               }
                               setShowPaymentModal(true);
-                              void loadPaymentInit();
+                              setSelectedContentId(item.id);
+                              void loadPaymentInit(item.id);
                             }}
                             style={{
                               marginTop: 12,
@@ -1055,7 +1088,7 @@ export default function FanPageClient({
                   lineHeight: 1,
                 }}
               >
-                {lowestItem ? formatPrice(lowestItem.price, lowestItem.currency) : "$0"}
+                {selectedItem ? formatPrice(selectedItem.price, selectedItem.currency) : "$0"}
               </p>
             </div>
 
@@ -1079,7 +1112,7 @@ export default function FanPageClient({
                   textTransform: "uppercase",
                 }}
               >
-                Pay {lowestItem ? formatPrice(lowestItem.price, lowestItem.currency) : "Now"} {"->"}
+                Pay {selectedItem ? formatPrice(selectedItem.price, selectedItem.currency) : "Now"} {"->"}
               </a>
             ) : (
               <div

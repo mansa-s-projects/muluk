@@ -35,6 +35,31 @@ CREATE TABLE IF NOT EXISTS withdrawal_requests (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Backward compatibility: if the table existed from older schemas,
+-- ensure columns used below exist before creating dependent views.
+ALTER TABLE withdrawal_requests
+  ADD COLUMN IF NOT EXISTS amount_cents INTEGER,
+  ADD COLUMN IF NOT EXISTS status TEXT;
+
+DO $$
+BEGIN
+  -- If legacy column `amount` exists, backfill `amount_cents`.
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'withdrawal_requests'
+      AND column_name = 'amount'
+  ) THEN
+    EXECUTE 'UPDATE withdrawal_requests SET amount_cents = COALESCE(amount_cents, amount)';
+  END IF;
+
+  -- Keep old rows compatible with current lifecycle enum usage.
+  UPDATE withdrawal_requests
+  SET status = 'pending'
+  WHERE status IS NULL;
+END $$;
+
 ALTER TABLE withdrawal_requests ENABLE ROW LEVEL SECURITY;
 
 -- Creators: read and insert their own requests only

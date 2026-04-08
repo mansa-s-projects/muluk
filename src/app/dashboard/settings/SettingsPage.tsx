@@ -181,36 +181,17 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
     setSaving(true);
     try {
       const supabase = createClient();
-      const normalizedMethod = payout.method === "stripe" ? "whop" : payout.method;
-
-      let { error } = await supabase
+      const { error } = await supabase
         .from("creator_payout_settings")
         .upsert({
           creator_id: initialData.userId,
-          method: normalizedMethod,
+          method: payout.method,
           whop_account_id: payout.whopAccountId,
-          stripe_account_id: payout.whopAccountId,
           wise_email: payout.wiseEmail,
           crypto_wallet: payout.cryptoWallet,
           paypal_email: payout.paypalEmail,
           updated_at: new Date().toISOString(),
         }, { onConflict: "creator_id" });
-
-      // Backward compatibility if whop_account_id migration has not been applied yet.
-      if (error && /whop_account_id/i.test(error.message)) {
-        const legacy = await supabase
-          .from("creator_payout_settings")
-          .upsert({
-            creator_id: initialData.userId,
-            method: normalizedMethod,
-            stripe_account_id: payout.whopAccountId,
-            wise_email: payout.wiseEmail,
-            crypto_wallet: payout.cryptoWallet,
-            paypal_email: payout.paypalEmail,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "creator_id" });
-        error = legacy.error;
-      }
 
       if (error) throw error;
       showMessage("Payout settings saved!");

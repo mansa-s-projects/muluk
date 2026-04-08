@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   // Fetch payout settings
   const { data: payoutSettings } = await supabase
     .from("creator_payout_settings")
-    .select("method, whop_account_id, stripe_account_id, wise_email, crypto_wallet, paypal_email")
+    .select("method, whop_account_id, wise_email, crypto_wallet, paypal_email")
     .eq("creator_id", user.id)
     .maybeSingle();
 
@@ -108,7 +108,6 @@ export async function POST(req: Request) {
   const method = payoutSettings.method ?? "whop";
   const details =
     method === "whop"   ? payoutSettings.whop_account_id :
-    method === "stripe" ? payoutSettings.stripe_account_id :
     method === "wise"   ? payoutSettings.wise_email :
     method === "crypto" ? payoutSettings.crypto_wallet :
     method === "paypal" ? payoutSettings.paypal_email :

@@ -81,7 +81,7 @@ export default async function HandlePage({
 
   const { data: contentItems } = await supabase
     .from("content_items_v2")
-    .select("id, title, description, price, currency, whop_checkout_url, preview_url, file_url, created_at")
+    .select("id, title, description, price, currency, whop_checkout_url, whop_product_id, preview_url, file_url, created_at")
     .eq("creator_id", creator.user_id)
     .eq("is_active", true)
     .order("created_at", { ascending: false })
@@ -131,6 +131,7 @@ export default async function HandlePage({
         price: item.price,
         currency: item.currency,
         whop_checkout_url: item.whop_checkout_url ?? null,
+        whop_product_id: item.whop_product_id ?? null,
         preview_url: item.preview_url ?? null,
         file_url: item.file_url ?? null,
         created_at: item.created_at,

@@ -1,10 +1,10 @@
-﻿-- CIPHER — Fan Token-Based Access System
+-- CIPHER - Fan Token-Based Access System
 -- Migration 026
 
 BEGIN;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 1. access_tokens — token-based access to purchased content
+-- 1. access_tokens - token-based access to purchased content
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS access_tokens (
   id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -5,7 +5,6 @@ import { SettingsPage } from "./SettingsPage";
 type PayoutRow = {
   method: string | null;
   whop_account_id?: string | null;
-  stripe_account_id?: string | null;
   wise_email?: string | null;
   crypto_wallet?: string | null;
   paypal_email?: string | null;
@@ -26,26 +25,16 @@ export default async function SettingsRoute() {
     .eq("user_id", user.id)
     .single();
 
-  // Fetch payout settings (whop-first with legacy stripe fallback)
+  // Fetch payout settings
   let payoutData: PayoutRow | null = null;
 
   const payoutWithWhop = await supabase
     .from("creator_payout_settings")
-    .select("method, whop_account_id, stripe_account_id, wise_email, crypto_wallet, paypal_email")
+    .select("method, whop_account_id, wise_email, crypto_wallet, paypal_email")
     .eq("creator_id", user.id)
     .single();
 
-  if (payoutWithWhop.error) {
-    const payoutLegacy = await supabase
-      .from("creator_payout_settings")
-      .select("method, stripe_account_id, wise_email, crypto_wallet, paypal_email")
-      .eq("creator_id", user.id)
-      .single();
-
-    payoutData = payoutLegacy.data as PayoutRow | null;
-  } else {
-    payoutData = payoutWithWhop.data as PayoutRow | null;
-  }
+  payoutData = payoutWithWhop.data as PayoutRow | null;
 
   // Fetch notification settings
   const { data: notifData } = await supabase
@@ -68,8 +57,8 @@ export default async function SettingsRoute() {
       location: profile?.location || "",
     },
     payout: {
-      method: payoutData?.method === "stripe" ? "whop" : payoutData?.method || "wise",
-      whopAccountId: payoutData?.whop_account_id || payoutData?.stripe_account_id || "",
+      method: payoutData?.method || "wise",
+      whopAccountId: payoutData?.whop_account_id || "",
       wiseEmail: payoutData?.wise_email || "",
       cryptoWallet: payoutData?.crypto_wallet || "",
       paypalEmail: payoutData?.paypal_email || "",

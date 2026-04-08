@@ -2,12 +2,18 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export const PUBLIC_ROUTES = new Set(["/", "/login", "/apply"]);
 
+// Path prefixes accessible without authentication (fan-facing pages)
+const PUBLIC_PREFIXES = ["/book", "/booking", "/r", "/vault", "/commission", "/tips", "/series"];
+
 const ADMIN_PREFIXES = ["/admin", "/setup-admin"];
 const DEBUG_PREFIXES = ["/debug"];
 const CREATOR_PREFIXES = ["/dashboard", "/onboarding"];
 
 export function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.has(pathname);
+  if (PUBLIC_ROUTES.has(pathname)) return true;
+  return PUBLIC_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
 }
 
 export function isAdminRoute(pathname: string): boolean {

@@ -174,7 +174,18 @@ CREATE INDEX IF NOT EXISTS idx_admin_realtime_events_user ON admin_realtime_even
 CREATE INDEX IF NOT EXISTS idx_admin_realtime_events_created ON admin_realtime_events(created_at DESC);
 
 -- Enable realtime for admin_realtime_events
-ALTER PUBLICATION supabase_realtime ADD TABLE admin_realtime_events;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'admin_realtime_events'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE admin_realtime_events;
+  END IF;
+END $$;
 
 -- ── admin_sessions ──────────────────────────────────────────────────────────
 -- Track admin login sessions

@@ -41,6 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_offers_published
 ALTER TABLE offers ENABLE ROW LEVEL SECURITY;
 
 -- Creators manage their own offers (all operations)
+DROP POLICY IF EXISTS "creators_manage_own_offers" ON offers;
 CREATE POLICY "creators_manage_own_offers"
   ON offers FOR ALL
   USING  (auth.uid() = creator_id)
@@ -49,6 +50,7 @@ CREATE POLICY "creators_manage_own_offers"
 -- Anyone (anon + authenticated) can read published offers.
 -- unlock_content is intentionally never returned by the public API layer
 -- without a verified purchase — enforce this in application code.
+DROP POLICY IF EXISTS "public_read_published_offers" ON offers;
 CREATE POLICY "public_read_published_offers"
   ON offers FOR SELECT
   TO anon, authenticated

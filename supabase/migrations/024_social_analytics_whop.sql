@@ -114,9 +114,31 @@ CREATE TABLE IF NOT EXISTS purchases (
   updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_purchases_payment_link ON purchases (payment_link_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'purchases'
+      AND column_name = 'payment_link_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_purchases_payment_link ON purchases (payment_link_id);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_purchases_creator      ON purchases (creator_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_purchases_buyer_email  ON purchases (buyer_email) WHERE buyer_email IS NOT NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'purchases'
+      AND column_name = 'buyer_email'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_purchases_buyer_email ON purchases (buyer_email) WHERE buyer_email IS NOT NULL;
+  END IF;
+END $$;
 
 ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "creators see own purchases" ON purchases

@@ -25,8 +25,19 @@ CREATE INDEX IF NOT EXISTS idx_unlocks_user_offer
   ON unlocks (user_id, offer_id);
 
 -- Creator dashboard: all users who unlocked an offer
-CREATE INDEX IF NOT EXISTS idx_unlocks_creator_offer
-  ON unlocks (creator_id, offer_id, created_at DESC);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'unlocks'
+      AND column_name = 'creator_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_unlocks_creator_offer
+      ON unlocks (creator_id, offer_id, created_at DESC);
+  END IF;
+END $$;
 
 -- ─── Row-Level Security ───────────────────────────────────────────────────────
 ALTER TABLE unlocks ENABLE ROW LEVEL SECURITY;
@@ -40,10 +51,21 @@ CREATE POLICY "users_read_own_unlocks"
 
 -- Creators can see all unlocks for their offers (sales dashboard)
 DROP POLICY IF EXISTS "creators_read_offer_unlocks" ON unlocks;
-CREATE POLICY "creators_read_offer_unlocks"
-  ON unlocks FOR SELECT
-  TO authenticated
-  USING (auth.uid() = creator_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'unlocks'
+      AND column_name = 'creator_id'
+  ) THEN
+    CREATE POLICY "creators_read_offer_unlocks"
+      ON unlocks FOR SELECT
+      TO authenticated
+      USING (auth.uid() = creator_id);
+  END IF;
+END $$;
 
 -- Only service_role can insert — purchases go through the API/webhook,
 -- not directly from the client, to prevent self-granting access.

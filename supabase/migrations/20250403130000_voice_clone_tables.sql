@@ -31,23 +31,28 @@ ALTER TABLE voice_clones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE voice_generations ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for voice_clones
+DROP POLICY IF EXISTS "Users can view own voice clones" ON voice_clones;
 CREATE POLICY "Users can view own voice clones"
   ON voice_clones FOR SELECT
   USING (auth.uid() = creator_id);
 
+DROP POLICY IF EXISTS "Users can create own voice clones" ON voice_clones;
 CREATE POLICY "Users can create own voice clones"
   ON voice_clones FOR INSERT
   WITH CHECK (auth.uid() = creator_id);
 
+DROP POLICY IF EXISTS "Users can delete own voice clones" ON voice_clones;
 CREATE POLICY "Users can delete own voice clones"
   ON voice_clones FOR DELETE
   USING (auth.uid() = creator_id);
 
 -- RLS Policies for voice_generations
+DROP POLICY IF EXISTS "Users can view own voice generations" ON voice_generations;
 CREATE POLICY "Users can view own voice generations"
   ON voice_generations FOR SELECT
   USING (auth.uid() = creator_id);
 
+DROP POLICY IF EXISTS "Users can create own voice generations" ON voice_generations;
 CREATE POLICY "Users can create own voice generations"
   ON voice_generations FOR INSERT
   WITH CHECK (auth.uid() = creator_id);
@@ -59,8 +64,28 @@ CREATE INDEX IF NOT EXISTS idx_voice_generations_creator_id ON voice_generations
 CREATE INDEX IF NOT EXISTS idx_voice_generations_created_at ON voice_generations(created_at DESC);
 
 -- Add to realtime publication
-ALTER PUBLICATION supabase_realtime ADD TABLE voice_clones;
-ALTER PUBLICATION supabase_realtime ADD TABLE voice_generations;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'voice_clones'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE voice_clones;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'voice_generations'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE voice_generations;
+  END IF;
+END $$;
 
 COMMENT ON TABLE voice_clones IS 'Stores AI voice clones created by creators using ElevenLabs';
 COMMENT ON TABLE voice_generations IS 'Tracks text-to-speech generations for usage monitoring';

@@ -15,9 +15,20 @@ ALTER TABLE access_tokens
   ADD COLUMN IF NOT EXISTS used_at TIMESTAMPTZ;
 
 -- Fast poll: find recent paid purchases for a given payment link
-CREATE INDEX IF NOT EXISTS idx_purchases_pl_created
-  ON purchases (payment_link_id, created_at DESC)
-  WHERE status = 'paid';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'purchases'
+      AND column_name = 'payment_link_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_purchases_pl_created
+      ON purchases (payment_link_id, created_at DESC)
+      WHERE status::text = 'paid';
+  END IF;
+END $$;
 
 -- Fast lookup of unused tokens by purchase set
 CREATE INDEX IF NOT EXISTS idx_access_tokens_unused
