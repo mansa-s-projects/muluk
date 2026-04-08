@@ -483,10 +483,18 @@ export default function Apply() {
                 ))}
               </div>
               <button
+                onClick={() => router.push("/login")}
+                style={{ marginTop: "48px", background: "var(--gold)", border: "none", borderRadius: "3px", color: "#0a0800", ...mono, fontSize: "11px", fontWeight: 500, letterSpacing: "0.2em", textTransform: "uppercase" as const, padding: "14px 32px", transition: "opacity 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+              >
+                Set up your account →
+              </button>
+              <button
                 onClick={() => router.push("/")}
-                style={{ marginTop: "48px", background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "3px", color: "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "12px 24px", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--muted)"; }}
+                style={{ marginTop: "16px", background: "transparent", border: "none", color: "var(--dim)", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "8px 24px", transition: "color 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.color = "var(--muted)"; }}
+                onMouseLeave={e => { e.currentTarget.style.color = "var(--dim)"; }}
               >
                 ← Back to cipher.so
               </button>

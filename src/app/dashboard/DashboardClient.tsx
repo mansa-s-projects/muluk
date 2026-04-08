@@ -482,6 +482,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
   const [contentExpiry, setContentExpiry] = useState("24h");
   const [contentSaving, setContentSaving] = useState(false);
   const [contentMsg, setContentMsg] = useState("");
+  const [contentShareUrl, setContentShareUrl] = useState("");
 
   const [genCodeLoading, setGenCodeLoading] = useState(false);
   const [genCodeResult, setGenCodeResult] = useState<{ code: string } | null>(null);
@@ -798,6 +799,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
 
   const saveContentItem = async () => {
     setContentMsg("");
+    setContentShareUrl("");
     if (!contentTitle.trim()) {
       setContentMsg("Title is required.");
       return;
@@ -860,7 +862,10 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
         }
       }
 
-      setContentMsg("Content item saved. Refresh to see latest.");
+      setContentMsg("Content saved.");
+      if (creatorProfile.handle) {
+        setContentShareUrl(`cipher.so/creator/${creatorProfile.handle}`);
+      }
       setContentTitle("");
       setContentDesc("");
       setContentPrice("0");
@@ -1378,19 +1383,22 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "var(--gold-dim)" }}>BURN MODE CONTENT SCHEDULER</div>
-                      <div style={{ fontSize: "14px", color: "var(--white)" }}>Set content to self-expire automatically</div>
+                      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "var(--gold-dim)" }}>QUICK PUBLISH</div>
+                      <div style={{ fontSize: "14px", color: "var(--white)" }}>Add content · set price · get shareable link</div>
                     </div>
                     <button type="button" onClick={() => setBurnMode(v => !v)} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: "999px", padding: "8px 14px", background: burnMode ? "rgba(200,169,110,0.16)" : "transparent", color: burnMode ? "var(--gold)" : "var(--dim)", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>
                       {burnMode ? "BURN MODE ON" : "BURN MODE OFF"}
                     </button>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "12px" }}>
-                    <input value={contentTitle} onChange={e => setContentTitle(e.target.value)} placeholder="Content title" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
-                    <input value={contentPrice} onChange={e => setContentPrice(e.target.value)} placeholder="Price" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", marginTop: "16px", alignItems: "stretch" }}>
+                    <input value={contentTitle} onChange={e => setContentTitle(e.target.value)} placeholder="Content title" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px", fontSize: "14px" }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "0 12px" }}>
+                      <span style={{ color: "var(--gold)", fontSize: "16px" }}>$</span>
+                      <input value={contentPrice} onChange={e => setContentPrice(e.target.value)} placeholder="0" style={{ background: "transparent", border: "none", color: "var(--white)", width: "72px", outline: "none", fontSize: "16px", fontWeight: 500 }} />
+                    </div>
                   </div>
-                  <textarea value={contentDesc} onChange={e => setContentDesc(e.target.value)} placeholder="Description" style={{ marginTop: "10px", width: "100%", minHeight: "72px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
+                  <textarea value={contentDesc} onChange={e => setContentDesc(e.target.value)} placeholder="Description (optional)" style={{ marginTop: "10px", width: "100%", minHeight: "56px", background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   <div style={{ marginTop: "10px", border: "1px solid rgba(29,161,242,0.28)", borderRadius: "8px", padding: "10px", background: "rgba(29,161,242,0.06)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                       <div>
@@ -1406,16 +1414,34 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
                     )}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                    <select value={contentExpiry} onChange={e => setContentExpiry(e.target.value)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
-                      <option value="24h">Expire in 24h</option>
-                      <option value="7d">Expire in 7d</option>
-                      <option value="30d">Expire in 30d</option>
-                    </select>
-                    <button type="button" onClick={saveContentItem} disabled={contentSaving} style={{ border: "none", borderRadius: "6px", padding: "10px 14px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>
-                      {contentSaving ? "SAVING" : "SAVE CONTENT"}
+                    {burnMode && (
+                      <select value={contentExpiry} onChange={e => setContentExpiry(e.target.value)} style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }}>
+                        <option value="24h">Expire in 24h</option>
+                        <option value="7d">Expire in 7d</option>
+                        <option value="30d">Expire in 30d</option>
+                      </select>
+                    )}
+                    <button type="button" onClick={saveContentItem} disabled={contentSaving} style={{ marginLeft: "auto", border: "none", borderRadius: "6px", padding: "12px 24px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", fontWeight: 600, letterSpacing: "0.12em", cursor: "pointer", opacity: contentSaving ? 0.7 : 1 }}>
+                      {contentSaving ? "PUBLISHING..." : "PUBLISH & GET LINK →"}
                     </button>
                   </div>
-                  {contentMsg && <div style={{ marginTop: "8px", color: contentMsg.includes("Could") ? "#ff6a6a" : "var(--gold)", fontSize: "12px" }}>{contentMsg}</div>}
+                  {contentMsg && (
+                    <div style={{ marginTop: "8px" }}>
+                      <div style={{ color: contentMsg.includes("Could") ? "#ff6a6a" : "var(--gold)", fontSize: "12px", ...mono }}>{contentMsg}</div>
+                      {contentShareUrl && (
+                        <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "6px", padding: "10px 12px" }}>
+                          <span style={{ ...mono, fontSize: "12px", color: "var(--gold)", flex: 1 }}>{contentShareUrl}</span>
+                          <button
+                            type="button"
+                            onClick={() => { void navigator.clipboard.writeText(`https://${contentShareUrl}`); }}
+                            style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "#0a0800", background: "var(--gold)", border: "none", borderRadius: "3px", padding: "5px 10px", cursor: "pointer" }}
+                          >
+                            COPY LINK
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
