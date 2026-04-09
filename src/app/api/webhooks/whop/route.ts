@@ -608,7 +608,7 @@ async function handleVaultPurchaseCompleted(
   }
 
   // Mark as paid
-  await supabase
+  const { data: vaultUpdated, error: vaultUpdateError } = await supabase
     .from("vault_purchases")
     .update({
       status:          "paid",
@@ -616,7 +616,17 @@ async function handleVaultPurchaseCompleted(
       paid_at:         new Date().toISOString(),
       ...(amountCents > 0 ? { amount_cents: amountCents } : {}),
     })
-    .eq("id", vaultPurchaseId);
+    .eq("id", vaultPurchaseId)
+    .select("id");
+
+  if (vaultUpdateError || !vaultUpdated || vaultUpdated.length === 0) {
+    console.error("[whop-webhook] vault purchase update failed", {
+      vaultPurchaseId,
+      whopPaymentId,
+      error: vaultUpdateError,
+    });
+    return NextResponse.json({ error: "Failed to persist vault purchase" }, { status: 500 });
+  }
 
   // Increment purchase_count on the vault item
   if (purchase.vault_item_id) {
@@ -661,14 +671,24 @@ async function handleCommissionPaymentCompleted(
     return NextResponse.json({ received: true, action: "commission_duplicate_skipped" });
   }
 
-  await supabase
+  const { data: commissionUpdated, error: commissionUpdateError } = await supabase
     .from("commissions")
     .update({
       status:          "paid",
       whop_payment_id: whopPaymentId,
       paid_at:         new Date().toISOString(),
     })
-    .eq("id", commissionId);
+    .eq("id", commissionId)
+    .select("id");
+
+  if (commissionUpdateError || !commissionUpdated || commissionUpdated.length === 0) {
+    console.error("[whop-webhook] commission update failed", {
+      commissionId,
+      whopPaymentId,
+      error: commissionUpdateError,
+    });
+    return NextResponse.json({ error: "Failed to persist commission payment" }, { status: 500 });
+  }
 
   console.info(
     `[whop-webhook] commission paid — id=${commissionId} payment=${whopPaymentId}`
@@ -706,14 +726,24 @@ async function handleTipPaymentCompleted(
     return NextResponse.json({ received: true, action: "tip_duplicate_skipped" });
   }
 
-  await supabase
+  const { data: tipUpdated, error: tipUpdateError } = await supabase
     .from("tips")
     .update({
       status:          "paid",
       whop_payment_id: whopPaymentId,
       paid_at:         new Date().toISOString(),
     })
-    .eq("id", tipId);
+    .eq("id", tipId)
+    .select("id");
+
+  if (tipUpdateError || !tipUpdated || tipUpdated.length === 0) {
+    console.error("[whop-webhook] tip update failed", {
+      tipId,
+      whopPaymentId,
+      error: tipUpdateError,
+    });
+    return NextResponse.json({ error: "Failed to persist tip payment" }, { status: 500 });
+  }
 
   console.info(
     `[whop-webhook] tip paid — id=${tipId} payment=${whopPaymentId}`
@@ -772,10 +802,22 @@ async function handleBookingPaymentCompleted(
     return NextResponse.json({ error: "Failed to confirm booking" }, { status: 500 });
   }
 
-  await supabase
+  const { error: availabilityUpdateError } = await supabase
     .from("availability")
     .update({ is_booked: true })
     .eq("id", booking.availability_id);
+
+  if (availabilityUpdateError) {
+    console.error("[whop-webhook] availability update failed", {
+      availabilityId: booking.availability_id,
+      error: availabilityUpdateError,
+    });
+    await supabase
+      .from("bookings")
+      .update({ status: "pending", whop_payment_id: null, paid_at: null })
+      .eq("id", bookingId);
+    return NextResponse.json({ error: "Failed to lock availability" }, { status: 500 });
+  }
 
   return NextResponse.json({ received: true, action: "booking_payment_confirmed" });
 }
@@ -810,14 +852,24 @@ async function handleSeriesPurchaseCompleted(
     return NextResponse.json({ received: true, action: "series_purchase_duplicate_skipped" });
   }
 
-  await supabase
+  const { data: seriesUpdated, error: seriesUpdateError } = await supabase
     .from("series_purchases")
     .update({
       status:          "paid",
       whop_payment_id: whopPaymentId,
       paid_at:         new Date().toISOString(),
     })
-    .eq("id", purchaseId);
+    .eq("id", purchaseId)
+    .select("id");
+
+  if (seriesUpdateError || !seriesUpdated || seriesUpdated.length === 0) {
+    console.error("[whop-webhook] series purchase update failed", {
+      purchaseId,
+      whopPaymentId,
+      error: seriesUpdateError,
+    });
+    return NextResponse.json({ error: "Failed to persist series purchase" }, { status: 500 });
+  }
 
   console.info(
     `[whop-webhook] series purchase paid — id=${purchaseId} payment=${whopPaymentId}`

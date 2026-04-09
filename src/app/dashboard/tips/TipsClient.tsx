@@ -15,6 +15,7 @@ interface Props {
 export default function TipsClient({ initialTips, monthlyEarnings, handle }: Props) {
   const [tips]    = useState<Tip[]>(initialTips);
   const [tab, setTab] = useState<"wall" | "all">("wall");
+  const [clipboardStatus, setClipboardStatus] = useState<"idle" | "success" | "error">("idle");
 
   const paidTips  = tips.filter((t) => t.status === "paid");
   const totalEarned = paidTips.reduce((s, t) => s + t.amount_cents, 0);
@@ -46,10 +47,19 @@ export default function TipsClient({ initialTips, monthlyEarnings, handle }: Pro
                 View Live ↗
               </a>
               <button
-                onClick={() => void navigator.clipboard.writeText(wallUrl)}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(wallUrl);
+                    setClipboardStatus("success");
+                    setTimeout(() => setClipboardStatus("idle"), 1800);
+                  } catch {
+                    setClipboardStatus("error");
+                    setTimeout(() => setClipboardStatus("idle"), 2200);
+                  }
+                }}
                 style={{ background: "var(--card)", border: "1px solid var(--rim)", borderRadius: 8, padding: "0.4rem 0.875rem", color: "var(--muted)", fontSize: "0.8125rem", cursor: "pointer" }}
               >
-                Copy Link
+                {clipboardStatus === "success" ? "Copied" : clipboardStatus === "error" ? "Copy failed" : "Copy Link"}
               </button>
             </div>
           )}
@@ -128,7 +138,7 @@ export default function TipsClient({ initialTips, monthlyEarnings, handle }: Pro
                 {displayedTips.map((tip) => (
                   <tr key={tip.id} style={{ borderBottom: "1px solid var(--rim)" }}>
                     <td style={{ padding: "0.875rem 1.25rem", color: "var(--white)", fontSize: "0.875rem" }}>
-                      {tip.is_anonymous ? <span style={{ color: "var(--dim)" }}>Anonymous</span> : (tip.display_name ?? "—")}
+                      {tip.is_anonymous ? <span style={{ color: "var(--dim)" }}>Anonymous</span> : (tip.display_name ?? "Fan")}
                     </td>
                     <td style={{ padding: "0.875rem 1.25rem", color: "var(--gold)", fontFamily: "var(--font-mono)", fontSize: "0.875rem" }}>
                       {formatTip(tip.amount_cents)}

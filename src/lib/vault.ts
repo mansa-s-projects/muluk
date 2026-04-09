@@ -120,10 +120,10 @@ export async function provisionVaultCheckout(params: {
   redirectUrl:     string;
 }): Promise<{ whop_product_id: string; whop_checkout_id: string; whop_checkout_url: string } | null> {
   const apiKey    = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
+  const companyId = process.env.WHOP_API_KEY;
 
   if (!apiKey || !companyId) {
-    console.warn("[vault] WHOP_API_KEY or WHOP_COMPANY_ID not set");
+    console.warn("[vault] WHOP_API_KEY not set");
     return null;
   }
 
@@ -187,9 +187,22 @@ export async function provisionVaultCheckout(params: {
 // ─── Supabase Storage helpers ────────────────────────────────────────────────
 
 export function getServiceSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const missing: string[] = [];
+  if (!supabaseUrl) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  if (!serviceRoleKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  if (missing.length > 0) {
+    throw new Error(`[vault] Missing required environment variables: ${missing.join(", ")}`);
+  }
+
+  const safeSupabaseUrl = supabaseUrl as string;
+  const safeServiceRoleKey = serviceRoleKey as string;
+
   return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    safeSupabaseUrl,
+    safeServiceRoleKey
   );
 }
 
@@ -214,7 +227,10 @@ export async function getOriginalSignedUrl(filePath: string): Promise<string | n
  * Return the public URL for a vault preview (public bucket).
  */
 export function getPreviewPublicUrl(previewPath: string): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    throw new Error("[vault] Missing NEXT_PUBLIC_SUPABASE_URL");
+  }
   return `${supabaseUrl}/storage/v1/object/public/${VAULT_PREVIEWS_BUCKET}/${previewPath}`;
 }
 

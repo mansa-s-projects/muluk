@@ -99,7 +99,10 @@ END $$;
 CREATE OR REPLACE FUNCTION increment_rate_card_views(p_slug TEXT)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  UPDATE rate_cards SET view_count = view_count + 1 WHERE slug = p_slug;
+  UPDATE rate_cards
+  SET view_count = view_count + 1
+  WHERE slug = p_slug
+    AND is_public = TRUE;
 END;
 $$;
 

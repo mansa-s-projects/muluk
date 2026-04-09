@@ -18,7 +18,11 @@ async function getAuthUser() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: () => {},
+        setAll: (toSet) => {
+          try {
+            toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {}
+        },
       },
     }
   );
@@ -52,7 +56,13 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!ep) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (typeof body.title      === "string")  updates.title      = body.title.trim();
+  if (typeof body.title === "string") {
+    const trimmedTitle = body.title.trim();
+    if (!trimmedTitle) {
+      return NextResponse.json({ error: "title cannot be empty" }, { status: 422 });
+    }
+    updates.title = trimmedTitle;
+  }
   if (typeof body.body       === "string")  updates.body       = body.body.trim()      || null;
   if (typeof body.media_url  === "string")  updates.media_url  = body.media_url.trim() || null;
   if (typeof body.sort_order === "number")  updates.sort_order = Math.floor(body.sort_order);
@@ -62,10 +72,13 @@ export async function PATCH(req: Request, { params }: Params) {
     .from("series_episodes")
     .update(updates)
     .eq("id", episodeId)
+    .eq("series_id", id)
+    .eq("creator_id", user.id)
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   return NextResponse.json(data);
 }
 
@@ -87,6 +100,20 @@ export async function DELETE(_req: Request, { params }: Params) {
     .maybeSingle();
   if (!ep) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await db.from("series_episodes").delete().eq("id", episodeId);
+  const { error: deleteErr, data: deleted } = await db
+    .from("series_episodes")
+    .delete()
+    .eq("id", episodeId)
+    .eq("series_id", id)
+    .eq("creator_id", user.id)
+    .select("id");
+
+  if (deleteErr) {
+    return NextResponse.json({ error: "Failed to delete episode" }, { status: 500 });
+  }
+  if (!deleted || deleted.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   return NextResponse.json({ deleted: true });
 }

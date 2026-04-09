@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface VaultItem {
   id: string;
@@ -23,7 +23,22 @@ interface Props {
   items: VaultItem[];
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+if (!SUPABASE_URL) {
+  throw new Error("NEXT_PUBLIC_SUPABASE_URL is required for VaultPageClient");
+}
+
+function isSafeCheckoutUrl(url: unknown): url is string {
+  if (typeof url !== "string" || !url.trim()) return false;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (parsed.protocol !== "https:") return false;
+    const allowedOrigins = ["https://whop.com", window.location.origin];
+    return allowedOrigins.includes(parsed.origin);
+  } catch {
+    return false;
+  }
+}
 
 function previewUrl(path: string | null) {
   if (!path) return null;
@@ -40,6 +55,27 @@ export default function VaultPageClient({ creator, items }: Props) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const modalTitleId = "vault-unlock-modal-title";
+
+  useEffect(() => {
+    if (!selectedItem) return;
+
+    lastFocusedRef.current = document.activeElement as HTMLElement | null;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedItem(null);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (lastFocusedRef.current) {
+        lastFocusedRef.current.focus();
+      }
+    };
+  }, [selectedItem]);
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +93,9 @@ export default function VaultPageClient({ creator, items }: Props) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Checkout failed");
+      if (!isSafeCheckoutUrl(json.checkout_url)) {
+        throw new Error("Invalid checkout URL returned by server");
+      }
       window.location.href = json.checkout_url;
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Something went wrong");
@@ -182,12 +221,31 @@ export default function VaultPageClient({ creator, items }: Props) {
                       cursor: "pointer",
                       transition: "border-color 0.25s, transform 0.25s",
                     }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Unlock ${item.title}`}
                     onClick={() => { setSelectedItem(item); setEmail(""); setCheckoutError(""); }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedItem(item);
+                        setEmail("");
+                        setCheckoutError("");
+                      }
+                    }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,169,110,0.3)";
                       (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
                     }}
                     onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor = "var(--rim)";
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+                    }}
+                    onFocus={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(200,169,110,0.3)";
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                    }}
+                    onBlur={(e) => {
                       (e.currentTarget as HTMLDivElement).style.borderColor = "var(--rim)";
                       (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
                     }}
@@ -361,6 +419,9 @@ export default function VaultPageClient({ creator, items }: Props) {
             justifyContent: "center",
             padding: 24,
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={modalTitleId}
           onClick={(e) => { if (e.target === e.currentTarget) setSelectedItem(null); }}
         >
           <div
@@ -409,6 +470,7 @@ export default function VaultPageClient({ creator, items }: Props) {
 
             <div style={{ padding: "24px 28px" }}>
               <h2
+                id={modalTitleId}
                 style={{
                   fontFamily: "var(--font-display)",
                   fontWeight: 300,
@@ -445,6 +507,7 @@ export default function VaultPageClient({ creator, items }: Props) {
               <form onSubmit={handleUnlock} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label
+                    htmlFor="vault-email"
                     style={{
                       fontFamily: "var(--font-mono)",
                       fontSize: 10,
@@ -458,6 +521,7 @@ export default function VaultPageClient({ creator, items }: Props) {
                     Your email — for delivery
                   </label>
                   <input
+                    id="vault-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

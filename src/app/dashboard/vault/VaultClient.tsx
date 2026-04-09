@@ -38,6 +38,7 @@ export default function VaultClient({ creatorId, handle, initialItems }: Props) 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -119,22 +120,38 @@ export default function VaultClient({ creatorId, handle, initialItems }: Props) 
 
   const toggleStatus = async (item: VaultItem) => {
     const newStatus = item.status === "active" ? "draft" : "active";
-    const res = await fetch(`/api/vault/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    if (res.ok) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i))
-      );
+    if (togglingId === item.id) return;
+    setTogglingId(item.id);
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i)));
+    try {
+      const res = await fetch(`/api/vault/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to update item (${res.status})`);
+      }
+    } catch (error) {
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, status: item.status } : i)));
+      alert(error instanceof Error ? error.message : "Failed to update item");
+    } finally {
+      setTogglingId(null);
     }
   };
 
   const deleteItem = async (itemId: string) => {
     if (!confirm("Delete this vault item? This cannot be undone.")) return;
-    const res = await fetch(`/api/vault/${itemId}`, { method: "DELETE" });
-    if (res.ok) setItems((prev) => prev.filter((i) => i.id !== itemId));
+    try {
+      const res = await fetch(`/api/vault/${itemId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error ?? `Failed to delete item (${res.status})`);
+      }
+      setItems((prev) => prev.filter((i) => i.id !== itemId));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to delete item");
+    }
   };
 
   return (
@@ -629,6 +646,7 @@ export default function VaultClient({ creatorId, handle, initialItems }: Props) 
                       </span>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
+                          disabled={togglingId === item.id}
                           onClick={() => toggleStatus(item)}
                           style={{
                             background: "none",
@@ -640,7 +658,8 @@ export default function VaultClient({ creatorId, handle, initialItems }: Props) 
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
                             padding: "6px 10px",
-                            cursor: "pointer",
+                            cursor: togglingId === item.id ? "not-allowed" : "pointer",
+                            opacity: togglingId === item.id ? 0.6 : 1,
                           }}
                         >
                           {item.status === "active" ? "Draft" : "Activate"}

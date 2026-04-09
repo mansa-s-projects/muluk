@@ -13,16 +13,19 @@ export default function VaultSuccessPage() {
   const params = useSearchParams();
   const token  = params.get("token") ?? "";
   const itemId = params.get("item") ?? "";
+  const hasValidParams = Boolean(token && itemId);
 
-  const [state, setState] = useState<"pending" | "ready" | "error">("pending");
+  const [state, setState] = useState<"pending" | "ready" | "error">(
+    hasValidParams ? "pending" : "error"
+  );
   const [unlock, setUnlock] = useState<UnlockData | null>(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [attempts, setAttempts] = useState(0);
+  const [errorMsg, setErrorMsg] = useState(
+    hasValidParams ? "" : "Invalid access link."
+  );
+  const [, setAttempts] = useState(0);
 
   useEffect(() => {
     if (!token || !itemId) {
-      setState("error");
-      setErrorMsg("Invalid access link.");
       return;
     }
 
@@ -57,8 +60,20 @@ export default function VaultSuccessPage() {
           setState("error");
           setErrorMsg(json.error ?? "Could not verify access.");
         }
-      } catch {
-        if (!cancelled) setTimeout(poll, 5000);
+      } catch (error) {
+        console.error("[vault/success] poll failed", error);
+        setAttempts((n) => {
+          const next = n + 1;
+          if (next >= MAX_POLLS) {
+            if (!cancelled) {
+              setState("error");
+              setErrorMsg("Could not verify payment after multiple attempts. Please refresh shortly.");
+            }
+          } else if (!cancelled) {
+            setTimeout(poll, 5000);
+          }
+          return next;
+        });
       }
     };
 

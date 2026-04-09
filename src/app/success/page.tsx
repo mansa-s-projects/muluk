@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cache } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createUnlock } from "@/lib/unlocks";
 import { formatPrice } from "@/lib/utils/formatPrice";
@@ -75,7 +76,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
       }}
     >
       {/* Wordmark */}
-      <a
+      <Link
         href="/"
         style={{
           fontFamily: "var(--font-mono, 'DM Mono', monospace)",
@@ -88,7 +89,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
         }}
       >
         CIPHER
-      </a>
+      </Link>
 
       {/* Card */}
       <div
@@ -218,7 +219,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
           {/* CTAs */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {offer_id && (
-              <a
+              <Link
                 href={`/offer/${offer_id}`}
                 style={{
                   display: "flex",
@@ -238,9 +239,9 @@ export default async function SuccessPage({ searchParams }: PageProps) {
                 }}
               >
                 VIEW OFFER →
-              </a>
+              </Link>
             )}
-            <a
+            <Link
               href="/dashboard"
               style={{
                 display: "flex",
@@ -261,7 +262,7 @@ export default async function SuccessPage({ searchParams }: PageProps) {
               }}
             >
               GO TO DASHBOARD
-            </a>
+            </Link>
           </div>
         </div>
       </div>

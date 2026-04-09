@@ -1,5 +1,5 @@
 /**
- * POST /api/commissions/[handle]
+ * POST /api/commissions/creator/[handle]
  * Fan submits a commission request (no auth required)
  */
 import { createClient } from "@supabase/supabase-js";
@@ -26,6 +26,12 @@ export async function POST(
   if (!fan_email || !title || !description || !budget_cents) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+  if (typeof title !== "string" || typeof description !== "string") {
+    return NextResponse.json({ error: "title and description must be strings" }, { status: 400 });
+  }
+  if (fan_name !== undefined && fan_name !== null && typeof fan_name !== "string") {
+    return NextResponse.json({ error: "fan_name must be a string" }, { status: 400 });
+  }
   if (typeof budget_cents !== "number" || budget_cents < 100) {
     return NextResponse.json({ error: "Minimum budget $1" }, { status: 400 });
   }
@@ -38,12 +44,17 @@ export async function POST(
   const clean = handle.replace(/^@/, "").toLowerCase();
 
   // Resolve creator by handle
-  const { data: creator } = await supabase
+  const { data: creator, error: creatorError } = await supabase
     .from("creator_applications")
     .select("user_id, name")
     .eq("handle", clean)
     .eq("status", "approved")
     .maybeSingle();
+
+  if (creatorError) {
+    console.error("[commissions] creator lookup failed:", creatorError);
+    return NextResponse.json({ error: "Failed to resolve creator" }, { status: 500 });
+  }
 
   if (!creator?.user_id) {
     return NextResponse.json({ error: "Creator not found" }, { status: 404 });

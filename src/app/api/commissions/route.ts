@@ -4,17 +4,8 @@
  * DELETE /api/commissions/[id]    — cancel (auth)
  */
 import { createServerClient } from "@supabase/ssr";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { provisionCommissionCheckout } from "@/lib/commissions";
-
-function getService() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 async function getAuthUser() {
   const cookieStore = await cookies();
@@ -25,6 +16,24 @@ async function getAuthUser() {
   );
   const { data: { user } } = await supabase.auth.getUser();
   return user;
+}
+
+async function getAuthSupabase() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (toSet) => {
+          try {
+            toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {}
+        },
+      },
+    }
+  );
 }
 
 // ── GET /api/commissions ──────────────────────────────────────────────────────
@@ -38,7 +47,7 @@ export async function GET(req: Request) {
   const page   = Math.max(1, parseInt(url.searchParams.get("page") ?? "1"));
   const limit  = 20;
 
-  const supabase = getService();
+  const supabase = await getAuthSupabase();
   let query = supabase
     .from("commissions")
     .select("id,fan_email,fan_name,title,description,budget_cents,agreed_cents,deadline,status,created_at,updated_at,paid_at,access_token", { count: "exact" })

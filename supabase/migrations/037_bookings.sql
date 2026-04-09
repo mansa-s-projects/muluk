@@ -22,6 +22,23 @@ CREATE TABLE IF NOT EXISTS availability (
   UNIQUE(creator_id, slot_date, start_time)
 );
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'availability_duration_positive'
+  ) THEN
+    ALTER TABLE availability
+      ADD CONSTRAINT availability_duration_positive CHECK (duration_minutes > 0);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'availability_price_positive'
+  ) THEN
+    ALTER TABLE availability
+      ADD CONSTRAINT availability_price_positive CHECK (price_cents > 0);
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_availability_creator   ON availability(creator_id);
 CREATE INDEX IF NOT EXISTS idx_availability_date      ON availability(slot_date);
 CREATE INDEX IF NOT EXISTS idx_availability_available ON availability(creator_id, slot_date) WHERE is_booked = FALSE AND is_active = TRUE;
@@ -44,6 +61,20 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_bookings_amount_cents_nonnegative'
+  ) THEN
+    ALTER TABLE bookings
+      ADD CONSTRAINT chk_bookings_amount_cents_nonnegative CHECK (amount_cents >= 0);
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_availability_unique
+  ON bookings(availability_id)
+  WHERE status <> 'cancelled';
 
 CREATE INDEX IF NOT EXISTS idx_bookings_creator        ON bookings(creator_id);
 DO $$
@@ -105,7 +136,8 @@ CREATE POLICY "public_read_availability"
 -- Availability: creator manages their own slots
 CREATE POLICY "creator_manage_availability"
   ON availability FOR ALL
-  USING (creator_id = auth.uid());
+  USING (creator_id = auth.uid())
+  WITH CHECK (creator_id = auth.uid());
 
 -- Bookings: creator reads their own bookings
 CREATE POLICY "creator_read_bookings"
@@ -116,6 +148,13 @@ CREATE POLICY "creator_read_bookings"
 CREATE POLICY "creator_update_bookings"
   ON bookings FOR UPDATE
   USING (creator_id = auth.uid());
+
+CREATE POLICY "public_create_bookings"
+  ON bookings FOR INSERT
+  WITH CHECK (
+    status = 'pending'
+    AND amount_cents >= 0
+  );
 
 -- ── Triggers ─────────────────────────────────────────────────────────────
 
@@ -151,5 +190,36 @@ BEGIN
   END IF;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION sync_availability_booked()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE availability
+    SET is_booked = (NEW.status <> 'cancelled')
+    WHERE id = NEW.availability_id;
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+    UPDATE availability
+    SET is_booked = EXISTS (
+      SELECT 1
+      FROM bookings b
+      WHERE b.availability_id = NEW.availability_id
+        AND b.status <> 'cancelled'
+    )
+    WHERE id = NEW.availability_id;
+    RETURN NEW;
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS bookings_sync_availability ON bookings;
+CREATE TRIGGER bookings_sync_availability
+  AFTER INSERT OR UPDATE ON bookings
+  FOR EACH ROW EXECUTE FUNCTION sync_availability_booked();
 
 COMMIT;

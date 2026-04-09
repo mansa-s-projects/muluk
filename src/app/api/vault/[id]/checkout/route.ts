@@ -93,14 +93,31 @@ export async function POST(
   });
 
   if (!checkout) {
-    await db.from("vault_purchases").delete().eq("id", purchase.id);
+    try {
+      await db.from("vault_purchases").delete().eq("id", purchase.id);
+    } catch (cleanupErr) {
+      console.error("[vault/checkout] failed to cleanup purchase after checkout failure", {
+        purchaseId: purchase.id,
+        error: cleanupErr,
+      });
+    }
     return NextResponse.json({ error: "Payment system unavailable — try again later" }, { status: 503 });
   }
 
-  await db
+  const { data: updatedPurchase, error: updateError } = await db
     .from("vault_purchases")
     .update({ whop_checkout_id: checkout.whop_checkout_id })
-    .eq("id", purchase.id);
+    .eq("id", purchase.id)
+    .select("id");
+
+  if (updateError || !updatedPurchase || updatedPurchase.length === 0) {
+    console.error("[vault/checkout] failed to persist whop checkout id", {
+      purchaseId: purchase.id,
+      whopCheckoutId: checkout.whop_checkout_id,
+      error: updateError,
+    });
+    return NextResponse.json({ error: "Failed to persist checkout" }, { status: 500 });
+  }
 
   return NextResponse.json({
     checkout_url: checkout.whop_checkout_url,

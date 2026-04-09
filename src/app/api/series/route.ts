@@ -19,7 +19,11 @@ async function getAuthUser() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: () => {},
+        setAll: (toSet) => {
+          try {
+            toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {}
+        },
       },
     }
   );
@@ -60,6 +64,25 @@ export async function POST(req: Request) {
   const price_cents = typeof body.price_cents === "number" ? Math.floor(body.price_cents) : 0;
   if (price_cents < 0) return NextResponse.json({ error: "price_cents must be >= 0" }, { status: 422 });
 
+  let safeCoverUrl: string | null = null;
+  if (typeof body.cover_url === "string") {
+    const trimmed = body.cover_url.trim();
+    if (trimmed) {
+      if (trimmed.length > 2048) {
+        return NextResponse.json({ error: "cover_url is too long" }, { status: 422 });
+      }
+      try {
+        const parsed = new URL(trimmed);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          return NextResponse.json({ error: "cover_url must use http or https" }, { status: 422 });
+        }
+        safeCoverUrl = parsed.toString();
+      } catch {
+        return NextResponse.json({ error: "cover_url must be a valid URL" }, { status: 422 });
+      }
+    }
+  }
+
   const db = getServiceDb();
   const { data, error } = await db
     .from("series")
@@ -67,7 +90,7 @@ export async function POST(req: Request) {
       creator_id:  user.id,
       title,
       description: typeof body.description === "string" ? body.description.trim() || null : null,
-      cover_url:   typeof body.cover_url   === "string" ? body.cover_url.trim()   || null : null,
+      cover_url:   safeCoverUrl,
       price_cents,
       status:      "draft",
     })

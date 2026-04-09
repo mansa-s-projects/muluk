@@ -42,12 +42,16 @@ export async function DELETE(_req: Request, { params }: Params) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("vault_items")
     .delete()
     .eq("id", id)
-    .eq("creator_id", user.id);
+    .eq("creator_id", user.id)
+    .select("id");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   return NextResponse.json({ deleted: true });
 }

@@ -35,7 +35,12 @@ export async function GET(_req: Request, { params }: Params) {
     .eq("is_public", true)
     .maybeSingle();
 
-  if (error || !card) {
+  if (error) {
+    console.error("[rate-card/get] query failed:", error);
+    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+  }
+
+  if (!card) {
     return NextResponse.json({ error: "Rate card not found" }, { status: 404 });
   }
 
@@ -100,10 +105,10 @@ export async function PATCH(req: Request, { params }: Params) {
   for (const [camel, snake] of priceFields) {
     if (camel in raw) {
       const val = raw[camel];
-      if (typeof val !== "number" || val < 0 || val > 10_000_000) {
+      if (typeof val !== "number" || !Number.isFinite(val) || val < 0 || val > 10_000_000) {
         return NextResponse.json({ error: `Invalid value for ${camel}` }, { status: 422 });
       }
-      update[snake] = Math.round(val * 100); // dollars → cents
+      update[snake] = Math.round((val + Number.EPSILON) * 100); // dollars → cents
     }
   }
 

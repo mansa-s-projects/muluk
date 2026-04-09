@@ -28,11 +28,15 @@ export async function GET(
   const db = getDb();
 
   // Resolve creator from handle
-  const { data: profile } = await db
+  const { data: profile, error: profileError } = await db
     .from("profiles")
     .select("id, display_name")
     .eq("handle", handle)
     .maybeSingle();
+
+  if (profileError) {
+    return NextResponse.json({ error: profileError.message || "Failed to resolve creator" }, { status: 500 });
+  }
 
   if (!profile) {
     return NextResponse.json({ error: "Creator not found" }, { status: 404 });

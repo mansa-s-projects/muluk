@@ -62,8 +62,8 @@ export async function POST(req: Request) {
   const { followers, engagementRate, niche, contentType } = body as Record<string, unknown>;
 
   if (
-    typeof followers      !== "number" || followers < 0 || followers > 500_000_000 ||
-    typeof engagementRate !== "number" || engagementRate < 0 || engagementRate > 100 ||
+    typeof followers      !== "number" || !Number.isFinite(followers) || followers < 0 || followers > 500_000_000 ||
+    typeof engagementRate !== "number" || !Number.isFinite(engagementRate) || engagementRate < 0 || engagementRate > 100 ||
     typeof niche          !== "string" || !VALID_NICHES.has(niche as NicheValue) ||
     typeof contentType    !== "string" || !VALID_CONTENT_TYPES.has(contentType as ContentTypeValue)
   ) {
@@ -123,11 +123,19 @@ export async function POST(req: Request) {
   }
 
   // ── Check for existing rate card to preserve slug ─────────────────────────
-  const { data: existing } = await db
+  const { data: existing, error: existingError } = await db
     .from("rate_cards")
     .select("slug")
     .eq("creator_id", user.id)
     .maybeSingle();
+
+  if (existingError) {
+    console.error("[rate-card/generate] failed to query existing slug", {
+      userId: user.id,
+      error: existingError,
+    });
+    return NextResponse.json({ error: "Failed to check existing rate card" }, { status: 500 });
+  }
 
   const slug = existing?.slug ?? generateSlug();
 

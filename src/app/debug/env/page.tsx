@@ -64,7 +64,6 @@ export default function DebugEnv() {
     // Check other env vars (existence only, no values shown)
     const envChecks = [
       { name: 'RESEND_API_KEY', required: false },
-      { name: 'OPENAI_API_KEY', required: false },
       { name: 'OPENROUTER_API_KEY', required: false },
       { name: 'NEXT_PUBLIC_POSTHOG_KEY', required: false },
       { name: 'NEXT_PUBLIC_SITE_URL', required: false },

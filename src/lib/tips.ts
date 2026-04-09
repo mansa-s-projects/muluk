@@ -52,7 +52,7 @@ export async function provisionTipCheckout(opts: {
   whop_checkout_url: string;
 } | null> {
   const apiKey = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
+  const companyId = process.env.WHOP_API_KEY;
   if (!apiKey || !companyId) return null;
 
   const headers = {
@@ -87,7 +87,26 @@ export async function provisionTipCheckout(opts: {
       headers,
       body: JSON.stringify(planBody),
     });
-    if (!planRes.ok) return null;
+    if (!planRes.ok) {
+      try {
+        const deleteRes = await fetch(`${WHOP_API_BASE}/products/${product.id}`, {
+          method: "DELETE",
+          headers,
+        });
+        if (!deleteRes.ok) {
+          console.error("[tips] orphaned Whop product cleanup failed", {
+            productId: product.id,
+            status: deleteRes.status,
+          });
+        }
+      } catch (deleteErr) {
+        console.error("[tips] orphaned Whop product cleanup failed", {
+          productId: product.id,
+          error: deleteErr,
+        });
+      }
+      return null;
+    }
     const plan = await planRes.json();
 
     const checkoutUrl = opts.fanEmail

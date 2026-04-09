@@ -78,7 +78,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
             }
           }
         } catch { /* fall through */ }
-        setState({ phase: "no_access", series: { id: seriesId, title: "This Series", description: "", cover_url: null, price_cents: 0, episode_count: 0 } });
+        setState({ phase: "no_access", series: { id: seriesId, title: "This Series", description: "", cover_url: null, price_cents: -1, episode_count: 0 } });
         return;
       }
 
@@ -107,7 +107,12 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
       const data = await res.json();
       if (data.checkout_url)  window.location.href = data.checkout_url;
       else if (data.redirect_url) window.location.href = data.redirect_url;
-    } catch {
+      else {
+        console.error("[series/reader] buy succeeded without redirect URL", data);
+        alert("Unable to continue to checkout right now. Please try again.");
+      }
+    } catch (error) {
+      console.error("[series/reader] buy request failed", error);
       alert("Something went wrong. Please try again.");
     } finally {
       setBuying(false);
@@ -204,6 +209,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
   // ─── No access — buy CTA ────────────────────────────────────────────────────
   if (state.phase === "no_access") {
     const s = state.series;
+    const priceUnknown = s.price_cents == null || s.price_cents < 0;
     const isFree = s.price_cents === 0;
     return shell(
       <div>
@@ -231,7 +237,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
             )}
             <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "1.1rem", color: "var(--gold)", letterSpacing: "0.05em" }}>
-                {formatSeriesPrice(s.price_cents)}
+                {priceUnknown ? "Check price" : formatSeriesPrice(s.price_cents)}
               </span>
               <span style={{ color: "var(--dim)", fontFamily: "var(--font-mono)", fontSize: "0.72rem" }}>
                 {s.episode_count} EPISODE{s.episode_count !== 1 ? "S" : ""}
@@ -249,6 +255,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
               <input
                 type="text"
+                aria-label="Name"
                 placeholder="Your name (optional)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -256,6 +263,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
               />
               <input
                 type="email"
+                aria-label="Email for receipt"
                 placeholder="Email for receipt (optional)"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -268,7 +276,7 @@ export default function SeriesReaderClient({ handle, seriesId }: Props) {
             disabled={buying}
             style={{ width: "100%", background: buying ? "var(--rim)" : "var(--gold)", border: "none", color: "#000", padding: "0.75rem", borderRadius: 6, cursor: buying ? "not-allowed" : "pointer", fontFamily: "var(--font-body)", fontSize: "0.95rem", fontWeight: 700, letterSpacing: "0.04em" }}
           >
-            {buying ? "Redirecting…" : isFree ? "Read Now" : `Get Access — ${formatSeriesPrice(s.price_cents)}`}
+            {buying ? "Redirecting…" : isFree ? "Read Now" : priceUnknown ? "Check price →" : `Get Access — ${formatSeriesPrice(s.price_cents)}`}
           </button>
         </div>
       </div>

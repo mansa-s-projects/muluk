@@ -62,7 +62,10 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
           brand_name:    form.brand_name.trim(),
           contact_name:  form.contact_name.trim() || undefined,
           contact_email: form.contact_email.trim() || undefined,
-          amount_cents:  form.amount_cents ? Math.round(parseFloat(form.amount_cents) * 100) : 0,
+          amount_cents: (() => {
+            const parsed = Number.parseFloat(form.amount_cents);
+            return Number.isNaN(parsed) ? 0 : Math.round(parsed * 100);
+          })(),
           currency:      form.currency,
           deadline:      form.deadline || undefined,
           deliverables:  form.deliverables.trim() || undefined,
@@ -101,9 +104,18 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
 
   async function deleteDeal(id: string) {
     if (!confirm("Delete this deal?")) return;
-    await fetch(`/api/deals/${id}`, { method: "DELETE" });
-    await refreshDeals();
-    setSelected(null);
+    try {
+      const res = await fetch(`/api/deals/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error ?? `Delete failed (${res.status})`);
+      }
+      await refreshDeals();
+      setSelected(null);
+    } catch (error) {
+      console.error("[deals] delete failed", error);
+      alert(error instanceof Error ? error.message : "Failed to delete deal");
+    }
   }
 
   return (

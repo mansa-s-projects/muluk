@@ -89,9 +89,16 @@ export default function AvailabilityClient({ creatorId, handle, slots: initialSl
 
   async function handleDelete(id: string) {
     setDeletingId(id);
+    setError("");
     try {
-      await fetch(`/api/dashboard/bookings/slots/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/dashboard/bookings/slots/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error ?? "Failed to delete slot");
+      }
       setSlots((s) => s.filter((slot) => slot.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete slot");
     } finally {
       setDeletingId(null);
     }

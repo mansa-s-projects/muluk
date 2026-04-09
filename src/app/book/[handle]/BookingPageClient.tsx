@@ -321,6 +321,7 @@ export default function BookingPageClient({ handle, initialCreator, initialSlots
             <form onSubmit={handlePay}>
               <div style={{ marginBottom: 16 }}>
                 <label
+                  htmlFor="fan-name"
                   style={{
                     display:       "block",
                     marginBottom:  6,
@@ -334,6 +335,7 @@ export default function BookingPageClient({ handle, initialCreator, initialSlots
                   Your Name *
                 </label>
                 <input
+                  id="fan-name"
                   type="text"
                   value={fanName}
                   onChange={(e) => setFanName(e.target.value)}
@@ -346,6 +348,7 @@ export default function BookingPageClient({ handle, initialCreator, initialSlots
 
               <div style={{ marginBottom: 20 }}>
                 <label
+                  htmlFor="fan-email"
                   style={{
                     display:       "block",
                     marginBottom:  6,
@@ -359,6 +362,7 @@ export default function BookingPageClient({ handle, initialCreator, initialSlots
                   Email *
                 </label>
                 <input
+                  id="fan-email"
                   type="email"
                   value={fanEmail}
                   onChange={(e) => setFanEmail(e.target.value)}

@@ -65,6 +65,16 @@ UPDATE series_episodes
 SET updated_at = COALESCE(updated_at, created_at, NOW())
 WHERE updated_at IS NULL;
 
+ALTER TABLE series_episodes
+  ALTER COLUMN sort_order SET DEFAULT 0,
+  ALTER COLUMN is_preview SET DEFAULT false,
+  ALTER COLUMN updated_at SET DEFAULT NOW();
+
+ALTER TABLE series_episodes
+  ALTER COLUMN sort_order SET NOT NULL,
+  ALTER COLUMN is_preview SET NOT NULL,
+  ALTER COLUMN updated_at SET NOT NULL;
+
 DO $$
 BEGIN
   IF EXISTS (
@@ -111,7 +121,7 @@ CREATE TABLE IF NOT EXISTS series_purchases (
                      CHECK(status IN ('pending','paid','refunded')),
   whop_payment_id  TEXT        UNIQUE,
   access_token     TEXT        UNIQUE NOT NULL
-                     DEFAULT encode(extensions.gen_random_bytes(24), 'hex'),
+                     DEFAULT encode(gen_random_bytes(24), 'hex'),
   paid_at          TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -122,7 +132,7 @@ ALTER TABLE series_purchases
   ADD COLUMN IF NOT EXISTS status TEXT;
 
 UPDATE series_purchases
-SET access_token = encode(extensions.gen_random_bytes(24), 'hex')
+SET access_token = encode(gen_random_bytes(24), 'hex')
 WHERE access_token IS NULL;
 
 UPDATE series_purchases
@@ -155,7 +165,7 @@ $$;
 
 DROP TRIGGER IF EXISTS trg_sync_series_sales ON series_purchases;
 CREATE TRIGGER trg_sync_series_sales
-  AFTER UPDATE ON series_purchases
+  AFTER INSERT OR UPDATE ON series_purchases
   FOR EACH ROW EXECUTE FUNCTION sync_series_total_sales();
 
 -- ── RLS ───────────────────────────────────────────────────────────────────────
@@ -190,7 +200,7 @@ CREATE POLICY "creator_manage_episodes"
 DROP POLICY IF EXISTS "public_insert_purchases" ON series_purchases;
 CREATE POLICY "public_insert_purchases"
   ON series_purchases FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "creator_read_purchases" ON series_purchases;
 CREATE POLICY "creator_read_purchases"
@@ -202,40 +212,23 @@ CREATE POLICY "creator_read_purchases"
 CREATE OR REPLACE FUNCTION get_series_monthly_revenue(p_creator_id UUID, p_year INT)
 RETURNS TABLE(month INT, total_cents BIGINT, purchase_count BIGINT)
 LANGUAGE plpgsql AS $$
+DECLARE
+  start_of_year DATE := make_date(p_year, 1, 1);
+  start_of_next_year DATE := make_date(p_year + 1, 1, 1);
 BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'series'
-      AND column_name = 'price_cents'
-  ) THEN
-    RETURN QUERY
-    SELECT
-      EXTRACT(MONTH FROM sp.paid_at)::INT  AS month,
-      COALESCE(SUM(s.price_cents), 0)      AS total_cents,
-      COUNT(*)                             AS purchase_count
-    FROM series_purchases sp
-    JOIN series s ON s.id = sp.series_id
-    WHERE sp.creator_id = p_creator_id
-      AND sp.status::text = 'paid'
-      AND EXTRACT(YEAR FROM sp.paid_at) = p_year
-    GROUP BY 1
-    ORDER BY 1;
-  ELSE
-    RETURN QUERY
-    SELECT
-      EXTRACT(MONTH FROM sp.paid_at)::INT  AS month,
-      COALESCE(SUM(s.price), 0)            AS total_cents,
-      COUNT(*)                             AS purchase_count
-    FROM series_purchases sp
-    JOIN series s ON s.id = sp.series_id
-    WHERE sp.creator_id = p_creator_id
-      AND sp.status::text = 'paid'
-      AND EXTRACT(YEAR FROM sp.paid_at) = p_year
-    GROUP BY 1
-    ORDER BY 1;
-  END IF;
+  RETURN QUERY
+  SELECT
+    EXTRACT(MONTH FROM sp.paid_at)::INT  AS month,
+    COALESCE(SUM(s.price_cents), 0)      AS total_cents,
+    COUNT(*)                             AS purchase_count
+  FROM series_purchases sp
+  JOIN series s ON s.id = sp.series_id
+  WHERE sp.creator_id = p_creator_id
+    AND sp.status = 'paid'
+    AND sp.paid_at >= start_of_year
+    AND sp.paid_at < start_of_next_year
+  GROUP BY 1
+  ORDER BY 1;
 END;
 $$;
 

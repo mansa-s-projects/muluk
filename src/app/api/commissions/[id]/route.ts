@@ -20,7 +20,16 @@ async function getAuthUser() {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll() } }
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (toSet) => {
+          try {
+            toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {}
+        },
+      },
+    }
   );
   const { data: { user } } = await supabase.auth.getUser();
   return user;
@@ -76,10 +85,13 @@ export async function PATCH(req: Request, { params }: Params) {
       redirectUrl,
     });
 
-    if (checkout) {
-      updates.whop_product_id  = checkout.whop_product_id;
-      updates.whop_checkout_id = checkout.whop_checkout_id;
+    if (!checkout) {
+      console.error("[commissions] checkout provisioning failed", { commissionId: id });
+      return NextResponse.json({ error: "Failed to provision checkout" }, { status: 502 });
     }
+
+    updates.whop_product_id  = checkout.whop_product_id;
+    updates.whop_checkout_id = checkout.whop_checkout_id;
   } else if (action === "reject") {
     if (!["pending", "accepted"].includes(existing.status)) {
       return NextResponse.json({ error: "Cannot reject at this stage" }, { status: 400 });
@@ -92,6 +104,9 @@ export async function PATCH(req: Request, { params }: Params) {
     updates.status       = "delivered";
     updates.delivered_at = new Date().toISOString();
   } else if (action === "cancel") {
+    if (["delivered", "cancelled", "rejected"].includes(existing.status)) {
+      return NextResponse.json({ error: "Commission is already in a terminal state" }, { status: 409 });
+    }
     updates.status = "cancelled";
   }
 
@@ -106,12 +121,14 @@ export async function PATCH(req: Request, { params }: Params) {
     .update(updates)
     .eq("id", id)
     .eq("creator_id", user.id)
-    .select()
-    .single();
+    .select();
 
   if (error) return NextResponse.json({ error: "Update failed" }, { status: 500 });
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: "Commission not found" }, { status: 404 });
+  }
 
-  return NextResponse.json({ commission: data });
+  return NextResponse.json({ commission: data[0] });
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

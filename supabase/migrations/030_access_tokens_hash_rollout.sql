@@ -10,7 +10,7 @@ ALTER TABLE access_tokens
 
 -- Backfill hashes for existing rows so legacy tokens remain valid after code switch.
 UPDATE access_tokens
-SET token_hash = encode(extensions.digest(convert_to(token, 'UTF8'), 'sha256'), 'hex')
+SET token_hash = encode(digest(convert_to(token, 'UTF8'), 'sha256'), 'hex')
 WHERE token_hash IS NULL
   AND token IS NOT NULL;
 

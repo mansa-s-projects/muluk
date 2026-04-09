@@ -52,6 +52,23 @@ export default async function SeriesDashboardPage() {
       .maybeSingle(),
   ]);
 
+  if (seriesRaw.error) {
+    console.error("[dashboard/series] failed to load series", { creatorId: user.id, error: seriesRaw.error });
+    throw new Error("Failed to load series");
+  }
+  if (monthlyRaw.error) {
+    console.error("[dashboard/series] failed to load monthly series revenue", {
+      creatorId: user.id,
+      rpc: "get_series_monthly_revenue",
+      error: monthlyRaw.error,
+    });
+    throw new Error("Failed to load series revenue");
+  }
+  if (profileRaw.error) {
+    console.error("[dashboard/series] failed to load creator profile", { creatorId: user.id, error: profileRaw.error });
+    throw new Error("Failed to load creator profile");
+  }
+
   const seriesList = (seriesRaw.data ?? []) as Series[];
 
   // Batch-fetch episodes for all series

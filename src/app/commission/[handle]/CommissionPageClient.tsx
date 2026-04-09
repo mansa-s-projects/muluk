@@ -33,13 +33,17 @@ export default function CommissionPageClient({ handle }: Props) {
   const [fanEmail, setFanEmail]   = useState("");
   const [notes, setNotes]         = useState("");
 
-  const effectiveBudget = budgetCents || (customBudget ? Math.round(parseFloat(customBudget) * 100) : 0);
+  const parsedCustomBudget = Number.parseFloat(customBudget);
+  const customBudgetCents = Number.isFinite(parsedCustomBudget)
+    ? Math.round(parsedCustomBudget * 100)
+    : 0;
+  const effectiveBudget = budgetCents || customBudgetCents;
 
   async function submit() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`/api/commissions/${handle}`, {
+      const res = await fetch(`/api/commissions/creator/${encodeURIComponent(handle)}`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -51,13 +55,30 @@ export default function CommissionPageClient({ handle }: Props) {
           notes: notes.trim() || undefined,
         }),
       });
-      const json = await res.json();
+      let json: Record<string, unknown> | null = null;
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("application/json")) {
+        try {
+          json = await res.json();
+        } catch {
+          json = null;
+        }
+      }
       if (!res.ok) {
-        setError(json.error ?? "Something went wrong.");
+        if (json && typeof json.error === "string") {
+          setError(json.error);
+        } else {
+          const text = await res.text().catch(() => "");
+          setError(text || "Something went wrong.");
+        }
         return;
       }
-      setResultToken(json.access_token);
-      setResultId(json.id);
+      if (!json) {
+        setError("Unexpected response from server.");
+        return;
+      }
+      setResultToken(typeof json.access_token === "string" ? json.access_token : "");
+      setResultId(typeof json.id === "string" ? json.id : "");
       setStep("submitted");
     } catch {
       setError("Network error. Please try again.");

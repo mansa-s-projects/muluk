@@ -51,7 +51,9 @@ BEGIN
       AND table_name = 'withdrawal_requests'
       AND column_name = 'amount'
   ) THEN
-    EXECUTE 'UPDATE withdrawal_requests SET amount_cents = COALESCE(amount_cents, amount)';
+    EXECUTE 'UPDATE withdrawal_requests
+             SET amount_cents = (amount::numeric * 100)::bigint
+             WHERE amount_cents IS NULL AND amount IS NOT NULL';
   END IF;
 
   -- Keep old rows compatible with current lifecycle enum usage.

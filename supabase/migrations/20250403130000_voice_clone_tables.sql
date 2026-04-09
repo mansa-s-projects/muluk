@@ -46,6 +46,12 @@ CREATE POLICY "Users can delete own voice clones"
   ON voice_clones FOR DELETE
   USING (auth.uid() = creator_id);
 
+DROP POLICY IF EXISTS "Users can update own voice clones" ON voice_clones;
+CREATE POLICY "Users can update own voice clones"
+  ON voice_clones FOR UPDATE
+  USING (auth.uid() = creator_id)
+  WITH CHECK (auth.uid() = creator_id);
+
 -- RLS Policies for voice_generations
 DROP POLICY IF EXISTS "Users can view own voice generations" ON voice_generations;
 CREATE POLICY "Users can view own voice generations"
@@ -62,6 +68,19 @@ CREATE INDEX IF NOT EXISTS idx_voice_clones_creator_id ON voice_clones(creator_i
 CREATE INDEX IF NOT EXISTS idx_voice_clones_voice_id ON voice_clones(voice_id);
 CREATE INDEX IF NOT EXISTS idx_voice_generations_creator_id ON voice_generations(creator_id);
 CREATE INDEX IF NOT EXISTS idx_voice_generations_created_at ON voice_generations(created_at DESC);
+
+CREATE OR REPLACE FUNCTION refresh_voice_clones_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_voice_clones_updated_at ON voice_clones;
+CREATE TRIGGER trg_voice_clones_updated_at
+  BEFORE UPDATE ON voice_clones
+  FOR EACH ROW EXECUTE FUNCTION refresh_voice_clones_updated_at();
 
 -- Add to realtime publication
 DO $$

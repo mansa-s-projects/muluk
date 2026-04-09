@@ -35,6 +35,7 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
   const [agreedCents, setAgreedCents] = useState("");
   const [loading, setLoading]         = useState(false);
   const [copied, setCopied]           = useState(false);
+  const [error, setError]             = useState("");
 
   const siteUrl  = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const shareUrl = `${siteUrl}/commission/${handle}`;
@@ -53,20 +54,27 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
 
   async function handleAction(id: string, action: string, extra?: Record<string, unknown>) {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`/api/commissions/${id}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ action, ...extra }),
       });
-      if (res.ok) {
-        await refreshList();
-        if (action !== "deliver") setSelected(null);
-        else {
-          const json = await res.json();
-          setSelected(json.commission ?? null);
-        }
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        setError(payload.error ?? "Action failed");
+        return;
       }
+
+      await refreshList();
+      if (action !== "deliver") setSelected(null);
+      else {
+        const json = await res.json().catch(() => ({}));
+        setSelected(json.commission ?? null);
+      }
+    } catch {
+      setError("Network error while updating commission");
     } finally {
       setLoading(false);
     }
@@ -158,9 +166,16 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--rim)" }}>
-                  {["Fan", "Title", "Budget", "Status", "Submitted", ""].map((h) => (
-                    <th key={h} style={{ padding: "0.875rem 1.25rem", textAlign: "left", color: "var(--muted)", fontSize: "0.75rem", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                      {h}
+                  {[
+                    { label: "Fan", key: "fan" },
+                    { label: "Title", key: "title" },
+                    { label: "Budget", key: "budget" },
+                    { label: "Status", key: "status" },
+                    { label: "Submitted", key: "submitted" },
+                    { label: "", key: "actions" },
+                  ].map((h) => (
+                    <th key={h.key} style={{ padding: "0.875rem 1.25rem", textAlign: "left", color: "var(--muted)", fontSize: "0.75rem", fontWeight: 500, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                      {h.label}
                     </th>
                   ))}
                 </tr>
@@ -206,14 +221,16 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
                       {c.status === "pending" && (
                         <div style={{ display: "flex", gap: "0.5rem" }} onClick={(e) => e.stopPropagation()}>
                           <button
+                            disabled={loading}
                             onClick={() => { setSelected(c); setAcceptModal(true); setAgreedCents(""); }}
-                            style={{ background: "var(--green-d)", border: "1px solid var(--green-b)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--green)", fontSize: "0.8125rem", cursor: "pointer" }}
+                            style={{ background: "var(--green-d)", border: "1px solid var(--green-b)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--green)", fontSize: "0.8125rem", cursor: loading ? "not-allowed" : "pointer", pointerEvents: loading ? "none" : "auto", opacity: loading ? 0.6 : 1 }}
                           >
                             Accept
                           </button>
                           <button
+                            disabled={loading}
                             onClick={() => handleAction(c.id, "reject")}
-                            style={{ background: "var(--red-d)", border: "1px solid var(--red)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--red)", fontSize: "0.8125rem", cursor: "pointer" }}
+                            style={{ background: "var(--red-d)", border: "1px solid var(--red)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--red)", fontSize: "0.8125rem", cursor: loading ? "not-allowed" : "pointer", pointerEvents: loading ? "none" : "auto", opacity: loading ? 0.6 : 1 }}
                           >
                             Reject
                           </button>
@@ -221,8 +238,9 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
                       )}
                       {c.status === "paid" && (
                         <button
+                          disabled={loading}
                           onClick={(e) => { e.stopPropagation(); handleAction(c.id, "deliver"); }}
-                          style={{ background: "var(--gold-glow)", border: "1px solid var(--gold-dim)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--gold)", fontSize: "0.8125rem", cursor: "pointer" }}
+                          style={{ background: "var(--gold-glow)", border: "1px solid var(--gold-dim)", borderRadius: 6, padding: "0.3rem 0.75rem", color: "var(--gold)", fontSize: "0.8125rem", cursor: loading ? "not-allowed" : "pointer", pointerEvents: loading ? "none" : "auto", opacity: loading ? 0.6 : 1 }}
                         >
                           Mark Delivered
                         </button>
@@ -234,6 +252,10 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
             </table>
           )}
         </div>
+
+        {error && (
+          <div style={{ marginTop: "0.75rem", color: "var(--red)", fontSize: "0.85rem" }}>{error}</div>
+        )}
       </div>
 
       {/* ── Detail Drawer ── */}

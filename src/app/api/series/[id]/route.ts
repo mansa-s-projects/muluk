@@ -19,7 +19,11 @@ async function getAuthUser() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: () => {},
+        setAll: (toSet) => {
+          try {
+            toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {}
+        },
       },
     }
   );
@@ -42,6 +46,16 @@ export async function GET(_req: Request, { params }: Params) {
     db.from("series").select("*").eq("id", id).eq("creator_id", user.id).maybeSingle(),
     db.from("series_episodes").select("*").eq("series_id", id).order("sort_order").order("created_at"),
   ]);
+
+  if (seriesRes.error || episodesRes.error) {
+    return NextResponse.json(
+      {
+        error: "Failed to load series",
+        details: seriesRes.error?.message ?? episodesRes.error?.message,
+      },
+      { status: 500 }
+    );
+  }
 
   if (!seriesRes.data) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ series: seriesRes.data, episodes: episodesRes.data ?? [] });

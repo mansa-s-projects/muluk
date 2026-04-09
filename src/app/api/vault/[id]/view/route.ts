@@ -45,7 +45,12 @@ export async function GET(
     .eq("vault_item_id", id)
     .maybeSingle();
 
-  if (error || !purchase) {
+  if (error) {
+    console.error("[vault/view] purchase query failed:", error);
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
+
+  if (!purchase) {
     return NextResponse.json({ error: "Token not found" }, { status: 404 });
   }
 
@@ -57,11 +62,16 @@ export async function GET(
   }
 
   // Fetch item to get file_path
-  const { data: item } = await db
+  const { data: item, error: itemError } = await db
     .from("vault_items")
     .select("file_path, mime_type, title")
     .eq("id", id)
     .maybeSingle();
+
+  if (itemError) {
+    console.error("[vault/view] item query failed:", itemError);
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 
   if (!item) {
     return NextResponse.json({ error: "Vault item not found" }, { status: 404 });

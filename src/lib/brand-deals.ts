@@ -36,12 +36,19 @@ export const DEAL_STATUS_COLORS: Record<BrandDeal["status"], string> = {
   cancelled: "dim",
 };
 
-export function formatDealAmount(cents: number, currency = "USD"): string {
-  const dollars = cents / 100;
-  return new Intl.NumberFormat("en-US", {
+export function formatDealAmount(cents: number, currency = "USD", locale?: string): string {
+  const resolvedLocale = locale ?? Intl.NumberFormat().resolvedOptions().locale;
+  const fractionDigits = new Intl.NumberFormat(resolvedLocale, {
     style: "currency",
     currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(dollars);
+  }).resolvedOptions().maximumFractionDigits ?? 2;
+  const divisor = 10 ** fractionDigits;
+  const amount = cents / divisor;
+
+  return new Intl.NumberFormat(resolvedLocale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(amount);
 }

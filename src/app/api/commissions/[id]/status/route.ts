@@ -25,19 +25,30 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const supabase = getService();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("commissions")
     .select("id,title,description,budget_cents,agreed_cents,status,deadline,whop_checkout_id,fan_email,paid_at,delivered_at,created_at")
     .eq("id", id)
     .eq("access_token", token)
     .maybeSingle();
 
+  if (error) {
+    console.error("[commissions/status] query failed:", error);
+    return NextResponse.json({ error: "Failed to fetch commission status" }, { status: 500 });
+  }
+
   if (!data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const safeFanEmail =
+    typeof data.fan_email === "string" && data.fan_email.trim().length > 0
+      ? data.fan_email
+      : null;
   const checkout_url = data.whop_checkout_id && data.status === "accepted"
-    ? `https://whop.com/checkout/${data.whop_checkout_id}/?email=${encodeURIComponent(data.fan_email)}`
+    ? safeFanEmail
+      ? `https://whop.com/checkout/${data.whop_checkout_id}/?email=${encodeURIComponent(safeFanEmail)}`
+      : `https://whop.com/checkout/${data.whop_checkout_id}/`
     : null;
 
   return NextResponse.json({

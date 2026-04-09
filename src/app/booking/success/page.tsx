@@ -12,7 +12,6 @@ interface Props {
 interface BookingDetails {
   id:                 string;
   fan_name:           string;
-  fan_email:          string;
   status:             string;
   amount_cents:       number;
   meeting_link:       string | null;
@@ -28,6 +27,10 @@ interface BookingDetails {
 }
 
 async function getBooking(bookingId: string): Promise<BookingDetails | null> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(bookingId)) {
+    return null;
+  }
+
   const db = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,7 +40,6 @@ async function getBooking(bookingId: string): Promise<BookingDetails | null> {
     .select(`
       id,
       fan_name,
-      fan_email,
       status,
       amount_cents,
       meeting_link,
@@ -52,6 +54,17 @@ async function getBooking(bookingId: string): Promise<BookingDetails | null> {
     .maybeSingle();
 
   return data as BookingDetails | null;
+}
+
+function validateMeetingLink(link: string | null | undefined): string | null {
+  if (!link || typeof link !== "string") return null;
+  try {
+    const parsed = new URL(link);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
 
 function fmtDate(d: string) {
@@ -76,6 +89,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
   const booking = bookingId ? await getBooking(bookingId) : null;
 
   const isConfirmed = booking?.status === "confirmed";
+  const safeMeetingLink = validateMeetingLink(booking?.meeting_link);
   const av          = booking?.availability;
   const creator     = av?.profiles;
 
@@ -170,7 +184,6 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
           >
             {/* Booking rows */}
             <DetailRow label="Fan" value={booking.fan_name} />
-            <DetailRow label="Email" value={booking.fan_email} />
             {creator && (
               <DetailRow label="Creator" value={creator.display_name ?? `@${creator.handle}`} />
             )}
@@ -182,9 +195,9 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
         )}
 
         {/* Meeting link */}
-        {isConfirmed && booking?.meeting_link && (
+        {isConfirmed && safeMeetingLink && (
           <a
-            href={booking.meeting_link}
+            href={safeMeetingLink}
             target="_blank"
             rel="noopener noreferrer"
             style={{

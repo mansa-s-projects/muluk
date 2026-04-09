@@ -26,7 +26,7 @@ BEGIN
   ) THEN
     CREATE INDEX IF NOT EXISTS idx_purchases_pl_created
       ON purchases (payment_link_id, created_at DESC)
-      WHERE status::text = 'paid';
+      WHERE status = 'paid';
   END IF;
 END $$;
 

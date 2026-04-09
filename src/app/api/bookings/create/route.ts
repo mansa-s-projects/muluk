@@ -22,7 +22,7 @@ async function provisionBookingCheckout(params: {
   redirectUrl: string;
 }): Promise<{ whop_checkout_id: string; whop_checkout_url: string } | null> {
   const apiKey = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
+  const companyId = process.env.WHOP_API_KEY;
   if (!apiKey || !companyId) return null;
 
   const headers = {
@@ -63,7 +63,26 @@ async function provisionBookingCheckout(params: {
       }),
     });
 
-    if (!planRes.ok) return null;
+    if (!planRes.ok) {
+      try {
+        const deleteRes = await fetch(`${WHOP_API_BASE}/products/${product.id}`, {
+          method: "DELETE",
+          headers,
+        });
+        if (!deleteRes.ok) {
+          console.error("[bookings] failed to cleanup orphaned Whop product", {
+            productId: product.id,
+            status: deleteRes.status,
+          });
+        }
+      } catch (deleteErr) {
+        console.error("[bookings] failed to cleanup orphaned Whop product", {
+          productId: product.id,
+          error: deleteErr,
+        });
+      }
+      return null;
+    }
     const plan = await planRes.json() as { id: string };
 
     return {
@@ -181,10 +200,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Payment system unavailable" }, { status: 503 });
   }
 
-  await db
+  const { error: checkoutUpdateError } = await db
     .from("bookings")
     .update({ whop_checkout_id: checkout.whop_checkout_id })
     .eq("id", booking.id);
+
+  if (checkoutUpdateError) {
+    console.error("[bookings] failed to persist whop_checkout_id", {
+      bookingId: booking.id,
+      whopCheckoutId: checkout.whop_checkout_id,
+      error: checkoutUpdateError,
+    });
+    return NextResponse.json({ error: "Failed to persist booking checkout" }, { status: 500 });
+  }
 
   return NextResponse.json({ url: checkout.whop_checkout_url });
 }

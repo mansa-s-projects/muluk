@@ -43,12 +43,19 @@ export async function DELETE(
   const db = serviceDb();
 
   // Confirm the slot belongs to this creator and is not yet booked
-  const { data: slot } = await db
+  const { data: slot, error: slotError } = await db
     .from("availability")
     .select("id, is_booked, creator_id")
     .eq("id", id)
     .single();
 
+  if (slotError && slotError.code === "PGRST116") {
+    return NextResponse.json({ error: "Slot not found" }, { status: 404 });
+  }
+  if (slotError) {
+    console.error("[dashboard/bookings/slots/delete] failed to load slot", { id, error: slotError });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
   if (!slot) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
   if (slot.creator_id !== user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (slot.is_booked) return NextResponse.json({ error: "Cannot delete a booked slot" }, { status: 409 });

@@ -3,8 +3,7 @@
  * Handles programmatic product + plan creation for one-click monetization.
  *
  * Env required:
- *   WHOP_API_KEY          — Bearer token for Whop API
- *   WHOP_COMPANY_ID       — Your Whop company / business ID (biz_xxxx)
+ *   WHOP_API_KEY          — Whop API key (also used as company_id in product creation)
  *   WHOP_WEBHOOK_SECRET   — Already used in webhook route
  */
 
@@ -75,8 +74,8 @@ export type WhopPlan = {
  * Create a Whop product (access pass wrapper).
  */
 export async function createWhopProduct(name: string, description?: string): Promise<WhopProduct> {
-  const companyId = process.env.WHOP_COMPANY_ID;
-  if (!companyId) throw new Error("WHOP_COMPANY_ID env var not set");
+  const companyId = process.env.WHOP_API_KEY;
+  if (!companyId) throw new Error("WHOP_API_KEY env var not set");
 
   return whopFetch<WhopProduct>("/products", {
     method: "POST",
@@ -123,7 +122,7 @@ export function buildWhopCheckoutUrl(accessPassSlug: string, redirectUrl: string
 
 /**
  * Try to create a product + plan + checkout URL for a payment link.
- * Returns null if WHOP_API_KEY or WHOP_COMPANY_ID are not set (graceful degradation).
+ * Returns null if WHOP_API_KEY is not set (graceful degradation).
  */
 export async function provisionWhopCheckout(params: {
   title: string;

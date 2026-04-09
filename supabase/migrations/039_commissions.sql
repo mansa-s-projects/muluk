@@ -48,6 +48,9 @@ UPDATE commissions
 SET access_token = encode(extensions.gen_random_bytes(24), 'hex')
 WHERE access_token IS NULL;
 
+ALTER TABLE commissions
+  ALTER COLUMN access_token SET NOT NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_commissions_access_token_unique
   ON commissions(access_token)
   WHERE access_token IS NOT NULL;

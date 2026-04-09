@@ -15,7 +15,8 @@ type Params = { params: Promise<{ handle: string }> };
 export async function GET(req: Request, { params }: Params) {
   const { handle } = await params;
   const { searchParams } = new URL(req.url);
-  const page  = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const rawPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const page = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1;
   const limit = 20;
   const offset = (page - 1) * limit;
 
@@ -149,13 +150,22 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Store Whop IDs on the tip
-  await supabase
+  const { error: updateError } = await supabase
     .from("tips")
     .update({
       whop_product_id:  checkout.whop_product_id,
       whop_checkout_id: checkout.whop_checkout_id,
     })
     .eq("id", tip.id);
+
+  if (updateError) {
+    console.error("[api/tips/[handle]] failed to persist checkout ids", {
+      tipId: tip.id,
+      whopCheckoutId: checkout.whop_checkout_id,
+      error: updateError.message,
+    });
+    return NextResponse.json({ error: "Failed to persist checkout" }, { status: 500 });
+  }
 
   return NextResponse.json({
     id:          tip.id,

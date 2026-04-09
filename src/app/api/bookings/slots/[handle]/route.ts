@@ -32,7 +32,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const today  = new Date().toISOString().split("T")[0];
   const cutoff = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  const { data: slots } = await db
+  const { data: slots, error: slotsError } = await db
     .from("availability")
     .select("id, slot_date, start_time, duration_minutes, price_cents")
     .eq("creator_id", profile.id)
@@ -42,6 +42,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     .lte("slot_date", cutoff)
     .order("slot_date",  { ascending: true })
     .order("start_time", { ascending: true });
+
+  if (slotsError) {
+    console.error("[bookings/slots] availability query failed:", slotsError);
+    return NextResponse.json({ error: "Database error fetching availability" }, { status: 500 });
+  }
 
   return NextResponse.json({ creator: profile, slots: slots ?? [] });
 }

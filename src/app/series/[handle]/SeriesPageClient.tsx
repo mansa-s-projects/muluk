@@ -43,8 +43,12 @@ export default function SeriesPageClient({ handle }: Props) {
         window.location.href = data.checkout_url;
       } else if (data.redirect_url) {
         window.location.href = data.redirect_url;
+      } else {
+        console.error("[series/page] buy succeeded without redirect URL", data);
+        alert("Unable to continue to checkout right now. Please try again.");
       }
-    } catch {
+    } catch (error) {
+      console.error("[series/page] buy request failed", error);
       alert("Something went wrong. Please try again.");
     } finally {
       setBuying(null);
@@ -173,7 +177,7 @@ function SeriesCard({
             <div key={ep.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
               <span style={{ color: "var(--amber)", fontSize: "0.5625rem", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.1em", background: "rgba(232,168,48,0.12)", padding: "2px 6px", borderRadius: 3 }}>Preview</span>
               <a
-                href={`/series/${handle}/${series.id}`}
+                href={`/series/${handle}/${series.id}?episode=${ep.id}`}
                 style={{ color: "var(--muted)", fontSize: "0.8125rem", textDecoration: "none" }}
               >
                 {ep.title}

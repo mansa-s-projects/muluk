@@ -8,7 +8,12 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+
+  if (!/^https?:\/\//.test(base)) {
+    console.error("[book/page] NEXT_PUBLIC_SITE_URL missing or invalid in generateMetadata");
+    return { title: "Book a Session" };
+  }
 
   try {
     const res = await fetch(`${base}/api/bookings/slots/${handle}`, {
@@ -28,7 +33,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BookPage({ params }: Props) {
   const { handle } = await params;
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const base = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+  if (!/^https?:\/\//.test(base)) {
+    console.error("[book/page] NEXT_PUBLIC_SITE_URL missing or invalid");
+    throw new Error("NEXT_PUBLIC_SITE_URL must be configured with an absolute URL");
+  }
 
   try {
     const res = await fetch(`${base}/api/bookings/slots/${handle}`, {
@@ -39,7 +48,8 @@ export default async function BookPage({ params }: Props) {
 
     const data = await res.json();
     return <BookingPageClient handle={handle} initialCreator={data.creator} initialSlots={data.slots} />;
-  } catch {
-    notFound();
+  } catch (error) {
+    console.error("[book/page] failed to load booking slots", error);
+    throw error;
   }
 }

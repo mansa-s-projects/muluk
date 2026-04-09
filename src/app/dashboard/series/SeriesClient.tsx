@@ -115,8 +115,9 @@ export default function SeriesClient({ initialSeries, initialEpisodes, monthlyEa
     if (!seriesForm.title.trim()) return;
     setLoading(true);
     try {
-      const priceCents = seriesForm.price
-        ? Math.round(parseFloat(seriesForm.price) * 100)
+      const parsedPrice = Number.parseFloat(seriesForm.price);
+      const priceCents = Number.isFinite(parsedPrice) && parsedPrice > 0
+        ? Math.round(parsedPrice * 100)
         : 0;
       const res = await fetch("/api/series", {
         method: "POST",
@@ -143,8 +144,9 @@ export default function SeriesClient({ initialSeries, initialEpisodes, monthlyEa
     if (!selected || !editForm.title.trim()) return;
     setLoading(true);
     try {
-      const priceCents = editForm.price
-        ? Math.round(parseFloat(editForm.price) * 100)
+      const parsedPrice = Number.parseFloat(editForm.price);
+      const priceCents = Number.isFinite(parsedPrice) && parsedPrice > 0
+        ? Math.round(parsedPrice * 100)
         : 0;
       const res = await fetch(`/api/series/${selected.id}`, {
         method: "PATCH",

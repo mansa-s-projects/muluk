@@ -11,7 +11,7 @@ export default async function RateCardPage() {
   if (!user) redirect("/login");
 
   // Load existing rate card + stats for this creator (if any)
-  const [{ data: rateCard }, { data: creatorStats }] = await Promise.all([
+  const [rateCardRes, creatorStatsRes] = await Promise.all([
     supabase
       .from("rate_cards")
       .select("*")
@@ -23,6 +23,18 @@ export default async function RateCardPage() {
       .eq("creator_id", user.id)
       .maybeSingle(),
   ]);
+
+  if (rateCardRes.error) {
+    console.error("[dashboard/rate-card] failed to load rate card", rateCardRes.error);
+    throw new Error("Failed to load rate card");
+  }
+  if (creatorStatsRes.error) {
+    console.error("[dashboard/rate-card] failed to load creator stats", creatorStatsRes.error);
+    throw new Error("Failed to load creator stats");
+  }
+
+  const rateCard = rateCardRes.data;
+  const creatorStats = creatorStatsRes.data;
 
   const savedPrices = rateCard
     ? pricesFromCents({

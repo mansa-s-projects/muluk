@@ -38,7 +38,8 @@ ALTER TABLE brand_deals ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "creator_manage_brand_deals" ON brand_deals;
 CREATE POLICY "creator_manage_brand_deals"
   ON brand_deals FOR ALL
-  USING (creator_id = auth.uid());
+  USING (creator_id = auth.uid())
+  WITH CHECK (creator_id = auth.uid());
 
 -- ── Updated_at trigger ────────────────────────────────────────────────────────
 
@@ -60,36 +61,21 @@ CREATE TRIGGER trg_brand_deal_updated_at
 CREATE OR REPLACE FUNCTION get_brand_deal_monthly_earnings(p_creator_id UUID, p_year INT)
 RETURNS TABLE(month INT, total_cents BIGINT)
 LANGUAGE plpgsql AS $$
+DECLARE
+  start_of_year DATE := make_date(p_year, 1, 1);
+  start_of_next_year DATE := make_date(p_year + 1, 1, 1);
 BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'brand_deals'
-      AND column_name = 'amount_cents'
-  ) THEN
-    RETURN QUERY
-    SELECT
-      EXTRACT(MONTH FROM paid_at)::INT AS month,
-      SUM(amount_cents)::BIGINT        AS total_cents
-    FROM brand_deals
-    WHERE creator_id = p_creator_id
-      AND status = 'paid'
-      AND EXTRACT(YEAR FROM paid_at) = p_year
-    GROUP BY 1
-    ORDER BY 1;
-  ELSE
-    RETURN QUERY
-    SELECT
-      EXTRACT(MONTH FROM paid_at)::INT AS month,
-      SUM(amount)::BIGINT              AS total_cents
-    FROM brand_deals
-    WHERE creator_id = p_creator_id
-      AND status = 'paid'
-      AND EXTRACT(YEAR FROM paid_at) = p_year
-    GROUP BY 1
-    ORDER BY 1;
-  END IF;
+  RETURN QUERY
+  SELECT
+    EXTRACT(MONTH FROM paid_at)::INT AS month,
+    SUM(amount_cents)::BIGINT        AS total_cents
+  FROM brand_deals
+  WHERE creator_id = p_creator_id
+    AND status = 'paid'
+    AND paid_at >= start_of_year
+    AND paid_at < start_of_next_year
+  GROUP BY 1
+  ORDER BY 1;
 END;
 $$;
 

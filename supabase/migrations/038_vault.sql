@@ -56,6 +56,34 @@ CREATE TABLE IF NOT EXISTS vault_purchases (
   paid_at          TIMESTAMPTZ
 );
 
+COMMENT ON COLUMN vault_purchases.buyer_email IS 'PII: buyer email address. Apply strict access controls and retention/deletion policies.';
+
+CREATE OR REPLACE FUNCTION enforce_vault_purchase_creator_match()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+  item_creator_id UUID;
+BEGIN
+  SELECT creator_id INTO item_creator_id
+  FROM vault_items
+  WHERE id = NEW.vault_item_id;
+
+  IF item_creator_id IS NULL THEN
+    RAISE EXCEPTION 'vault item % not found', NEW.vault_item_id;
+  END IF;
+
+  IF NEW.creator_id IS DISTINCT FROM item_creator_id THEN
+    RAISE EXCEPTION 'creator_id must match vault_items.creator_id for vault_item_id %', NEW.vault_item_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_enforce_vault_purchase_creator_match ON vault_purchases;
+CREATE TRIGGER trg_enforce_vault_purchase_creator_match
+  BEFORE INSERT OR UPDATE ON vault_purchases
+  FOR EACH ROW EXECUTE FUNCTION enforce_vault_purchase_creator_match();
+
 CREATE INDEX IF NOT EXISTS idx_vault_purchases_item   ON vault_purchases(vault_item_id);
 CREATE INDEX IF NOT EXISTS idx_vault_purchases_token  ON vault_purchases(access_token);
 CREATE INDEX IF NOT EXISTS idx_vault_purchases_whop   ON vault_purchases(whop_payment_id)

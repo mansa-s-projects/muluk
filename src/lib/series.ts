@@ -99,6 +99,9 @@ export const SERIES_STATUS_COLORS: Record<
 // ── Formatters ───────────────────────────────────────────────────────────────
 
 export function formatSeriesPrice(cents: number): string {
+  if (cents < 0) {
+    throw new TypeError(`formatSeriesPrice expected non-negative cents, got ${cents}`);
+  }
   if (cents === 0) return "Free";
   if (cents % 100 === 0) return `$${cents / 100}`;
   return `$${(cents / 100).toFixed(2)}`;
@@ -125,8 +128,8 @@ export async function provisionSeriesPurchaseCheckout(opts: {
   whop_checkout_url: string;
 } | null> {
   const apiKey    = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
-  if (!apiKey || !companyId) return null;
+  const companyId = process.env.WHOP_API_KEY;
+  if (!apiKey) return null;
 
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -160,7 +163,26 @@ export async function provisionSeriesPurchaseCheckout(opts: {
         },
       }),
     });
-    if (!planRes.ok) return null;
+    if (!planRes.ok) {
+      try {
+        const deleteRes = await fetch(`${WHOP_API_BASE}/products/${product.id}`, {
+          method: "DELETE",
+          headers,
+        });
+        if (!deleteRes.ok) {
+          console.error("[series] orphaned Whop product cleanup failed", {
+            productId: product.id,
+            status: deleteRes.status,
+          });
+        }
+      } catch (deleteErr) {
+        console.error("[series] orphaned Whop product cleanup failed", {
+          productId: product.id,
+          error: deleteErr,
+        });
+      }
+      return null;
+    }
     const plan = await planRes.json() as { id: string };
 
     const checkoutUrl = opts.fanEmail

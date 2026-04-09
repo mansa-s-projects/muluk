@@ -46,7 +46,7 @@ const MOCK_OUTPUTS: Record<string, string> = {
 • OF's EU compliance tensions create a 90-day window of creator uncertainty
 • Crypto-native Gen Z creators (18-24) represent a high-growth cohort no competitor is targeting explicitly
 
-_Running with offline fallback — add ANTHROPIC_API_KEY to .env.local for live AI analysis._`,
+_Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live AI analysis._`,
 
   writer: `**Copy Suite — Launch Assets**
 
@@ -60,7 +60,7 @@ Open: creator staring at earnings dashboard, frustrated. Text overlay: "This is 
 Subject: _They've been taking 20% of your work for years_
 Opening: "While you were building your audience, your platform was building their margins — here's what you're actually owed."
 
-_Running with offline fallback — add ANTHROPIC_API_KEY to .env.local for live generation._`,
+_Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live generation._`,
 
   critic: `**Critical Risk Analysis**
 
@@ -76,7 +76,7 @@ Stripe terminates adult content platforms without warning. CIPHER needs 3 indepe
 **Core Assumption at Risk**
 CIPHER assumes creators migrate for economics. What they actually migrate for is audience portability. Without a fan migration tool, switching cost is prohibitively high regardless of fee structure.
 
-_Running with offline fallback — add ANTHROPIC_API_KEY to .env.local for live analysis._`,
+_Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live analysis._`,
 };
 
 export async function POST(request: NextRequest) {
@@ -87,27 +87,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing agent or run_id" }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     let outputText: string;
 
     if (apiKey) {
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-6",
+            model: "anthropic/claude-sonnet-4-5",
             max_tokens: 512,
             messages: [{ role: "user", content: AGENT_PROMPTS[agent] ?? AGENT_PROMPTS.researcher }],
           }),
         });
-        if (!res.ok) throw new Error(`Anthropic ${res.status}`);
+        if (!res.ok) throw new Error(`OpenRouter ${res.status}`);
         const data = await res.json();
-        outputText = data.content?.[0]?.text ?? MOCK_OUTPUTS[agent];
+        outputText = data.choices?.[0]?.message?.content ?? MOCK_OUTPUTS[agent];
       } catch {
         outputText = MOCK_OUTPUTS[agent];
       }
@@ -124,7 +123,7 @@ export async function POST(request: NextRequest) {
       agent,
       output: {
         text: outputText,
-        model: apiKey ? "claude-sonnet-4-6" : "mock",
+        model: apiKey ? "anthropic/claude-sonnet-4-5" : "mock",
         timestamp: new Date().toISOString(),
       },
       run_id,

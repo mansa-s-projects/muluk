@@ -75,24 +75,54 @@ export async function POST(req: Request) {
     ? `${SITE_URL}/@${creator.handle}?payment=success`
     : `${SITE_URL}/?payment=success`;
 
-  const checkout = await provisionWhopCheckout({
-    title: content.title,
-    description: content.description ?? undefined,
-    price_cents: content.price,
-    redirect_url: redirectUrl,
-  });
+  let checkout;
+  try {
+    checkout = await provisionWhopCheckout({
+      title: content.title,
+      description: content.description ?? undefined,
+      price_cents: content.price,
+      redirect_url: redirectUrl,
+    });
+  } catch (checkoutErr) {
+    console.error("[whop-link] checkout provisioning threw", checkoutErr);
+    return NextResponse.json({ error: "Unable to provision checkout" }, { status: 503 });
+  }
 
   if (!checkout) {
     return NextResponse.json({ error: "Unable to provision checkout" }, { status: 503 });
   }
 
-  await db
+  const { data: updatedRows, error: updateError } = await db
     .from("content_items_v2")
     .update({
       whop_product_id: checkout.whop_product_id,
       whop_checkout_url: checkout.whop_checkout_url,
     })
-    .eq("id", content.id);
+    .eq("id", content.id)
+    .is("whop_checkout_url", null)
+    .select("id, whop_checkout_url, whop_product_id");
+
+  if (updateError) {
+    console.error("[whop-link] failed to persist checkout:", updateError);
+    return NextResponse.json({ error: "Failed to persist checkout" }, { status: 500 });
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    const { data: current, error: rereadError } = await db
+      .from("content_items_v2")
+      .select("whop_checkout_url, whop_product_id")
+      .eq("id", content.id)
+      .maybeSingle();
+
+    if (rereadError || !current?.whop_checkout_url) {
+      return NextResponse.json({ error: "Unable to resolve checkout" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      checkout_url: current.whop_checkout_url,
+      whop_product_id: current.whop_product_id ?? null,
+    });
+  }
 
   return NextResponse.json({
     checkout_url: checkout.whop_checkout_url,

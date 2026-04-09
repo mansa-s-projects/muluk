@@ -18,20 +18,28 @@ export async function GET(_req: Request, { params }: Params) {
   const db = getServiceDb();
 
   // Resolve creator by handle
-  const { data: creator } = await db
+  const { data: creator, error: creatorError } = await db
     .from("creator_applications")
     .select("user_id")
     .eq("handle", handle)
     .eq("status", "approved")
     .maybeSingle();
+
+  if (creatorError) {
+    return NextResponse.json({ error: creatorError.message || "Creator lookup failed" }, { status: 500 });
+  }
   if (!creator) return NextResponse.json({ error: "Creator not found" }, { status: 404 });
 
-  const { data: seriesList } = await db
+  const { data: seriesList, error: seriesError } = await db
     .from("series")
     .select("id, title, description, cover_url, price_cents, episode_count")
     .eq("creator_id", creator.user_id)
     .eq("status", "published")
     .order("created_at", { ascending: false });
+
+  if (seriesError) {
+    return NextResponse.json({ error: seriesError.message || "Series query failed" }, { status: 500 });
+  }
 
   if (!seriesList || seriesList.length === 0) {
     return NextResponse.json({ series: [] });
@@ -39,12 +47,20 @@ export async function GET(_req: Request, { params }: Params) {
 
   // Fetch preview episodes for each series in one query
   const seriesIds = seriesList.map((s) => s.id);
-  const { data: previewEps } = await db
+  const { data: previewEps, error: previewEpsError } = await db
     .from("series_episodes")
     .select("id, series_id, title, body, media_url, sort_order, is_preview")
     .in("series_id", seriesIds)
     .eq("is_preview", true)
     .order("sort_order");
+
+  if (previewEpsError) {
+    console.error("[series/public] preview episodes query failed", {
+      seriesIds,
+      error: previewEpsError.message,
+    });
+    return NextResponse.json({ error: "Failed to load preview episodes" }, { status: 500 });
+  }
 
   const epsBySeriesId = (previewEps ?? []).reduce<Record<string, PublicEpisode[]>>(
     (acc, ep) => {

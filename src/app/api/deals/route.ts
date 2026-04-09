@@ -38,7 +38,8 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
-  const page   = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const rawPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const page = Number.isNaN(rawPage) ? 1 : Math.max(1, rawPage);
   const limit  = 20;
   const offset = (page - 1) * limit;
 
@@ -88,9 +89,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "brand_name is required" }, { status: 422 });
   }
 
-  const amountCents = typeof body.amount_cents === "number" ? body.amount_cents : 0;
+  if (
+    typeof body.amount_cents !== "number" ||
+    Number.isNaN(body.amount_cents) ||
+    !Number.isFinite(body.amount_cents)
+  ) {
+    return NextResponse.json({ error: "amount_cents must be a non-negative number" }, { status: 422 });
+  }
+
+  const amountCents = body.amount_cents;
   if (amountCents < 0) {
-    return NextResponse.json({ error: "amount_cents must be >= 0" }, { status: 422 });
+    return NextResponse.json({ error: "amount_cents must be a non-negative number" }, { status: 422 });
   }
 
   const supabase = getServiceClient();

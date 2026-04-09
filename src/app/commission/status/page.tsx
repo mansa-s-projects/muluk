@@ -200,7 +200,7 @@ function StatusPageInner() {
 
 export default function CommissionStatusPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div style={{ minHeight: "50vh", display: "grid", placeItems: "center", color: "var(--muted)" }}>Loading status…</div>}>
       <StatusPageInner />
     </Suspense>
   );

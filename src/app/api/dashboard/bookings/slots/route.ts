@@ -47,7 +47,12 @@ export async function POST(req: NextRequest) {
     meeting_link?:    string | null;
   };
 
-  if (!slot_date || !start_time || !duration_minutes || !price_cents) {
+  if (
+    slot_date == null ||
+    start_time == null ||
+    duration_minutes == null ||
+    price_cents == null
+  ) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 

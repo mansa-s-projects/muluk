@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { checkUnlock } from "@/lib/unlocks";
 import { formatPrice } from "@/lib/utils/formatPrice";
 import BuyButton from "./BuyButton";
 
@@ -102,7 +102,7 @@ export default async function OfferPage({ params }: PageProps) {
     }}>
 
       {/* Wordmark */}
-      <a
+      <Link
         href="/"
         style={{
           fontFamily: "var(--font-mono, 'DM Mono', monospace)",
@@ -115,7 +115,7 @@ export default async function OfferPage({ params }: PageProps) {
         }}
       >
         CIPHER
-      </a>
+      </Link>
 
       {/* Card */}
       <div style={{

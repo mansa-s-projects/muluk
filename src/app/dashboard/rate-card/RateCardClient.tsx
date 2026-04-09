@@ -144,9 +144,14 @@ export default function RateCardClient({ savedCard, savedPrices, savedStats }: P
 
   const handleCopyLink = useCallback(async () => {
     if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2200);
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch (error) {
+      console.error("[rate-card] clipboard copy failed", error);
+      setError("Unable to copy link. Please copy it manually.");
+    }
   }, [publicUrl]);
 
   const startEdit = (key: EditablePriceKey) => {

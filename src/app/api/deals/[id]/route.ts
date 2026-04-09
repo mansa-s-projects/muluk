@@ -77,7 +77,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if ("contact_email" in body) {
     updates.contact_email = typeof body.contact_email === "string" ? body.contact_email.trim() || null : null;
   }
-  if (typeof body.amount_cents === "number" && body.amount_cents >= 0) {
+  if (typeof body.amount_cents === "number" && Number.isInteger(body.amount_cents) && body.amount_cents >= 0) {
     updates.amount_cents = body.amount_cents;
   }
   if (typeof body.currency === "string" && body.currency.trim()) {
@@ -97,7 +97,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   if (typeof body.status === "string" && VALID_STATUSES.includes(body.status as DealStatus)) {
     updates.status = body.status;
-    if (body.status === "paid" && !existing.status.includes("paid")) {
+    if (body.status === "paid" && existing.status !== "paid") {
       updates.paid_at = new Date().toISOString();
     }
   }

@@ -17,6 +17,7 @@
  *   status      — 'active' | 'draft' (default: 'active')
  */
 
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient }  from "@/lib/supabase/server";
 import {
@@ -118,10 +119,17 @@ export async function POST(req: Request) {
 
   // ── Upload to Supabase Storage ──────────────────────────────────────────────
   const db       = getServiceSupabase();
-  const stamp    = Date.now();
-  const ext      = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-  const filePath = `${user.id}/${stamp}.${ext}`;
-  const previewPath = `${user.id}/${stamp}_preview.jpg`;
+  const uploadId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
+  const fileName = file.name || "";
+  const rawExt = fileName.split(".").pop()?.toLowerCase() ?? "";
+  const validExt =
+    rawExt &&
+    rawExt !== fileName.toLowerCase() &&
+    /^[a-z0-9]+$/.test(rawExt) &&
+    rawExt.length <= 10;
+  const ext = validExt ? rawExt : "bin";
+  const filePath = `${user.id}/${uploadId}.${ext}`;
+  const previewPath = `${user.id}/${uploadId}_preview.jpg`;
 
   const [originalUpload, previewUpload] = await Promise.all([
     db.storage
@@ -151,7 +159,15 @@ export async function POST(req: Request) {
   }
   if (previewUpload.error) {
     // Rollback original
-    await db.storage.from(VAULT_ORIGINALS_BUCKET).remove([filePath]);
+    try {
+      await db.storage.from(VAULT_ORIGINALS_BUCKET).remove([filePath]);
+    } catch (rollbackErr) {
+      console.error("[vault/upload] rollback failed after preview upload error", {
+        bucket: VAULT_ORIGINALS_BUCKET,
+        filePath,
+        error: rollbackErr,
+      });
+    }
     console.error("[vault/upload] preview upload failed:", previewUpload.error.message);
     return NextResponse.json({ error: "Failed to upload preview" }, { status: 500 });
   }
@@ -176,10 +192,21 @@ export async function POST(req: Request) {
 
   if (insertErr || !item) {
     // Rollback storage
-    await Promise.all([
-      db.storage.from(VAULT_ORIGINALS_BUCKET).remove([filePath]),
-      db.storage.from(VAULT_PREVIEWS_BUCKET).remove([previewPath]),
-    ]);
+    try {
+      await Promise.all([
+        db.storage.from(VAULT_ORIGINALS_BUCKET).remove([filePath]),
+        db.storage.from(VAULT_PREVIEWS_BUCKET).remove([previewPath]),
+      ]);
+    } catch (rollbackErr) {
+      console.error("[vault/upload] rollback failed after DB insert failure", {
+        originalBucket: VAULT_ORIGINALS_BUCKET,
+        previewBucket: VAULT_PREVIEWS_BUCKET,
+        filePath,
+        previewPath,
+        insertErr: insertErr?.message,
+        error: rollbackErr,
+      });
+    }
     return NextResponse.json({ error: "Failed to create vault item" }, { status: 500 });
   }
 

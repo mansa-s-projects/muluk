@@ -103,7 +103,14 @@ CREATE POLICY "public_read_paid_tips"
 DROP POLICY IF EXISTS "public_insert_tips" ON tips;
 CREATE POLICY "public_insert_tips"
   ON tips FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (
+    auth.role() = 'service_role'
+    OR (
+      creator_id = auth.uid()
+      AND status = 'pending'
+      AND amount_cents > 0
+    )
+  );
 
 -- Creator reads all their own tips
 DROP POLICY IF EXISTS "creator_manage_tips" ON tips;

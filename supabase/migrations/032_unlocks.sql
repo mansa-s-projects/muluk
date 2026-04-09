@@ -50,7 +50,6 @@ CREATE POLICY "users_read_own_unlocks"
   USING (auth.uid() = user_id);
 
 -- Creators can see all unlocks for their offers (sales dashboard)
-DROP POLICY IF EXISTS "creators_read_offer_unlocks" ON unlocks;
 DO $$
 BEGIN
   IF EXISTS (
@@ -60,6 +59,7 @@ BEGIN
       AND table_name = 'unlocks'
       AND column_name = 'creator_id'
   ) THEN
+    DROP POLICY IF EXISTS "creators_read_offer_unlocks" ON unlocks;
     CREATE POLICY "creators_read_offer_unlocks"
       ON unlocks FOR SELECT
       TO authenticated

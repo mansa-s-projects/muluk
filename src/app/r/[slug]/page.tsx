@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createServerClient } from "@supabase/ssr";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -55,11 +56,16 @@ async function fetchCard(slug: string): Promise<RateCard | null> {
 
   if (error || !data) return null;
 
-  // Fire-and-forget view increment
-  void db.rpc("increment_rate_card_views", { p_slug: slug });
-
   const row = data as typeof data & { profiles: RateCard["profiles"] };
   return row as unknown as RateCard;
+}
+
+async function incrementRateCardViews(slug: string): Promise<void> {
+  const db = getServiceDb();
+  const { error } = await db.rpc("increment_rate_card_views", { p_slug: slug });
+  if (error) {
+    console.error("[rate-card/public] failed to increment views", { slug, error });
+  }
 }
 
 // ── Metadata ──────────────────────────────────────────────────────────────
@@ -100,6 +106,7 @@ export default async function PublicRateCardPage({ params }: Params) {
   const { slug } = await params;
   const card = await fetchCard(slug);
   if (!card) notFound();
+  await incrementRateCardViews(slug);
 
   const creatorName   = card.profiles?.display_name ?? card.profiles?.handle ?? "Creator";
   const handle        = card.profiles?.handle;
@@ -205,7 +212,7 @@ export default async function PublicRateCardPage({ params }: Params) {
             marginBottom:  56,
           }}
         >
-          <a
+          <Link
             href="/"
             style={{
               fontFamily:    "var(--font-display, 'Cormorant Garamond', serif)",
@@ -218,7 +225,7 @@ export default async function PublicRateCardPage({ params }: Params) {
             }}
           >
             CIPHER
-          </a>
+          </Link>
         </div>
 
         {/* ── Creator identity ── */}
@@ -444,33 +451,55 @@ export default async function PublicRateCardPage({ params }: Params) {
               </div>
 
               {/* CTA */}
-              <a
-                href={`${profileBase}${handle ? `?inquiry=${svc.ctaQuery}` : ""}`}
-                style={{
-                  display:         "block",
-                  textAlign:       "center",
-                  padding:         "12px",
-                  background:      svc.key === "subscription"
-                    ? "#c8a96e"
-                    : "rgba(200,169,110,0.07)",
-                  color:           svc.key === "subscription"
-                    ? "#0a0800"
-                    : "#c8a96e",
-                  border:          svc.key === "subscription"
-                    ? "none"
-                    : "1px solid rgba(200,169,110,0.2)",
-                  borderRadius:    3,
-                  fontFamily:      "var(--font-mono, 'DM Mono', monospace)",
-                  fontSize:        10,
-                  letterSpacing:   "0.18em",
-                  textTransform:   "uppercase",
-                  textDecoration:  "none",
-                  transition:      "opacity 0.2s",
-                  cursor:          "pointer",
-                }}
-              >
-                {svc.cta}
-              </a>
+              {handle ? (
+                <a
+                  href={`${profileBase}?inquiry=${svc.ctaQuery}`}
+                  style={{
+                    display:         "block",
+                    textAlign:       "center",
+                    padding:         "12px",
+                    background:      svc.key === "subscription"
+                      ? "#c8a96e"
+                      : "rgba(200,169,110,0.07)",
+                    color:           svc.key === "subscription"
+                      ? "#0a0800"
+                      : "#c8a96e",
+                    border:          svc.key === "subscription"
+                      ? "none"
+                      : "1px solid rgba(200,169,110,0.2)",
+                    borderRadius:    3,
+                    fontFamily:      "var(--font-mono, 'DM Mono', monospace)",
+                    fontSize:        10,
+                    letterSpacing:   "0.18em",
+                    textTransform:   "uppercase",
+                    textDecoration:  "none",
+                    transition:      "opacity 0.2s",
+                    cursor:          "pointer",
+                  }}
+                >
+                  {svc.cta}
+                </a>
+              ) : (
+                <span
+                  aria-disabled="true"
+                  style={{
+                    display: "block",
+                    textAlign: "center",
+                    padding: "12px",
+                    background: "rgba(255,255,255,0.05)",
+                    color: "rgba(255,255,255,0.35)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 3,
+                    fontFamily: "var(--font-mono, 'DM Mono', monospace)",
+                    fontSize: 10,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    cursor: "not-allowed",
+                  }}
+                >
+                  {svc.cta}
+                </span>
+              )}
             </div>
           ))}
         </div>

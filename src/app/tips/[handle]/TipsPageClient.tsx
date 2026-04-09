@@ -32,7 +32,11 @@ export default function TipsPageClient({ handle }: Props) {
   const [isAnon, setAnon]           = useState(false);
   const [fanEmail, setEmail]        = useState("");
 
-  const effectiveAmount = amount || (customAmount ? Math.round(parseFloat(customAmount) * 100) : 0);
+  const parsedCustomAmount = Number.parseFloat(customAmount);
+  const customCents = Number.isFinite(parsedCustomAmount)
+    ? Math.round(parsedCustomAmount * 100)
+    : 0;
+  const effectiveAmount = amount || customCents;
 
   const fetchWall = useCallback(async (page = 1) => {
     try {
@@ -157,7 +161,7 @@ export default function TipsPageClient({ handle }: Props) {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Your kind words for @{handle}..."
+                    placeholder={`Your kind words for @${handle}...`}
                     rows={3}
                     maxLength={500}
                     style={{ ...inputStyle, resize: "vertical" }}

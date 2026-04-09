@@ -60,15 +60,28 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Could not create purchase" }, { status: 500 });
   }
 
-  const siteUrl   = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+  if (!/^https?:\/\//.test(siteUrl)) {
+    console.error("[series/buy] NEXT_PUBLIC_SITE_URL is missing or invalid");
+    return NextResponse.json({ error: "Server misconfigured: NEXT_PUBLIC_SITE_URL is required" }, { status: 500 });
+  }
   const redirectUrl = `${siteUrl}/series/${handle}/${id}?token=${purchase.access_token as string}`;
 
   // Free series — mark paid immediately, skip Whop
   if (priceCents === 0) {
-    await db
+    const { error: freeUpdateError, data: freeUpdated } = await db
       .from("series_purchases")
       .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", purchase.id as string);
+      .eq("id", purchase.id as string)
+      .select("id");
+
+    if (freeUpdateError || !freeUpdated || freeUpdated.length === 0) {
+      console.error("[series/buy] failed to mark free purchase as paid", {
+        purchaseId: purchase.id,
+        error: freeUpdateError,
+      });
+      return NextResponse.json({ error: "Failed to finalize free purchase" }, { status: 500 });
+    }
 
     return NextResponse.json({
       id:           purchase.id,
