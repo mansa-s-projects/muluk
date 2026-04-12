@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 type PgEvent = "INSERT" | "UPDATE" | "DELETE" | "*";
 
@@ -31,25 +31,26 @@ export function useRealtime<T extends Record<string, unknown>>({
   enabled = true,
 }: UseRealtimeOptions<T>) {
   const supabase = createClient();
-  // Keep a stable ref to the callback so the subscription doesn't re-fire on every render
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
 
   useEffect(() => {
     if (!enabled) return;
 
-    const ch = supabase.channel(channel).on(
-      "postgres_changes" as Parameters<typeof ch.on>[0],
-      {
-        event,
-        schema: "public",
-        table,
-        ...(filter ? { filter } : {}),
-      } as Parameters<typeof ch.on>[1],
-      (payload) => {
-        onEventRef.current(payload as RealtimePostgresChangesPayload<T>);
-      }
-    );
+    const ch: RealtimeChannel = supabase
+      .channel(channel)
+      .on(
+        "postgres_changes",
+        {
+          event,
+          schema: "public",
+          table,
+          ...(filter ? { filter } : {}),
+        },
+        (payload) => {
+          onEventRef.current(payload as RealtimePostgresChangesPayload<T>);
+        }
+      );
 
     ch.subscribe();
 
