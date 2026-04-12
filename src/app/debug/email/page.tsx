@@ -85,7 +85,7 @@ export default function DebugEmail() {
           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: 12, fontFamily: 'var(--font-mono, DM Mono), monospace' }}>Available Email Templates</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { name: 'sendWelcomeEmail', desc: 'Welcome new creators to CIPHER', params: 'email, displayName' },
+              { name: 'sendWelcomeEmail', desc: 'Welcome new creators to MULUK', params: 'email, displayName' },
               { name: 'sendEarningsNotification', desc: 'Notify creators of new earnings', params: 'email, amount, displayName' },
               { name: 'sendPurchaseReceipt', desc: 'Receipt for fan purchases', params: 'email, contentTitle, amount, displayName' },
             ].map(fn => (

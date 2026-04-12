@@ -53,7 +53,7 @@ const MOCK_METRICS = [
 
 const ADVISORS = [
   { role: "CFO", color: "#4cc88c", bg: "rgba(76,200,140,0.06)", border: "rgba(76,200,140,0.18)",
-    insight: "At 8% rake on $50K creator MRR, CIPHER generates $4K/month. Break-even requires 200 active creators at $2K avg MRR. Achievable by Q3 if CAC stays under $180.",
+    insight: "At 8% rake on $50K creator MRR, MULUK generates $4K/month. Break-even requires 200 active creators at $2K avg MRR. Achievable by Q3 if CAC stays under $180.",
     action: "Model CAC at $120 target. Prioritize organic creator referrals over paid ads." },
   { role: "CMO", color: "#c8a96e", bg: "rgba(200,169,110,0.08)", border: "rgba(200,169,110,0.22)",
     insight: "The 88% creator revenue claim is the single strongest differentiator. Every competitor comparison ad should lead with that number. Secondary hook: anonymous fan codes.",
@@ -69,12 +69,12 @@ const ADVISORS = [
 const RED_BLUE = [
   {
     topic: "Primary Acquisition Channel",
-    red:  { label: "OFFENSE", position: "Go all-in on TikTok creator testimonials — high-earning creators showing their CIPHER vs OnlyFans earnings comparison will go viral. Lean into the controversy.", tactics: ["Creator earnings reveal videos", "Side-by-side platform fee comparisons", "Controversial 'I'm leaving OF' content"] },
+    red:  { label: "OFFENSE", position: "Go all-in on TikTok creator testimonials — high-earning creators showing their MULUK vs OnlyFans earnings comparison will go viral. Lean into the controversy.", tactics: ["Creator earnings reveal videos", "Side-by-side platform fee comparisons", "Controversial 'I'm leaving OF' content"] },
     blue: { label: "DEFENSE", position: "Build trust through transparency. A public earnings calculator, open-source smart contract audit, and creator testimonials focused on payment reliability matter more long-term.", tactics: ["Public earnings calculator tool", "Open-source smart contract audit", "Creator payment guarantee pilot"] },
   },
   {
     topic: "Competitor Response Strategy",
-    red:  { label: "OFFENSE", position: "Don't wait for OnlyFans to respond — announce the migration tool first. Build an OF→CIPHER importer that moves fan codes in one click. Make it a news story.", tactics: ["Build OF → CIPHER migration tool", "Pre-announce migration capability", "Target OF creator subreddits directly"] },
+    red:  { label: "OFFENSE", position: "Don't wait for OnlyFans to respond — announce the migration tool first. Build an OF→MULUK importer that moves fan codes in one click. Make it a news story.", tactics: ["Build OF → MULUK migration tool", "Pre-announce migration capability", "Target OF creator subreddits directly"] },
     blue: { label: "DEFENSE", position: "Avoid direct comparison marketing. Position as 'next generation platform' rather than an OF killer. Differentiate through crypto-native features, not price wars.", tactics: ["Crypto-native positioning language", "Avoid competitor brand comparisons", "Focus on unique fan code identity"] },
   },
 ];
@@ -330,7 +330,7 @@ function SynthesisSection() {
       <div style={{ ...card, padding: "32px 28px" }}>
         <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", ...dim, marginBottom: "16px" }}>Strategic Synthesis</div>
         <h2 style={{ ...disp, fontSize: "32px", fontWeight: 300, lineHeight: 1.15, letterSpacing: "-0.01em", marginBottom: "16px" }}>
-          CIPHER&apos;s launch window is <em style={{ fontStyle: "italic", ...gold }}>now.</em>
+          MULUK&apos;s launch window is <em style={{ fontStyle: "italic", ...gold }}>now.</em>
         </h2>
         <p style={{ fontSize: "14px", fontWeight: 300, ...muted, lineHeight: 1.85, maxWidth: "640px", marginBottom: "20px" }}>
           The convergence of creator fee fatigue, OnlyFans regulatory pressure, and Gen Z&apos;s crypto-native identity creates a 90-day acquisition window that won&apos;t repeat. The anonymous fan code is a category-defining feature - no competitor can match it without a full rebuild. Priority: activate 50 seed creators before any paid spend. Organic creator-to-creator referral is the only sustainable CAC model at this stage.
@@ -457,7 +457,7 @@ export default function MarketingDashboard() {
         {/* Logo */}
         <div style={{ padding: "28px 24px 20px", borderBottom: "1px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ ...mono, fontSize: "16px", fontWeight: 500, letterSpacing: "0.25em", ...gold }}>CIPHER</span>
+            <span style={{ ...mono, fontSize: "16px", fontWeight: 500, letterSpacing: "0.25em", ...gold }}>MULUK</span>
             <span style={{ ...mono, fontSize: "8px", letterSpacing: "0.2em", color: "rgba(200,169,110,0.5)", border: "1px solid rgba(200,169,110,0.2)", padding: "2px 6px", borderRadius: "2px" }}>MKT</span>
           </div>
           <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.1em", ...dim, marginTop: "6px" }}>Marketing Intelligence</div>

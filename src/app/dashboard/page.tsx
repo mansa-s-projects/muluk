@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import DashboardShell from "./components/DashboardShell";
 import DashboardHome from "./DashboardHome";
 
-export const metadata = { title: "Dashboard — CIPHER" };
+export const metadata = { title: "Dashboard — MULUK" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();

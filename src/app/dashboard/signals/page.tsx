@@ -4,7 +4,7 @@ import SignalBoardClient from "./SignalBoardClient";
 import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 export const metadata = {
-  title: "Signal Board — CIPHER",
+  title: "Signal Board — MULUK",
   description: "Real-time monetization signals based on what's trending in your niche.",
 };
 

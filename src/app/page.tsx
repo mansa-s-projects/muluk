@@ -9,8 +9,8 @@ import { track } from "@/lib/analytics/track";
 ───────────────────────────────────────── */
 function Cursor() {
   useEffect(() => {
-    const dot  = document.getElementById("cipher-cursor")!;
-    const ring = document.getElementById("cipher-ring")!;
+    const dot  = document.getElementById("muluk-cursor")!;
+    const ring = document.getElementById("muluk-ring")!;
     if (!dot || !ring) return;
 
     let mx = -200, my = -200;
@@ -179,8 +179,8 @@ export default function Home() {
   return (
     <>
       {/* cursor DOM nodes — must be in body */}
-      <div id="cipher-cursor" />
-      <div id="cipher-ring" />
+      <div id="muluk-cursor" />
+      <div id="muluk-ring" />
       <Cursor />
 
       {/* ══ NAV ══ */}
@@ -267,7 +267,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ══ WHY CIPHER ══ */}
+      {/* ══ WHY MULUK ══ */}
       <div id="why">
         <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>

@@ -12,7 +12,7 @@ export default function ReferralCaptureClient() {
     const ref = (searchParams.get("ref") ?? "").trim().toLowerCase();
     if (!ref || !/^[a-z0-9][a-z0-9_-]{2,31}$/.test(ref)) return;
 
-    const dedupeKey = `cipher_ref_click:${ref}`;
+    const dedupeKey = `muluk_ref_click:${ref}`;
     const now = Date.now();
     const last = Number(localStorage.getItem(dedupeKey) ?? "0");
 

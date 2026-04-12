@@ -55,7 +55,7 @@ export default function OfferLoading() {
           color: "rgba(200,169,110,0.35)",
           marginBottom: "44px",
         }}>
-          CIPHER
+          MULUK
         </div>
 
         {/* Card skeleton */}

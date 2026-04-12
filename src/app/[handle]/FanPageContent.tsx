@@ -663,7 +663,7 @@ function FanPageInner({ creator, contentItems }: Props) {
             color: "rgba(255,255,255,0.15)",
           }}
         >
-          CIPHER
+          MULUK
         </span>
         <span style={{ color: "rgba(255,255,255,0.08)", fontSize: 10 }}>·</span>
         <span

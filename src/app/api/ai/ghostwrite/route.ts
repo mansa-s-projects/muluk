@@ -73,8 +73,8 @@ export async function POST(req: Request) {
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://cipher.so",
-          "X-Title": "CIPHER Platform",
+          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip",
+          "X-Title": "MULUK Platform",
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash-lite",

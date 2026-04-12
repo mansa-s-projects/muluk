@@ -260,7 +260,7 @@ export default function TipsPageClient({ handle }: Props) {
         </div>
 
         <p style={{ textAlign: "center", color: "var(--dim)", fontSize: "0.75rem", marginTop: "3rem" }}>
-          Powered by CIPHER · Secure payments
+          Powered by MULUK · Secure payments
         </p>
       </div>
     </div>

@@ -570,7 +570,7 @@ function CreatorIntelligenceSystem({ onAction }: { onAction: (m: any) => void })
                     {details.creator?.referral_handle && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <Link size={12} style={{ color: t.goldDim, flexShrink: 0 }} />
-                        <span style={{ fontFamily: t.mono, fontSize: 11, color: t.goldDim }}>cipher.so/r/</span>
+                        <span style={{ fontFamily: t.mono, fontSize: 11, color: t.goldDim }}>muluk.vip/r/</span>
                         <span style={{ fontFamily: t.mono, fontSize: 11, color: t.gold }}>{details.creator.referral_handle}</span>
                         <Pill label="referral link" color={t.goldDim} bg={t.goldFaint} />
                       </div>
@@ -891,7 +891,7 @@ function GrowthFunnelSystem({ stats }: { stats: PlatformStats | null }) {
     { event: 'fan_acquired_first', desc: 'First fan via creator link', why: 'Validates creator promotion activity' },
     { event: 'churn_signal_30d', desc: 'No login or activity in 30 days', why: 'Immediate re-engagement candidate' },
     { event: 'feature_vault_used', desc: 'Creator used vault feature', why: 'High-value feature engagement signal' },
-    { event: 'feature_radio_played', desc: 'Creator played CIPHER Radio', why: 'Product engagement signal' },
+    { event: 'feature_radio_played', desc: 'Creator played MULUK Radio', why: 'Product engagement signal' },
   ];
   const automations = [
     { name: 'Auto-Flag Risky Creators', trigger: 'Churn risk > 80 + no activity in 14d', action: 'Add admin note + flag for review + queue re-engagement email', color: t.amber },
@@ -1469,7 +1469,7 @@ function Sidebar({ active, onNav, incidentCount }: { active: System; onNav: (s: 
       <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${t.rim}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: 7, background: `linear-gradient(135deg, ${t.gold}, ${t.goldDim})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Shield size={15} style={{ color: '#0a0800' }} /></div>
-          <div><div style={{ fontFamily: t.serif, fontSize: 16, letterSpacing: '0.1em', color: t.gold, fontWeight: 300 }}>CIPHER</div><div style={{ fontFamily: t.mono, fontSize: 8, letterSpacing: '0.25em', color: t.goldDim, textTransform: 'uppercase' as const }}>God Mode</div></div>
+          <div><div style={{ fontFamily: t.serif, fontSize: 16, letterSpacing: '0.1em', color: t.gold, fontWeight: 300 }}>MULUK</div><div style={{ fontFamily: t.mono, fontSize: 8, letterSpacing: '0.25em', color: t.goldDim, textTransform: 'uppercase' as const }}>God Mode</div></div>
         </div>
       </div>
       <nav style={{ flex: 1, padding: '16px 10px', overflowY: 'auto' }}>

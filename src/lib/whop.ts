@@ -1,5 +1,5 @@
 /**
- * Whop API client for CIPHER.
+ * Whop API client for MULUK.
  * Handles programmatic product + plan creation for one-click monetization.
  *
  * Env required:

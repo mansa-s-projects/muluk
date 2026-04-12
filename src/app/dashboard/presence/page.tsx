@@ -4,7 +4,7 @@ import DashboardShell from "@/app/dashboard/components/DashboardShell";
 import PresenceClient, { type PresenceData } from "./PresenceClient";
 
 export const metadata = {
-  title: "Live Fan Presence — CIPHER",
+  title: "Live Fan Presence — MULUK",
   description: "See who's online, what they're viewing, and who your high-value fans are.",
 };
 

@@ -365,7 +365,7 @@ export default function PayLinkClient({
       >
         {/* Wordmark */}
         <div style={{ ...mono, fontSize: "12px", letterSpacing: "0.35em", color: "rgba(200,169,110,0.55)", marginBottom: "40px" }}>
-          CIPHER
+          MULUK
         </div>
 
         {/* Card */}

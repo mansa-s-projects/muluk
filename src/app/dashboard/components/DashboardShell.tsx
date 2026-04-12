@@ -121,7 +121,7 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
               marginBottom: "3px",
             }}
           >
-            CIPHER
+            MULUK
           </Link>
           <div
             style={{

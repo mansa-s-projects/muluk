@@ -191,7 +191,7 @@ function StatusPageInner() {
         )}
 
         <p style={{ textAlign: "center", color: "var(--dim)", fontSize: "0.75rem", marginTop: "2rem" }}>
-          Powered by CIPHER · Bookmark this page
+          Powered by MULUK · Bookmark this page
         </p>
       </div>
     </div>

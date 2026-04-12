@@ -43,9 +43,9 @@ const fetchOffer = cache(async (id: string): Promise<Offer | null> => {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const offer = await fetchOffer(id);
-  if (!offer) return { title: "Offer Not Found — CIPHER" };
+  if (!offer) return { title: "Offer Not Found — MULUK" };
   return {
-    title: `${offer.title} — CIPHER`,
+    title: `${offer.title} — MULUK`,
     description: offer.description ?? "Exclusive offer — available now.",
     openGraph: offer.thumbnail_url
       ? { images: [{ url: offer.thumbnail_url }] }
@@ -114,7 +114,7 @@ export default async function OfferPage({ params }: PageProps) {
           display: "block",
         }}
       >
-        CIPHER
+        MULUK
       </Link>
 
       {/* Card */}
@@ -294,7 +294,7 @@ export default async function OfferPage({ params }: PageProps) {
                 letterSpacing: "0.12em",
                 color: "rgba(255,255,255,0.15)",
               }}>
-                Secured by CIPHER · Powered by Whop
+                Secured by MULUK · Powered by Whop
               </div>
             </>
           )}

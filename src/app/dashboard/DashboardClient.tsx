@@ -546,7 +546,7 @@ export default function DashboardClient({
   const [socialLoading, setSocialLoading] = useState<SocialPlatform | null>(null);
   const [socialRefreshing, setSocialRefreshing] = useState(false);
   const [autoShareEnabled, setAutoShareEnabled] = useState(false);
-  const [shareText, setShareText] = useState("New exclusive content just dropped 🔒 cipher.co/@creator");
+  const [shareText, setShareText] = useState("New exclusive content just dropped 🔒 muluk.vip/@creator");
 
   // Referral handle customization
   const [customHandle, setCustomHandle] = useState(creatorProfile.referralHandle || "");
@@ -558,7 +558,7 @@ export default function DashboardClient({
   const [showHandleEdit, setShowHandleEdit] = useState(false);
 
   const handle = customHandle || creatorProfile.referralHandle || userEmail.split("@")[0] || userId.slice(0, 8);
-  const referralLink = `cipher.so/ref/${handle}`;
+  const referralLink = `muluk.vip/ref/${handle}`;
   const maxChart = Math.max(...chartData.map(d => d.amount), 1);
   const forecast = useMemo(() => {
     const totalWeek = chartData.reduce((sum, d) => sum + d.amount, 0);
@@ -664,7 +664,7 @@ export default function DashboardClient({
   const activeDrop = contentItems.find(item => item.status === "active") ?? contentItems[0] ?? null;
 
   useEffect(() => {
-    setShareText(`New exclusive content just dropped 🔒 cipher.co/@${handle}`);
+    setShareText(`New exclusive content just dropped 🔒 muluk.vip/@${handle}`);
   }, [handle]);
 
   useEffect(() => {
@@ -1240,7 +1240,7 @@ export default function DashboardClient({
 
       const blob = await zip.generateAsync({ type: "blob" });
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadBlob(`cipher-export-${stamp}.zip`, blob);
+      downloadBlob(`muluk-export-${stamp}.zip`, blob);
       setExportMsg("Export bundle downloaded.");
     } catch (err) {
       console.error("Export failed:", err);
@@ -1259,7 +1259,7 @@ export default function DashboardClient({
       last_active: formatDateTime(fan.lastActive),
       tags: fan.tags.join(" | "),
     })));
-    downloadBlob("cipher-fans.csv", new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    downloadBlob("muluk-fans.csv", new Blob([csv], { type: "text/csv;charset=utf-8" }));
   };
 
   const handleSignOut = async () => {
@@ -1369,7 +1369,7 @@ export default function DashboardClient({
       <div style={{ display: "flex", minHeight: "100vh", background: "#020203", backgroundImage: "radial-gradient(circle at 10% 5%, rgba(200,169,110,0.09), transparent 40%)" }}>
         <aside className="db-sidebar" style={{ width: "220px", position: "fixed", top: 0, left: 0, bottom: 0, background: "rgba(8,8,15,0.98)", borderRight: "1px solid rgba(255,255,255,0.055)", display: "flex", flexDirection: "column", zIndex: 100, backdropFilter: "blur(12px)", overflowY: "auto", minHeight: 0 }}>
           <div style={{ padding: "24px 20px", borderBottom: "1px solid rgba(255,255,255,0.055)" }}>
-            <Link href="/" style={{ ...mono, fontSize: "13px", fontWeight: 500, letterSpacing: "0.3em", color: "var(--gold)", textDecoration: "none", display: "block", marginBottom: "3px" }}>CIPHER</Link>
+            <Link href="/" style={{ ...mono, fontSize: "13px", fontWeight: 500, letterSpacing: "0.3em", color: "var(--gold)", textDecoration: "none", display: "block", marginBottom: "3px" }}>MULUK</Link>
             <div style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.12em" }}>Creator Console</div>
           </div>
 
@@ -1524,7 +1524,7 @@ export default function DashboardClient({
         <div className="db-main" style={{ marginLeft: "220px", flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <header style={{ height: "56px", position: "sticky", top: 0, background: "rgba(2,2,3,0.95)", borderBottom: "1px solid rgba(255,255,255,0.055)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", zIndex: 50 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.15em" }}>CIPHER</span>
+              <span style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.15em" }}>MULUK</span>
               <span style={{ color: "rgba(255,255,255,0.18)" }}>/</span>
               <span style={{ ...mono, fontSize: "10px", color: "var(--gold)", letterSpacing: "0.15em" }}>{activeSection.toUpperCase()}</span>
             </div>
@@ -1596,7 +1596,7 @@ export default function DashboardClient({
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText(`https://cipher.so/${creatorProfile.handle || userId}`).then(() => {
+                            navigator.clipboard.writeText(`https://muluk.vip/${creatorProfile.handle || userId}`).then(() => {
                               setCopiedDropLink(true);
                               setTimeout(() => setCopiedDropLink(false), 2000);
                             }).catch(() => {});
@@ -1645,7 +1645,7 @@ export default function DashboardClient({
                             <button
                               type="button"
                               onClick={() => {
-                                navigator.clipboard.writeText(`https://cipher.so/${creatorProfile.handle || userId}`).then(() => {
+                                navigator.clipboard.writeText(`https://muluk.vip/${creatorProfile.handle || userId}`).then(() => {
                                   setCopiedDropLink(true);
                                   setTimeout(() => setCopiedDropLink(false), 2000);
                                 }).catch(() => {});
@@ -1721,7 +1721,7 @@ export default function DashboardClient({
                       <div style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.1em" }}>TOTAL COMBINED FOLLOWERS</div>
                       <div style={{ ...disp, fontSize: "38px", color: "var(--gold)", marginTop: "4px" }}>{effectiveReach.totalFollowers.toLocaleString()}</div>
                       <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "8px" }}>
-                        Your potential CIPHER audience: {effectiveReach.totalFollowers.toLocaleString()} people.
+                        Your potential MULUK audience: {effectiveReach.totalFollowers.toLocaleString()} people.
                       </div>
                       <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "4px" }}>
                         If 1% convert: {potentialFans.toLocaleString()} fan codes = {money.format(estimatedMonthly)}/month estimated.
@@ -1815,14 +1815,14 @@ export default function DashboardClient({
                       <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px" }}>
                         <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "#8dcfff", marginBottom: "10px" }}>POST THIS NOW (COPY → PASTE)</div>
                         <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.7, marginBottom: "12px" }}>
-                          <div>Just dropped exclusive content on CIPHER. First access is limited — grab it before it expires 🔒</div>
+                          <div>Just dropped exclusive content on MULUK. First access is limited — grab it before it expires 🔒</div>
                           {activeDrop && <div style={{ marginTop: "8px", color: "var(--gold)" }}>&quot;{activeDrop.title}&quot; — {money.format(activeDrop.price / 100)}</div>}
-                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>cipher.so/{creatorProfile.handle || userId}</div>
+                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>muluk.vip/{creatorProfile.handle || userId}</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            const text = `Just dropped exclusive content on CIPHER. First access is limited — grab it before it expires 🔒${activeDrop ? `\n\n"${activeDrop.title}" — ${money.format(activeDrop.price / 100)}` : ""}\n\ncipher.so/${creatorProfile.handle || userId}`;
+                            const text = `Just dropped exclusive content on MULUK. First access is limited — grab it before it expires 🔒${activeDrop ? `\n\n"${activeDrop.title}" — ${money.format(activeDrop.price / 100)}` : ""}\n\nmuluk.vip/${creatorProfile.handle || userId}`;
                             navigator.clipboard.writeText(text).catch(() => {});
                           }}
                           style={{ border: "1px solid rgba(29,161,242,0.4)", borderRadius: "5px", padding: "7px 12px", background: "rgba(29,161,242,0.08)", color: "#8dcfff", ...mono, fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer" }}
@@ -1834,14 +1834,14 @@ export default function DashboardClient({
                       <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px" }}>
                         <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "#d9b3ff", marginBottom: "10px" }}>DM SCRIPT (SEND TO TOP FOLLOWERS)</div>
                         <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.7, marginBottom: "12px" }}>
-                          <div>Hey — just launched something exclusive on CIPHER, thought you&apos;d want first access before I post publicly.</div>
+                          <div>Hey — just launched something exclusive on MULUK, thought you&apos;d want first access before I post publicly.</div>
                           <div style={{ marginTop: "8px" }}>It&apos;s {activeDrop ? money.format(activeDrop.price / 100) : "limited pricing"} and expires soon.</div>
-                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>cipher.so/{creatorProfile.handle || userId}</div>
+                          <div style={{ marginTop: "8px", color: "var(--muted)" }}>muluk.vip/{creatorProfile.handle || userId}</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            const text = `Hey — just launched something exclusive on CIPHER, thought you'd want first access before I post publicly.\n\nIt's ${activeDrop ? money.format(activeDrop.price / 100) : "limited pricing"} and expires soon.\n\ncipher.so/${creatorProfile.handle || userId}`;
+                            const text = `Hey — just launched something exclusive on MULUK, thought you'd want first access before I post publicly.\n\nIt's ${activeDrop ? money.format(activeDrop.price / 100) : "limited pricing"} and expires soon.\n\nmuluk.vip/${creatorProfile.handle || userId}`;
                             navigator.clipboard.writeText(text).catch(() => {});
                           }}
                           style={{ border: "1px solid rgba(217,179,255,0.4)", borderRadius: "5px", padding: "7px 12px", background: "rgba(217,179,255,0.08)", color: "#d9b3ff", ...mono, fontSize: "10px", letterSpacing: "0.12em", cursor: "pointer" }}
@@ -2261,7 +2261,7 @@ export default function DashboardClient({
                       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "6px" }}>PAYMENT LINKS</div>
                       <div style={{ ...disp, fontSize: "26px", color: "var(--gold)", lineHeight: 1.2, marginBottom: "8px" }}>Direct Sale Pages</div>
                       <div style={{ fontSize: "13px", color: "var(--dim)", lineHeight: 1.6, maxWidth: "480px" }}>
-                        Generate a shareable <span style={{ color: "var(--muted)" }}>cipher.so/pay/[id]</span> URL.
+                        Generate a shareable <span style={{ color: "var(--muted)" }}>muluk.vip/pay/[id]</span> URL.
                         Upload content, set a price, click Generate Link, and sell instantly with Stripe checkout.
                       </div>
                     </div>
@@ -2560,7 +2560,7 @@ export default function DashboardClient({
                             CUSTOM REFERRAL HANDLE
                           </div>
                           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                            <span style={{ ...mono, fontSize: "12px", color: "var(--dim)" }}>cipher.so/ref/</span>
+                            <span style={{ ...mono, fontSize: "12px", color: "var(--dim)" }}>muluk.vip/ref/</span>
                             <input
                               type="text"
                               value={customHandle}
@@ -2751,7 +2751,7 @@ export default function DashboardClient({
                     { key: "price", title: "Price Optimizer", desc: "Analyzes your real transaction data. Recommends optimal price with AI confidence score.", icon: "◈" },
                     { key: "calendar", title: "Content Calendar", desc: "7-day planning board. Click each day, assign content drops, schedule to DB.", icon: "⬡" },
                     { key: "blast", title: "Fan Message Blast", desc: "Broadcast to all fans, active fans, or top spenders instantly.", icon: "▲" },
-                    { key: "collab", title: "Collaboration Finder", desc: "Discover other CIPHER creators. Send split proposals with custom cut percentages.", icon: "◎" },
+                    { key: "collab", title: "Collaboration Finder", desc: "Discover other MULUK creators. Send split proposals with custom cut percentages.", icon: "◎" },
                     { key: "voice", title: "Voice Studio", desc: "Private rollout. Coming soon.", icon: "🎙️", comingSoon: true },
                     { key: "tax", title: "Tax Summary", desc: "Full earnings breakdown by year. Platform fee calc. Export CSV for your accountant.", icon: "≡" },
                   ].map(tool => (
@@ -3034,7 +3034,7 @@ export default function DashboardClient({
 
                     <div style={{ border: "1px solid rgba(29,161,242,0.24)", borderRadius: "10px", padding: "14px", background: "rgba(29,161,242,0.06)" }}>
                       <div style={{ ...mono, fontSize: "10px", color: "#8dcfff", letterSpacing: "0.12em" }}>PRIVACY</div>
-                      <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "8px", lineHeight: 1.7 }}>These exports are assembled in-browser and downloaded immediately. CIPHER does not upload a second copy during export generation. For deletion requests or subject-access workflows, contact privacy directly.</div>
+                      <div style={{ fontSize: "13px", color: "var(--white)", marginTop: "8px", lineHeight: 1.7 }}>These exports are assembled in-browser and downloaded immediately. MULUK does not upload a second copy during export generation. For deletion requests or subject-access workflows, contact privacy directly.</div>
                     </div>
                   </div>
 
@@ -3050,7 +3050,7 @@ export default function DashboardClient({
                     </div>
 
                     <button type="button" onClick={() => void exportDataBundle()} disabled={exportBusy} style={{ border: "none", borderRadius: "8px", padding: "12px 14px", background: "var(--gold)", color: "#120c00", ...mono, fontSize: "11px", letterSpacing: "0.1em", cursor: "pointer" }}>{exportBusy ? "BUILDING ZIP" : "DOWNLOAD ZIP EXPORT"}</button>
-                    <a href="mailto:privacy@cipher.so?subject=GDPR%20data%20request" style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", padding: "12px 14px", color: "var(--white)", textDecoration: "none", ...mono, fontSize: "11px", letterSpacing: "0.1em", textAlign: "center" }}>CONTACT PRIVACY / GDPR</a>
+                    <a href="mailto:privacy@muluk.vip?subject=GDPR%20data%20request" style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", padding: "12px 14px", color: "var(--white)", textDecoration: "none", ...mono, fontSize: "11px", letterSpacing: "0.1em", textAlign: "center" }}>CONTACT PRIVACY / GDPR</a>
                     {exportMsg && <div style={{ fontSize: "12px", color: exportMsg.includes("downloaded") ? "#39c56f" : "#ff8a8a" }}>{exportMsg}</div>}
                   </div>
                 </div>

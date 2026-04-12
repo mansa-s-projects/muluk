@@ -50,7 +50,7 @@ type PricingRecommendation = {
   factors?: string[];
 };
 
-// ─── CIPHER Score ──────────────────────────────────────────────────────────────
+// ─── MULUK Score ──────────────────────────────────────────────────────────────
 export type CipherScoreData = {
   totalEarnings: number;
   fanCount: number;
@@ -96,12 +96,12 @@ export function CipherScore({ data }: { data: CipherScoreData }) {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const progress = (displayScore / 1000) * circumference;
-  const tier = total >= 800 ? "OBSIDIAN" : total >= 600 ? "GOLD" : total >= 400 ? "SILVER" : total >= 200 ? "BRONZE" : "CIPHER";
+  const tier = total >= 800 ? "OBSIDIAN" : total >= 600 ? "GOLD" : total >= 400 ? "SILVER" : total >= 200 ? "BRONZE" : "MULUK";
   const tierColor = total >= 800 ? "#e8ccff" : total >= 600 ? "#c8a96e" : total >= 400 ? "#a7adb8" : total >= 200 ? "#cd7f32" : "#555";
 
   return (
     <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
-      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>CIPHER SCORE</div>
+      <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>MULUK SCORE</div>
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "20px", alignItems: "center" }}>
         <div style={{ position: "relative", width: "130px", height: "130px" }}>
           <svg width="130" height="130" style={{ transform: "rotate(-90deg)" }}>
@@ -304,9 +304,9 @@ export function CipherRadio() {
   const [currentTrack, setCurrentTrack] = useState(0);
 
   const tracks = [
-    { title: "Midnight Protocol", artist: "CIPHER FM", duration: "3:42" },
-    { title: "Neon Drift", artist: "CIPHER FM", duration: "4:15" },
-    { title: "Shadow Markets", artist: "CIPHER FM", duration: "3:28" },
+    { title: "Midnight Protocol", artist: "MULUK FM", duration: "3:42" },
+    { title: "Neon Drift", artist: "MULUK FM", duration: "4:15" },
+    { title: "Shadow Markets", artist: "MULUK FM", duration: "3:28" },
   ];
 
   const toggle = () => {
@@ -317,7 +317,7 @@ export function CipherRadio() {
   return (
     <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)" }}>CIPHER RADIO</div>
+        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)" }}>MULUK RADIO</div>
         <div style={{ display: "flex", gap: "6px" }}>
           <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: playing ? "#4cc88c" : "var(--dim)", animation: playing ? "pulse 1s infinite" : "none" }} />
           <span style={{ ...mono, fontSize: "9px", color: playing ? "#4cc88c" : "var(--dim)" }}>{playing ? "LIVE" : "OFFLINE"}</span>
@@ -388,21 +388,21 @@ export function CipherRadioCompact() {
   const tracks = [
     { 
       title: "Midnight Protocol", 
-      artist: "CIPHER FM", 
+      artist: "MULUK FM", 
       duration: "3:42",
       // Ambient electronic track
       url: "https://cdn.pixabay.com/audio/2024/11/29/audio_cb337f4415.mp3"
     },
     { 
       title: "Neon Drift", 
-      artist: "CIPHER FM", 
+      artist: "MULUK FM", 
       duration: "4:15",
       // Lo-fi chill track
       url: "https://cdn.pixabay.com/audio/2024/09/10/audio_6e5d7d1912.mp3"
     },
     { 
       title: "Shadow Markets", 
-      artist: "CIPHER FM", 
+      artist: "MULUK FM", 
       duration: "3:28",
       // Dark ambient track
       url: "https://cdn.pixabay.com/audio/2024/10/25/audio_52696cd20a.mp3"

@@ -1,8 +1,8 @@
-﻿// CIPHER Resend Email Notification System
+﻿// MULUK Resend Email Notification System
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = 'CIPHER <notifications@cipher.so>';
+const FROM_EMAIL = 'MULUK <notifications@muluk.vip>';
 
 type WelcomeEmailData = {
   name: string;
@@ -37,20 +37,20 @@ const emailTemplate = (content: string, _title: string) => `
 </head>
 <body>
   <div class="container">
-    <div class="header"><div class="logo">CIPHER</div></div>
+    <div class="header"><div class="logo">MULUK</div></div>
     <div class="content">${content}</div>
-    <div class="footer"><p>CIPHER - The Dark Luxury Creator Platform</p></div>
+    <div class="footer"><p>MULUK - The Dark Luxury Creator Platform</p></div>
   </div>
 </body>
 </html>
 `;
 
 export const sendWelcomeEmail = async (data: WelcomeEmailData) => {
-  const content = `<h2>Welcome to CIPHER, ${data.name}</h2><p>You've joined the most exclusive creator platform.</p>`;
+  const content = `<h2>Welcome to MULUK, ${data.name}</h2><p>You've joined the most exclusive creator platform.</p>`;
   return await resend.emails.send({
     from: FROM_EMAIL,
     to: data.to,
-    subject: 'Welcome to CIPHER',
+    subject: 'Welcome to MULUK',
     html: emailTemplate(content, 'Welcome'),
   });
 };
@@ -60,7 +60,7 @@ export const sendEarningsNotification = async (data: EarningsEmailData) => {
   return await resend.emails.send({
     from: FROM_EMAIL,
     to: data.to,
-    subject: `💰 You earned $${data.amount} on CIPHER`,
+    subject: `💰 You earned $${data.amount} on MULUK`,
     html: emailTemplate(content, 'New Earnings'),
   });
 };
@@ -70,7 +70,7 @@ export const sendPurchaseReceipt = async (data: PurchaseReceiptData) => {
   return await resend.emails.send({
     from: FROM_EMAIL,
     to: data.to,
-    subject: 'Your CIPHER Purchase',
+    subject: 'Your MULUK Purchase',
     html: emailTemplate(content, 'Purchase Receipt'),
   });
 };

@@ -134,7 +134,7 @@ export class AIRouter {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
               "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-              "X-Title": "CIPHER Platform",
+              "X-Title": "MULUK Platform",
             },
             body: JSON.stringify({
               model: config.model,

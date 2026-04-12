@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import VaultClient from "./VaultClient";
 import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
-export const metadata = { title: "Vault — CIPHER" };
+export const metadata = { title: "Vault — MULUK" };
 
 export default async function VaultPage() {
   const supabase = await createClient();

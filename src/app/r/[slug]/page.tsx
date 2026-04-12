@@ -73,11 +73,11 @@ async function incrementRateCardViews(slug: string): Promise<void> {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const card = await fetchCard(slug);
-  if (!card) return { title: "Rate Card — CIPHER" };
+  if (!card) return { title: "Rate Card — MULUK" };
 
   const creatorName = card.profiles?.display_name ?? card.profiles?.handle ?? "Creator";
   return {
-    title:       `${creatorName} — Rate Card | CIPHER`,
+    title:       `${creatorName} — Rate Card | MULUK`,
     description: `Official pricing for brand deals, sponsored posts, and sessions with ${creatorName}.`,
     robots:      { index: false, follow: false },
   };
@@ -205,7 +205,7 @@ export default async function PublicRateCardPage({ params }: Params) {
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 860, margin: "0 auto", padding: "60px 24px 80px" }}>
 
-        {/* ── CIPHER wordmark ── */}
+        {/* ── MULUK wordmark ── */}
         <div
           style={{
             textAlign:     "center",
@@ -224,7 +224,7 @@ export default async function PublicRateCardPage({ params }: Params) {
               textDecoration: "none",
             }}
           >
-            CIPHER
+            MULUK
           </Link>
         </div>
 
@@ -523,7 +523,7 @@ export default async function PublicRateCardPage({ params }: Params) {
             Prices shown are starting rates. Final pricing may vary based on deliverables and timeline.
           </p>
           <a
-            href="https://cipher.so"
+            href="https://muluk.vip"
             style={{
               fontFamily:    "var(--font-mono, 'DM Mono', monospace)",
               fontSize:      9,
@@ -533,7 +533,7 @@ export default async function PublicRateCardPage({ params }: Params) {
               textDecoration: "none",
             }}
           >
-            Powered by CIPHER
+            Powered by MULUK
           </a>
         </div>
       </div>

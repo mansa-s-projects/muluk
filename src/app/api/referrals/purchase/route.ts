@@ -10,7 +10,7 @@ function getServiceClient() {
 
 export async function POST(request: Request) {
   try {
-    const internalKey = request.headers.get("x-cipher-internal-key");
+    const internalKey = request.headers.get("x-muluk-internal-key");
     if (!internalKey || internalKey !== process.env.REFERRAL_INTERNAL_API_KEY) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

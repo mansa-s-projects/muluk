@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
-const REF_COOKIE = "cipher_referral_code";
-const REF_SOURCE_COOKIE = "cipher_referral_source";
+const REF_COOKIE = "muluk_referral_code";
+const REF_SOURCE_COOKIE = "muluk_referral_source";
 
 function getServiceClient() {
   return createServiceClient(

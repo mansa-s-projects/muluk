@@ -383,9 +383,9 @@ type FirstSaleEngineProps = {
 
   const postScript = drop.caption || `I've been working on something for the real ones.\n\n🔓 My private ${niche} community just opened. First 50 members lock in founding pricing at $${drop.price}/mo.\n\nThis is where I drop everything I can't post publicly. Once it's full, price goes up.\n\nLink in bio${fanPageUrl ? `: ${fanPageUrl}` : ''}.`;
 
-  const dmScript = `Hey! I just launched something I think you'll actually want.\n\nI opened up private access to [your content here] — exclusive stuff for a small group. Founding price is $${drop.price}/mo and I'm keeping slots limited.\n\nThought of you first. Here's the link: ${fanPageUrl || 'cipher.so/[your-handle]'}\n\nNo pressure — just wanted you to see it first.`;
+  const dmScript = `Hey! I just launched something I think you'll actually want.\n\nI opened up private access to [your content here] — exclusive stuff for a small group. Founding price is $${drop.price}/mo and I'm keeping slots limited.\n\nThought of you first. Here's the link: ${fanPageUrl || 'muluk.vip/[your-handle]'}\n\nNo pressure — just wanted you to see it first.`;
 
-  const bioScript = fanPageUrl || 'cipher.so/[your-handle]';
+  const bioScript = fanPageUrl || 'muluk.vip/[your-handle]';
 
   const copy = (key: string, text: string) => {
     navigator.clipboard.writeText(text);

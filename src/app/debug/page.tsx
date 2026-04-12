@@ -28,7 +28,7 @@ export default function DebugIndex() {
     <div style={{ minHeight: '100vh', background: '#020203', color: 'rgba(255,255,255,0.92)', padding: '48px 24px', fontFamily: 'var(--font-body, Outfit), sans-serif' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ marginBottom: 8, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono, DM Mono), monospace' }}>
-          CIPHER // DEBUG CONSOLE
+          MULUK // DEBUG CONSOLE
         </div>
         <h1 style={{ fontSize: 36, fontWeight: 300, fontFamily: 'var(--font-display, Cormorant), serif', color: '#c8a96e', marginBottom: 8 }}>
           Debug Dashboard

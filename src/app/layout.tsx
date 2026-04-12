@@ -29,20 +29,20 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CIPHER — The Creator Platform They Were Afraid To Build",
+  title: "MULUK — The Creator Platform They Were Afraid To Build",
   description:
     "Anonymous fans. Auto-split payments. Lifetime referral income. 8–12% platform fee.",
-  metadataBase: new URL("https://cipher.so"),
+  metadataBase: new URL("https://muluk.vip"),
   openGraph: {
-    title: "CIPHER — The Creator Platform They Were Afraid To Build",
+    title: "MULUK — The Creator Platform They Were Afraid To Build",
     description: "Anonymous fans. Auto-split payments. Lifetime referral income.",
-    url: "https://cipher.so",
-    siteName: "CIPHER",
+    url: "https://muluk.vip",
+    siteName: "MULUK",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "CIPHER — The Creator Platform They Were Afraid To Build",
+    title: "MULUK — The Creator Platform They Were Afraid To Build",
     description: "Anonymous fans. Auto-split payments. Lifetime referral income.",
   },
 };

@@ -229,7 +229,7 @@ export default function CommissionPageClient({ handle }: Props) {
 
         {/* ── Footer ── */}
         <p style={{ textAlign: "center", color: "var(--dim)", fontSize: "0.75rem", marginTop: "1.5rem" }}>
-          Powered by CIPHER · Secure payouts
+          Powered by MULUK · Secure payouts
         </p>
       </div>
     </div>

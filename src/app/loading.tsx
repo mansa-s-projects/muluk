@@ -25,7 +25,7 @@ export default function Loading() {
         color: "rgba(255,255,255,0.4)",
         textTransform: "uppercase",
       }}>
-        Loading CIPHER
+        Loading MULUK
       </div>
 
       <span style={{
@@ -39,7 +39,7 @@ export default function Loading() {
         width: "1px",
         whiteSpace: "nowrap",
       }}>
-        Loading CIPHER
+        Loading MULUK
       </span>
 
       <style>{`

@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
       <div className="w-full max-w-md p-8 bg-[#111] border border-[#222] rounded-xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#d4af37] mb-2">CIPHER</h1>
+          <h1 className="text-3xl font-bold text-[#d4af37] mb-2">MULUK</h1>
           <p className="text-gray-400">Admin Command Center</p>
         </div>
 

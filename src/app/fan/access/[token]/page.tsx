@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { hashAccessToken } from "@/lib/token-hash";
 
 export const metadata: Metadata = {
-  title: "Unlocked Content — CIPHER",
+  title: "Unlocked Content — MULUK",
   robots: { index: false, follow: false },
 };
 
@@ -184,7 +184,7 @@ function StatusPage({ icon, title, message }: { icon: string; title: string; mes
       }}
     >
       <div style={{ ...mono, fontSize: "12px", letterSpacing: "0.35em", color: "rgba(200,169,110,0.55)", marginBottom: "40px" }}>
-        CIPHER
+        MULUK
       </div>
       <div
         style={{
@@ -246,7 +246,7 @@ export default async function FanAccessPage({ params }: PageProps) {
         }}
       >
         <div style={{ ...mono, fontSize: "12px", letterSpacing: "0.35em", color: "rgba(200,169,110,0.55)", marginBottom: "40px" }}>
-          CIPHER
+          MULUK
         </div>
 
         <div
@@ -332,7 +332,7 @@ export default async function FanAccessPage({ params }: PageProps) {
                 letterSpacing: "0.12em",
               }}
             >
-              POWERED BY CIPHER
+              POWERED BY MULUK
             </div>
           </div>
         </div>

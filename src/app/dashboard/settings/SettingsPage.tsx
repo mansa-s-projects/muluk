@@ -735,7 +735,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
               <button
                 onClick={() => {
                   if (confirm("Are you sure you want to delete your account? This cannot be undone.")) {
-                    alert("Contact support@cipher.so to request account deletion.");
+                    alert("Contact support@muluk.vip to request account deletion.");
                   }
                 }}
                 style={{

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Design tokens (inline — matches CIPHER system) ───────────────────────────
+// ─── Design tokens (inline — matches MULUK system) ───────────────────────────
 const mono: React.CSSProperties = {
   fontFamily: "var(--font-mono, 'DM Mono', monospace)",
 };

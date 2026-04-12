@@ -245,7 +245,7 @@ export default function DebugRoutesPage() {
   return (
     <div className="min-h-screen bg-black text-gray-200 p-8 font-mono">
       <h1 className="text-2xl font-bold text-[#c8a96e] mb-2">
-        CIPHER Route Debug Guide
+        MULUK Route Debug Guide
       </h1>
       <p className="text-gray-400 mb-8">
         Total: {totalRoutes} routes | Middleware: auth, admin=404 in prod, debug=404 in prod

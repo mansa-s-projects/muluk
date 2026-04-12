@@ -172,7 +172,7 @@ export default function SetupAdminPage() {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:18, color:c.gold,
           }}>✦</div>
-          <div style={{ fontFamily:c.serif, fontSize:28, fontWeight:300, color:c.gold, letterSpacing:"0.08em", marginBottom:4 }}>CIPHER</div>
+          <div style={{ fontFamily:c.serif, fontSize:28, fontWeight:300, color:c.gold, letterSpacing:"0.08em", marginBottom:4 }}>MULUK</div>
           <div style={{ fontFamily:c.mono, fontSize:9, color:c.goldDim, letterSpacing:"0.3em", textTransform:"uppercase" }}>Admin Setup</div>
         </div>
 
@@ -299,7 +299,7 @@ export default function SetupAdminPage() {
         {/* Footer */}
         <div style={{ marginTop:28, paddingTop:16, borderTop:`1px solid ${c.rim}`, textAlign:"center" }}>
           <span style={{ fontFamily:c.mono, fontSize:9, color:c.dim, letterSpacing:"0.1em" }}>
-            CIPHER ADMIN SETUP · PRIVATE
+            MULUK ADMIN SETUP · PRIVATE
           </span>
         </div>
       </div>

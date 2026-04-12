@@ -4,7 +4,7 @@ import DashboardShell from "@/app/dashboard/components/DashboardShell";
 import ReferralIntelligenceClient from "./ReferralIntelligenceClient";
 
 export const metadata = {
-  title: "Referral Intelligence — CIPHER",
+  title: "Referral Intelligence — MULUK",
   description: "Track click-to-signup-to-revenue performance and top referral conversions.",
 };
 

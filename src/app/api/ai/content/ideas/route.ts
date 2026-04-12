@@ -49,7 +49,7 @@ For each idea provide:
 - Title (hook-driven)
 - Content type (photo series, video, carousel, story, reel, exclusive drop)
 - Brief description (2 sentences)
-- Platform optimization (Instagram, TikTok, Twitter/X, or CIPHER exclusive)
+- Platform optimization (Instagram, TikTok, Twitter/X, or MULUK exclusive)
 - Estimated engagement level (high/medium/low with reason)
 - Monetization angle (tip, unlock, subscription, or free growth content)
 

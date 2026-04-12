@@ -111,7 +111,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Creator not found" }, { status: 404 });
   }
 
-  const siteUrl    = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cipherapp.co";
+  const siteUrl    = process.env.NEXT_PUBLIC_SITE_URL ?? "https://muluk.vip";
   const redirectUrl = `${siteUrl}/tips/${handle}/success`;
 
   // Insert tip record first to get ID

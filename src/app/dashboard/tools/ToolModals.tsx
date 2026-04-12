@@ -725,7 +725,7 @@ export function FanMessageBlastModal({ userId, fanCodeCount, onClose }: { userId
 
       <div style={{ border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "12px", marginBottom: "16px", background: "rgba(200,169,110,0.04)" }}>
         <div style={{ fontSize: "12px", color: "var(--muted)" }}>
-          This message will be sent to <strong style={{ color: "var(--gold)" }}>{selectedSeg.count} {selectedSeg.label}</strong> via CIPHER platform.
+          This message will be sent to <strong style={{ color: "var(--gold)" }}>{selectedSeg.count} {selectedSeg.label}</strong> via MULUK platform.
         </div>
       </div>
 
@@ -772,7 +772,7 @@ export function CollabFinderModal({ userId, onClose }: { userId: string; onClose
         status: "pending",
       });
       if (error) throw error;
-      setSentMsg(`Proposal sent to ${selectedHandle}. They'll be notified on CIPHER.`);
+      setSentMsg(`Proposal sent to ${selectedHandle}. They'll be notified on MULUK.`);
       setPropMsg("");
       setSelectedHandle("");
     } catch {
@@ -783,7 +783,7 @@ export function CollabFinderModal({ userId, onClose }: { userId: string; onClose
   };
 
   return (
-    <Modal title="Collab Finder" sub="Connect with other CIPHER creators for revenue splits" onClose={onClose}>
+    <Modal title="Collab Finder" sub="Connect with other MULUK creators for revenue splits" onClose={onClose}>
       <div style={{ display: "flex", gap: "8px", marginBottom: "14px", flexWrap: "wrap" }}>
         {["all", "luxury", "music", "art", "fitness", "fashion"].map(cat => (
           <button

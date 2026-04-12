@@ -222,7 +222,7 @@ export default function FanPageClient({
   };
 
   const tweetUrl = verifiedCode
-    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just unlocked @${creator.handle} on CIPHER with ${verifiedCode}`)}`
+    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just unlocked @${creator.handle} on MULUK with ${verifiedCode}`)}`
     : "https://twitter.com/intent/tweet";
 
   return (
@@ -352,7 +352,7 @@ export default function FanPageClient({
                 textTransform: "uppercase",
               }}
             >
-              CIPHER - PHANTOM MODE ACTIVE
+              MULUK - PHANTOM MODE ACTIVE
             </p>
 
             <div style={{ marginTop: 28 }}>
@@ -457,7 +457,7 @@ export default function FanPageClient({
                     marginBottom: 18,
                   }}
                 >
-                  CIPHER CREATOR
+                  MULUK CREATOR
                 </div>
                 <div
                   style={{
@@ -949,7 +949,7 @@ export default function FanPageClient({
               textTransform: "uppercase",
             }}
           >
-            <span>CIPHER</span>
+            <span>MULUK</span>
             <span style={{ color: "#c8a96e" }}>·</span>
             <span>cipher.co</span>
             <span style={{ color: "#c8a96e" }}>·</span>
@@ -1015,7 +1015,7 @@ export default function FanPageClient({
                 color: "#c8a96e",
               }}
             >
-              CIPHER
+              MULUK
             </div>
             <h2
               style={{

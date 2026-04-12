@@ -101,7 +101,7 @@ function buildWatermarkSvg(width: number, height: number): string {
         fill="rgba(255,255,255,0.75)" text-anchor="middle" dominant-baseline="middle">LOCKED</text>
   <text x="50%" y="${Math.round(height * 0.5) + 48}"
         font-family="Arial,sans-serif" font-size="${Math.round(subSize * 0.75)}" letter-spacing="2"
-        fill="rgba(200,169,110,0.6)" text-anchor="middle" dominant-baseline="middle">CIPHER VAULT</text>
+        fill="rgba(200,169,110,0.6)" text-anchor="middle" dominant-baseline="middle">MULUK VAULT</text>
 </svg>`;
 }
 
@@ -148,7 +148,7 @@ export async function provisionVaultCheckout(params: {
   try {
     const product = await whopPost<{ id: string; slug: string }>("/products", {
       name:        params.itemTitle,
-      description: `Unlock this exclusive content on CIPHER`,
+      description: `Unlock this exclusive content on MULUK`,
       company_id:  companyId,
       visibility:  "visible",
     });

@@ -34,8 +34,8 @@ const COUNTRIES = ["United Arab Emirates", "United States", "United Kingdom", "M
 ───────────────────────────────────────── */
 function Cursor() {
   useEffect(() => {
-    const dot  = document.getElementById("cipher-cursor");
-    const ring = document.getElementById("cipher-ring");
+    const dot  = document.getElementById("muluk-cursor");
+    const ring = document.getElementById("muluk-ring");
     if (!dot || !ring) return;
     let mx = -200, my = -200, rx = -200, ry = -200, raf: number;
     const move = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
@@ -332,8 +332,8 @@ export default function Apply() {
 
   return (
     <>
-      <div id="cipher-cursor" style={{ position: "fixed", width: "8px", height: "8px", background: "var(--gold)", borderRadius: "50%", pointerEvents: "none", zIndex: 99999, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)", mixBlendMode: "screen" }} />
-      <div id="cipher-ring"   style={{ position: "fixed", width: "32px", height: "32px", border: "1px solid rgba(200,169,110,0.4)", borderRadius: "50%", pointerEvents: "none", zIndex: 99998, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)" }} />
+      <div id="muluk-cursor" style={{ position: "fixed", width: "8px", height: "8px", background: "var(--gold)", borderRadius: "50%", pointerEvents: "none", zIndex: 99999, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)", mixBlendMode: "screen" }} />
+      <div id="muluk-ring"   style={{ position: "fixed", width: "32px", height: "32px", border: "1px solid rgba(200,169,110,0.4)", borderRadius: "50%", pointerEvents: "none", zIndex: 99998, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)" }} />
       <Cursor />
 
       <div className="apply-grid" style={{ minHeight: "100vh", background: "#020203", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
@@ -342,7 +342,7 @@ export default function Apply() {
         <div className="apply-left" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)", padding: "56px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "sticky", top: 0, height: "100vh" }}>
 
           {/* logo */}
-          <Link href="/" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>CIPHER</Link>
+          <Link href="/" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>MULUK</Link>
 
           {/* center content */}
           <div>
@@ -358,7 +358,7 @@ export default function Apply() {
               {step === 4 && <>You&apos;re<br /><em style={{ ...gold, fontStyle: "italic" }}>in.</em></>}
             </h1>
             <p style={{ fontSize: "14px", fontWeight: 300, lineHeight: 1.8, ...muted, maxWidth: "320px" }}>
-              {step === 0 && "Tell us about yourself. Your handle is your identity on CIPHER."}
+              {step === 0 && "Tell us about yourself. Your handle is your identity on MULUK."}
               {step === 1 && "We support Whop, Wise, crypto, and PayPal. No Whop payout profile required to apply."}
               {step === 2 && "What kind of content do you create and how big is your current audience?"}
               {step === 3 && "Review your application. We'll reach out within 48 hours."}
@@ -462,7 +462,7 @@ export default function Apply() {
                 ))}
               </div>
               <div style={{ background: "var(--gold-glow)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "3px", padding: "16px 20px", ...mono, fontSize: "12px", ...gold, lineHeight: 1.6 }}>
-                By applying you agree to CIPHER&apos;s creator terms. We&apos;ll review your application and reach out within 48 hours.
+                By applying you agree to MULUK&apos;s creator terms. We&apos;ll review your application and reach out within 48 hours.
               </div>
             </div>
           )}
@@ -488,7 +488,7 @@ export default function Apply() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--muted)"; }}
               >
-                ← Back to cipher.so
+                ← Back to muluk.vip
               </button>
             </div>
           )}
@@ -507,7 +507,7 @@ export default function Apply() {
                     onMouseEnter={e => (e.currentTarget.style.color = "var(--muted)")}
                     onMouseLeave={e => (e.currentTarget.style.color = "var(--dim)")}
                   >← Back</button>
-                : <Link href="/" style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", textDecoration: "none" }}>← cipher.so</Link>
+                : <Link href="/" style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", textDecoration: "none" }}>← muluk.vip</Link>
               }
               <button
                 onClick={next}
@@ -530,10 +530,10 @@ export default function Apply() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @media (hover: hover) and (pointer: fine) {
-          #cipher-cursor, #cipher-ring { display: block; }
+          #muluk-cursor, #muluk-ring { display: block; }
         }
         @media (hover: none), (pointer: coarse) {
-          #cipher-cursor, #cipher-ring { display: none !important; }
+          #muluk-cursor, #muluk-ring { display: none !important; }
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #020203; }

@@ -8,7 +8,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props) {
   const { handle } = await params;
-  return { title: `${handle}'s Vault — CIPHER` };
+  return { title: `${handle}'s Vault — MULUK` };
 }
 
 export default async function VaultHandlePage({ params }: Props) {

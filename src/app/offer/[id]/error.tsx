@@ -46,7 +46,7 @@ export default function OfferError({ error, reset }: Props) {
         color: "rgba(200,169,110,0.35)",
         marginBottom: "44px",
       }}>
-        CIPHER
+        MULUK
       </div>
 
       {/* Error card */}

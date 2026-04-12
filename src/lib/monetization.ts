@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 /**
  * Generate a cryptographically secure random code.
- * Format: CIPHER-XXXXXXXXXX (10 alphanumeric chars)
+ * Format: MULUK-XXXXXXXXXX (10 alphanumeric chars)
  */
 export function generateFanCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (0/O, 1/I)
@@ -16,7 +16,7 @@ export function generateFanCode(): string {
 
 /**
  * Calculate platform fee and creator earnings.
- * Uses CIPHER tier system: 12% default, 10% Legend, 8% Apex
+ * Uses MULUK tier system: 12% default, 10% Legend, 8% Apex
  */
 export function calculateSplit(
   amountCents: number,

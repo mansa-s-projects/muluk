@@ -127,20 +127,20 @@ export default function ReferralIntelligenceClient() {
 
   const shareToX = () => {
     if (!data?.referral_link) return;
-    const text = encodeURIComponent("Join me on CIPHER.");
+    const text = encodeURIComponent("Join me on MULUK.");
     const url = encodeURIComponent(data.referral_link);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank", "noopener,noreferrer");
   };
 
   const shareToWhatsApp = () => {
     if (!data?.referral_link) return;
-    const text = encodeURIComponent(`Join me on CIPHER: ${data.referral_link}`);
+    const text = encodeURIComponent(`Join me on MULUK: ${data.referral_link}`);
     window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const shareToTelegram = () => {
     if (!data?.referral_link) return;
-    const text = encodeURIComponent("Join me on CIPHER");
+    const text = encodeURIComponent("Join me on MULUK");
     const url = encodeURIComponent(data.referral_link);
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, "_blank", "noopener,noreferrer");
   };

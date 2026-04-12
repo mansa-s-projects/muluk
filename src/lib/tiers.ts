@@ -1,5 +1,5 @@
 /**
- * CIPHER Subscription Tier Enforcement
+ * MULUK Subscription Tier Enforcement
  *
  * Single source of truth for all feature gating.
  * All tier data is read from the subscription_tiers + creator_subscriptions tables
@@ -92,7 +92,7 @@ export const FEATURE_MIN_TIER: Record<Feature, TierSlug> = {
  * Hardcoded fallback used when a creator has no subscription row in the DB.
  * Prevents crashes while giving cipher-level access by default.
  */
-const DEFAULT_CIPHER_TIER: SubscriptionTier = {
+const DEFAULT_MULUK_TIER: SubscriptionTier = {
   slug:              "cipher",
   display_name:      "Cipher",
   platform_fee_pct:  12,
@@ -181,7 +181,7 @@ export async function getUserTier(
         error: tierError?.message,
       });
     }
-    return { ...DEFAULT_CIPHER_TIER, slug: "cipher" };
+    return { ...DEFAULT_MULUK_TIER, slug: "cipher" };
   }
 
   return tier as SubscriptionTier;

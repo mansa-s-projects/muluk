@@ -105,14 +105,14 @@ export async function POST(req: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: "CIPHER <hello@cipher.so>",
+        from: "MULUK <hello@muluk.vip>",
         to: email,
-        subject: "Your CIPHER application is under review",
+        subject: "Your MULUK application is under review",
         html: `
 <!DOCTYPE html><html><body style="margin:0;padding:0;background:#020203;font-family:'Helvetica Neue',sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:60px 24px;">
 <table width="560" cellpadding="0" cellspacing="0">
-  <tr><td style="padding-bottom:40px;"><span style="font-family:'Courier New',monospace;font-size:17px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">CIPHER</span></td></tr>
+  <tr><td style="padding-bottom:40px;"><span style="font-family:'Courier New',monospace;font-size:17px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">MULUK</span></td></tr>
   <tr><td style="padding-bottom:40px;"><div style="height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,110,0.4),transparent);"></div></td></tr>
   <tr><td style="padding-bottom:20px;"><h1 style="margin:0;font-family:Georgia,serif;font-size:42px;font-weight:300;color:rgba(255,255,255,0.92);line-height:1.1;">Application<br/><em style="color:#c8a96e;">received.</em></h1></td></tr>
   <tr><td style="padding-bottom:36px;"><p style="margin:0;font-size:15px;font-weight:300;line-height:1.8;color:rgba(255,255,255,0.5);">Hey ${escapeHtml(name)}, we&#x27;ve received your application for <strong style="color:rgba(255,255,255,0.7);">@${escapeHtml(handle)}</strong>.<br/><br/>We review every application personally. You&#x27;ll hear from us within 48 hours.</p></td></tr>
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       ${[["Category", category], ["Country", country], ["Payout", payout], ["Audience", audience]].map(([label, value]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="font-size:12px;color:rgba(255,255,255,0.3);font-family:'Courier New',monospace;">${label}</span><span style="font-size:13px;color:rgba(255,255,255,0.6);font-weight:300;">${escapeHtml(value)}</span></div>`).join("")}
     </div>
   </td></tr>
-  <tr><td><p style="margin:0;font-family:'Courier New',monospace;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.1em;">&#xa9; 2025 CIPHER &#xb7; cipher.so</p></td></tr>
+  <tr><td><p style="margin:0;font-family:'Courier New',monospace;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.1em;">&#xa9; 2025 MULUK &#xb7; muluk.vip</p></td></tr>
 </table></td></tr></table>
 </body></html>`,
       });

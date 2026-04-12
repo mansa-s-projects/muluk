@@ -538,7 +538,7 @@ async function handlePayoutCompleted(
 //     metadata: {
 //       offer_id:    "<uuid>",   ← set via provisionWhopCheckout
 //       creator_id:  "<uuid>",   ← set via provisionWhopCheckout
-//       user_id:     "<uuid>",   ← CIPHER auth.users UUID (optional — falls back to lookup)
+//       user_id:     "<uuid>",   ← MULUK auth.users UUID (optional — falls back to lookup)
 //     }
 //   }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -581,7 +581,7 @@ async function handleMembershipValid(data: Record<string, unknown>) {
     }
 
     if (!userId || !UUID_RE.test(userId)) {
-      console.warn("[whop-webhook] membership.went_valid — cannot resolve CIPHER user_id for whop user", data.user);
+      console.warn("[whop-webhook] membership.went_valid — cannot resolve MULUK user_id for whop user", data.user);
       return NextResponse.json({ received: true, action: "offer_unlock_skipped", reason: "no_user_id" });
     }
   }

@@ -39,7 +39,7 @@ const AI_ROUTES: TestResult[] = [
 
 const ROUTE_CONFIGS = {
   '/api/ai/ghostwrite': {
-    body: { prompt: 'Write a test sentence about CIPHER platform.', tier: 'balanced' },
+    body: { prompt: 'Write a test sentence about MULUK platform.', tier: 'balanced' },
     parse: (r: RouteResponse) => r.success ? 'Response received' : r.error,
   },
   '/api/ai/onboarding/analyze': {
@@ -74,7 +74,7 @@ const ROUTE_CONFIGS = {
     parse: (r: RouteResponse) => r.success ? `Voice cloned: ${r.voice?.name}` : r.error,
   },
   '/api/ai/voice/tts': {
-    body: { text: 'Hello from CIPHER', voiceId: 'rachel' },
+    body: { text: 'Hello from MULUK', voiceId: 'rachel' },
     parse: (r: RouteResponse) => r.success ? 'Audio generated' : r.error,
   },
 };

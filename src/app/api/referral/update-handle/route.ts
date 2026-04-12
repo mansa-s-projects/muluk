@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       handle: handle.toLowerCase(),
-      link: `cipher.so/ref/${handle.toLowerCase()}`,
+      link: `muluk.vip/ref/${handle.toLowerCase()}`,
     });
 
   } catch (error) {

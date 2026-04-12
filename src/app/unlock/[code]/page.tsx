@@ -122,7 +122,7 @@ export default function UnlockPage({
     await handleWhopPay();
   };
 
-  // ── Styles (inline to match CIPHER design system) ─────────────────────
+  // ── Styles (inline to match MULUK design system) ─────────────────────
   const mono = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" } as const;
   const disp = { fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" } as const;
   const gold = { color: "#c8a96e" } as const;
@@ -249,7 +249,7 @@ export default function UnlockPage({
 
           {/* Footer */}
           <div style={{ textAlign: "center", marginTop: "48px" }}>
-            <span style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>CIPHER</span>
+            <span style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>MULUK</span>
             <div style={{ ...mono, fontSize: "10px", ...dim, marginTop: "8px", letterSpacing: "0.12em" }}>
               Anonymous content. Instant access.
             </div>
@@ -267,7 +267,7 @@ export default function UnlockPage({
       <div style={{ maxWidth: "520px", margin: "80px auto 0" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "48px" }}>
-          <span style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>CIPHER</span>
+          <span style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>MULUK</span>
         </div>
 
         {/* Content card */}
@@ -349,7 +349,7 @@ export default function UnlockPage({
             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
               <div>
                 <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.22em", textTransform: "uppercase", color: "#c8a96e" }}>Payment shell</div>
-                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.62)", marginTop: "4px" }}>Apple Pay style flow in CIPHER. Secure payment is completed with Whop.</div>
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.62)", marginTop: "4px" }}>Apple Pay style flow in MULUK. Secure payment is completed with Whop.</div>
               </div>
               <div style={{ ...mono, fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.12em" }}>{paymentConfig.mode}</div>
             </div>
@@ -401,7 +401,7 @@ export default function UnlockPage({
         {/* Footer */}
         <div style={{ textAlign: "center", marginTop: "48px" }}>
           <div style={{ ...mono, fontSize: "10px", ...dim, letterSpacing: "0.12em" }}>
-            Powered by CIPHER · No login required
+            Powered by MULUK · No login required
           </div>
         </div>
       </div>
@@ -555,7 +555,7 @@ export default function UnlockPage({
               </button>
 
               <div style={{ marginTop: "12px", textAlign: "center", fontSize: "11px", color: "rgba(255,255,255,0.36)", lineHeight: 1.6 }}>
-                The final payment step opens on Whop. This payment sheet is ready to support embedded checkout later without changing the CIPHER unlock flow.
+                The final payment step opens on Whop. This payment sheet is ready to support embedded checkout later without changing the MULUK unlock flow.
               </div>
             </div>
           </div>

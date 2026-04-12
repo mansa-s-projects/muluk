@@ -50,11 +50,11 @@ export async function POST(req: NextRequest) {
       const isCreator = type === "creator";
 
       await resend.emails.send({
-        from:    "CIPHER <hello@cipher.so>",   // ← change to your verified domain
+        from:    "MULUK <hello@muluk.vip>",   // ← change to your verified domain
         to:      email,
         subject: isCreator
-          ? "You're on the CIPHER waitlist — founding creator spot reserved"
-          : "You're on the CIPHER waitlist",
+          ? "You're on the MULUK waitlist — founding creator spot reserved"
+          : "You're on the MULUK waitlist",
         html: emailTemplate({ email, type: type as "creator" | "fan" }),
       });
     }
@@ -78,7 +78,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "fan"
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>You're on the CIPHER waitlist</title>
+<title>You're on the MULUK waitlist</title>
 </head>
 <body style="margin:0;padding:0;background:#020203;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#020203;min-height:100vh;">
@@ -89,7 +89,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "fan"
           <!-- LOGO -->
           <tr>
             <td style="padding-bottom:48px;">
-              <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">CIPHER</span>
+              <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">MULUK</span>
             </td>
           </tr>
 
@@ -117,7 +117,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "fan"
                   ? `We received your application for <strong style="color:rgba(255,255,255,0.7);font-weight:400;">${email}</strong>.<br/><br/>
                      You're among the first 500 creators we're onboarding personally. That means lower fees locked in for life, a founding creator badge, and direct access to our team before we open to the public.`
                   : `You're on the list at <strong style="color:rgba(255,255,255,0.7);font-weight:400;">${email}</strong>.<br/><br/>
-                     We'll let you know the moment CIPHER opens. You'll get access before anyone else.`
+                     We'll let you know the moment MULUK opens. You'll get access before anyone else.`
                 }
               </p>
             </td>
@@ -153,7 +153,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "fan"
           <tr>
             <td>
               <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.1em;">
-                © 2025 CIPHER &nbsp;·&nbsp; cipher.so &nbsp;·&nbsp;
+                © 2025 MULUK &nbsp;·&nbsp; muluk.vip &nbsp;·&nbsp;
                 <a href="#" style="color:rgba(255,255,255,0.2);text-decoration:none;">Unsubscribe</a>
               </p>
             </td>

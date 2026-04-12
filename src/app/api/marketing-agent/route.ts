@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const AGENT_PROMPTS: Record<string, string> = {
-  researcher: `You are a market research analyst for CIPHER, a creator economy platform disrupting OnlyFans with 88% creator payouts, anonymous fan codes, and crypto payment rails to 190 countries.
+  researcher: `You are a market research analyst for MULUK, a creator economy platform disrupting OnlyFans with 88% creator payouts, anonymous fan codes, and crypto payment rails to 190 countries.
 
 Provide 3 concise insights:
 1. Creator migration patterns from competitor platforms
@@ -11,21 +11,21 @@ Provide 3 concise insights:
 
 Format as structured bullet points under bold headers. Under 250 words. Be specific and data-driven.`,
 
-  writer: `You are a senior marketing copywriter for CIPHER — a creator platform where creators keep 88% of earnings.
+  writer: `You are a senior marketing copywriter for MULUK — a creator platform where creators keep 88% of earnings.
 
 Write 3 high-converting marketing assets:
 1. Twitter/X thread opener (punchy, controversial angle on platform fees)
 2. TikTok video concept (15-30 seconds, creator frustration-to-solution hook)
 3. Email: subject line + opening sentence for creator outreach
 
-CIPHER's differentiators: anonymous fan codes, 8% platform fee vs 20% on competitors, crypto payouts to 190 countries. Under 200 words total.`,
+MULUK's differentiators: anonymous fan codes, 8% platform fee vs 20% on competitors, crypto payouts to 190 countries. Under 200 words total.`,
 
-  critic: `You are a critical marketing strategist and devil's advocate for CIPHER, a new creator platform.
+  critic: `You are a critical marketing strategist and devil's advocate for MULUK, a new creator platform.
 
 Identify:
 1. Top 3 launch risks in the current go-to-market approach
-2. The strongest competitor counter-argument CIPHER must prepare for
-3. One critical assumption CIPHER is making that could be wrong
+2. The strongest competitor counter-argument MULUK must prepare for
+3. One critical assumption MULUK is making that could be wrong
 
 Be brutally direct. Under 250 words.`,
 };
@@ -34,7 +34,7 @@ const MOCK_OUTPUTS: Record<string, string> = {
   researcher: `**Market Intelligence Report**
 
 **Creator Migration Signals**
-• 34% of surveyed OF creators cite platform fees as #1 pain point — CIPHER's 8-12% vs 20% is a decisive wedge
+• 34% of surveyed OF creators cite platform fees as #1 pain point — MULUK's 8-12% vs 20% is a decisive wedge
 • Migration intent spikes after payout delays: target creators who experienced holds in the past 6 months
 • Anonymous fan access removes the #1 barrier for mainstream creator crossover
 
@@ -54,7 +54,7 @@ _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live
 "OnlyFans quietly takes 20% of everything you make. On $10K/month that's $2,000 gone. Every month. Forever. I found out what happens when that number drops to 8%. 🧵"
 
 **TikTok Video Concept**
-Open: creator staring at earnings dashboard, frustrated. Text overlay: "This is what I made." Cut to fee deduction. "This is what they kept." 2-second pause. Cut to CIPHER. "This is what changes Monday."
+Open: creator staring at earnings dashboard, frustrated. Text overlay: "This is what I made." Cut to fee deduction. "This is what they kept." 2-second pause. Cut to MULUK. "This is what changes Monday."
 
 **Email**
 Subject: _They've been taking 20% of your work for years_
@@ -68,13 +68,13 @@ _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live
 Anonymous fan codes are the product's crown jewel and its biggest liability. One viral chargeback wave destroys creator trust instantly. Fraud scoring must ship before beta.
 
 **Risk 2 — Creator Activation Gap**
-Waitlist numbers are meaningless without day-one creator activation. If CIPHER can't seed 50+ high-earning creators in launch week, the demand flywheel never starts. This is the most underprepared area.
+Waitlist numbers are meaningless without day-one creator activation. If MULUK can't seed 50+ high-earning creators in launch week, the demand flywheel never starts. This is the most underprepared area.
 
 **Risk 3 — Payment Processor Dependency**
-Stripe terminates adult content platforms without warning. CIPHER needs 3 independent payment rails operational on launch day.
+Stripe terminates adult content platforms without warning. MULUK needs 3 independent payment rails operational on launch day.
 
 **Core Assumption at Risk**
-CIPHER assumes creators migrate for economics. What they actually migrate for is audience portability. Without a fan migration tool, switching cost is prohibitively high regardless of fee structure.
+MULUK assumes creators migrate for economics. What they actually migrate for is audience portability. Without a fan migration tool, switching cost is prohibitively high regardless of fee structure.
 
 _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live analysis._`,
 };
