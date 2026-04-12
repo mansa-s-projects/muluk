@@ -346,7 +346,9 @@ export function ApplicationManager() {
                 <div style={{ marginBottom: "24px" }}>
                   <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "8px" }}>ASSIGN TIER</div>
                   <div style={{ display: "flex", gap: "12px" }}>
-                    {(["cipher", "legend", "apex"] as const).map(tier => (
+                    {((["cipher", "legend", "apex"] as const)).map(tier => {
+                      const tierLabel: Record<string, string> = { cipher: "Prince", legend: "King", apex: "Emperor" };
+                      return (
                       <button
                         key={tier}
                         onClick={() => setSelectedTier(tier)}
@@ -363,9 +365,10 @@ export function ApplicationManager() {
                           cursor: "pointer",
                         }}
                       >
-                        {tier}
+                        {tierLabel[tier]}
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

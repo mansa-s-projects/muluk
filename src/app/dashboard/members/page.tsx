@@ -1,27 +1,27 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "./components/DashboardShell";
-import DashboardHome from "./DashboardHome";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
+import MembersClient from "./MembersClient";
 
-export const metadata = { title: "Dashboard — CIPHER" };
+export const metadata = { title: "Members — Muluk" };
 
-export default async function DashboardPage() {
+export default async function MembersPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profileRow } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
     .select("onboarding_completed")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileRow?.onboarding_completed !== true) redirect("/dashboard/onboarding");
+  if (profile?.onboarding_completed !== true) redirect("/dashboard/onboarding");
 
   const { data: creatorProfile } = await supabase
-    .from("creator_profiles")
+    .from("creator_applications")
     .select("handle")
     .eq("user_id", user.id)
     .maybeSingle();
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
       userId={user.id}
       handle={creatorProfile?.handle ?? undefined}
     >
-      <DashboardHome userId={user.id} />
+      <MembersClient userId={user.id} />
     </DashboardShell>
   );
 }

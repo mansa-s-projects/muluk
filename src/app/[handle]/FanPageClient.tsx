@@ -63,7 +63,7 @@ function tierStyle(tierRaw: string) {
   const tier = tierRaw.toLowerCase();
   if (tier === "apex") {
     return {
-      label: "APEX - INVITATION ONLY",
+      label: "EMPEROR — INVITATION ONLY",
       color: "#e05555",
       border: "rgba(224,85,85,0.4)",
       bg: "rgba(224,85,85,0.08)",
@@ -72,7 +72,7 @@ function tierStyle(tierRaw: string) {
 
   if (tier === "legend") {
     return {
-      label: "LEGEND",
+      label: "KING",
       color: "#c8a96e",
       border: "rgba(200,169,110,0.35)",
       bg: "rgba(200,169,110,0.08)",
@@ -80,7 +80,7 @@ function tierStyle(tierRaw: string) {
   }
 
   return {
-    label: "CIPHER",
+    label: "PRINCE",
     color: "rgba(255,255,255,0.82)",
     border: "rgba(255,255,255,0.18)",
     bg: "rgba(255,255,255,0.04)",

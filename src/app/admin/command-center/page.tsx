@@ -107,9 +107,10 @@ function SeverityDot({ sev }: { sev: string }) {
   return <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: c, boxShadow: `0 0 5px ${c}`, flexShrink: 0 }} />;
 }
 function TierPill({ tier }: { tier: string }) {
+  const displayMap: Record<string, string> = { apex: 'Emperor', legend: 'King', cipher: 'Prince' };
   const map: Record<string, [string, string]> = { apex: [t.purple, t.purpleD], legend: [t.blue, t.blueD], cipher: [t.gold, t.goldGlow] };
   const [color, bg] = map[tier] || [t.muted, t.faint];
-  return <Pill label={tier} color={color} bg={bg} />;
+  return <Pill label={displayMap[tier] ?? tier} color={color} bg={bg} />;
 }
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, [string, string]> = { approved: [t.green, t.greenD], pending: [t.amber, t.amberD], rejected: [t.red, t.redD], suspended: [t.red, t.redD], active: [t.green, t.greenD], success: [t.green, t.greenD], failed: [t.red, t.redD] };
@@ -261,9 +262,9 @@ function ActionModal({ modal, onClose, onSuccess }: { modal: any; onClose: () =>
         </div>
         {modal.type === 'change_tier' && (
           <select value={tier} onChange={e => setTier(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: t.ink, border: `1px solid ${t.rim2}`, borderRadius: 6, color: t.white, fontFamily: t.mono, fontSize: 12, marginBottom: 12, outline: 'none' }}>
-            <option value="cipher">Cipher — 12% fee</option>
-            <option value="legend">Legend — 10% fee</option>
-            <option value="apex">Apex — 8% fee</option>
+            <option value="cipher">Prince — 12% fee</option>
+            <option value="legend">King — 10% fee</option>
+            <option value="apex">Emperor — 8% fee</option>
           </select>
         )}
         {modal.type === 'force_withdrawal' && (
@@ -303,9 +304,9 @@ function OverviewSystem({ stats, events, onAction }: { stats: PlatformStats | nu
   const liveActivity = events.slice(0, 20);
   const revenuePoints = [0.3, 0.5, 0.4, 0.7, 0.6, 0.8, 0.75, 0.9, 1.0].map(x => Math.round(x * stats.finances.periodGMV / 9));
   const healthBreakdown = [
-    { label: 'Apex Tier', count: stats.users.tierDistribution.apex, color: t.purple, pct: Math.round((stats.users.tierDistribution.apex / Math.max(stats.users.totalCreators, 1)) * 100) },
-    { label: 'Legend Tier', count: stats.users.tierDistribution.legend, color: t.blue, pct: Math.round((stats.users.tierDistribution.legend / Math.max(stats.users.totalCreators, 1)) * 100) },
-    { label: 'Cipher Tier', count: stats.users.tierDistribution.cipher, color: t.gold, pct: Math.round((stats.users.tierDistribution.cipher / Math.max(stats.users.totalCreators, 1)) * 100) },
+    { label: 'Emperor Tier', count: stats.users.tierDistribution.apex, color: t.purple, pct: Math.round((stats.users.tierDistribution.apex / Math.max(stats.users.totalCreators, 1)) * 100) },
+    { label: 'King Tier', count: stats.users.tierDistribution.legend, color: t.blue, pct: Math.round((stats.users.tierDistribution.legend / Math.max(stats.users.totalCreators, 1)) * 100) },
+    { label: 'Prince Tier', count: stats.users.tierDistribution.cipher, color: t.gold, pct: Math.round((stats.users.tierDistribution.cipher / Math.max(stats.users.totalCreators, 1)) * 100) },
     { label: 'Pending', count: stats.users.pendingApplications, color: t.amber, pct: Math.round((stats.users.pendingApplications / Math.max(stats.users.totalCreators, 1)) * 100) },
   ];
   return (
@@ -1026,7 +1027,7 @@ function CreatorsTableSystem({ onAction }: { onAction: (m: any) => void }) {
           <option value="all">All Status</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option><option value="suspended">Suspended</option>
         </select>
         <select value={tierFilter} onChange={e => { setTierFilter(e.target.value); setLoading(true); }} style={{ padding: '9px 12px', background: t.surface, border: `1px solid ${t.rim2}`, borderRadius: 6, color: t.white, fontFamily: t.mono, fontSize: 11, outline: 'none' }}>
-          <option value="all">All Tiers</option><option value="cipher">Cipher</option><option value="legend">Legend</option><option value="apex">Apex</option>
+          <option value="all">All Tiers</option><option value="cipher">Prince</option><option value="legend">King</option><option value="apex">Emperor</option>
         </select>
         <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: t.faint, border: `1px solid ${t.rim}`, borderRadius: 6, color: t.muted, fontFamily: t.mono, fontSize: 10, letterSpacing: '0.12em', cursor: 'pointer' }}>
           <Download size={12} /> EXPORT CSV
@@ -1170,7 +1171,7 @@ function SystemMessagesSystem() {
           <SectionLabel>Broadcast Guidelines</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { icon: '🎯', text: 'Use Cipher tier for high-value announcements' },
+              { icon: '🎯', text: 'Use Prince tier for standard creator onboarding' },
               { icon: '📢', text: 'All tier sends to every creator on the platform' },
               { icon: '⚠️', text: 'Messages are logged in admin audit trail' },
               { icon: '🔔', text: 'Messages trigger creator dashboard notifications' },

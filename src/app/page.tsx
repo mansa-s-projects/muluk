@@ -185,7 +185,7 @@ export default function Home() {
 
       {/* ══ NAV ══ */}
       <nav className="nav-bar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, padding: "28px 56px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(to bottom, rgba(2,2,3,0.92) 0%, transparent 100%)" }}>
-        <a href="#" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>CIPHER</a>
+        <a href="#" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>MULUK</a>
         <div style={{ display: "flex", alignItems: "center", gap: "32px" }}>
           <div className="nav-links" style={{ display: "flex", alignItems: "center", gap: "32px" }}>
             {[["#why","Why"],["#how","How it works"],["#tiers","Tiers"]].map(([href, label]) => (
@@ -213,7 +213,7 @@ export default function Home() {
         {/* eyebrow */}
         <div className="anim-eyebrow" style={{ ...mono, display: "inline-flex", alignItems: "center", gap: "12px", fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase" as const, ...gold, opacity: 0, marginBottom: "52px" }}>
           <span style={{ display: "block", width: "40px", height: "1px", background: "linear-gradient(90deg, transparent, var(--gold-dim))" }} />
-          Creator Economy — Redefined
+          Creator Kingdom — Operating System
           <span style={{ display: "block", width: "40px", height: "1px", background: "linear-gradient(270deg, transparent, var(--gold-dim))" }} />
         </div>
 
@@ -221,14 +221,14 @@ export default function Home() {
         <h1 className="anim-headline" style={{ marginBottom: "40px" }}>
           <span style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "clamp(13px,1.8vw,18px)", fontWeight: 300, letterSpacing: "0.35em", textTransform: "uppercase" as const, ...muted, marginBottom: "20px" }}>Introducing</span>
           <span style={{ display: "block", ...disp, fontSize: "clamp(64px,11vw,148px)", fontWeight: 300, lineHeight: 0.88, letterSpacing: "-0.01em", color: "rgba(255,255,255,0.92)" }}>
-            <em style={{ fontStyle: "italic", ...gold, fontWeight: 300 }}>CIPHER</em>
+            <em style={{ fontStyle: "italic", ...gold, fontWeight: 300 }}>MULUK</em>
           </span>
-          <span style={{ display: "block", ...disp, fontSize: "clamp(14px,2.2vw,26px)", fontWeight: 300, fontStyle: "italic", ...muted, marginTop: "20px", letterSpacing: "0.04em" }}>The platform they were afraid to build</span>
+          <span style={{ display: "block", ...disp, fontSize: "clamp(14px,2.2vw,26px)", fontWeight: 300, fontStyle: "italic", ...muted, marginTop: "20px", letterSpacing: "0.04em" }}>The operating system for creators who reign.</span>
         </h1>
 
         {/* desc */}
         <p className="anim-desc" style={{ maxWidth: "500px", fontSize: "clamp(14px,1.5vw,16px)", fontWeight: 300, lineHeight: 1.85, ...muted, margin: "0 auto 60px" }}>
-          Fans with <strong style={{ ...gold, fontWeight: 400 }}>zero accounts</strong>. Payments that <strong style={{ ...gold, fontWeight: 400 }}>split automatically</strong>. Creators who keep <strong style={{ ...gold, fontWeight: 400 }}>88% or more</strong>. Referrals that pay <strong style={{ ...gold, fontWeight: 400 }}>for life</strong>.
+          Members with <strong style={{ ...gold, fontWeight: 400 }}>zero accounts</strong>. Payments that <strong style={{ ...gold, fontWeight: 400 }}>split automatically</strong>. Creators who keep <strong style={{ ...gold, fontWeight: 400 }}>88% or more</strong>. Expansion networks that generate <strong style={{ ...gold, fontWeight: 400 }}>for life</strong>.
         </p>
 
         {/* waitlist */}
@@ -238,7 +238,7 @@ export default function Home() {
 
         {/* stats */}
         <div className="anim-stats hero-stats" style={{ position: "absolute", bottom: "52px", left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          {[["8–12%","Platform cut"],["∞","Referral lifetime"],["0","Fan data required"]].map(([num, label], i) => (
+          {[["8–12%","Platform cut"],["∞","Expansion network"],["0","Member data required"]].map(([num, label], i) => (
             <div key={i} style={{ padding: "0 48px", textAlign: "center", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.10)" : "none" }}>
               <span style={{ display: "block", ...disp, fontSize: "32px", fontWeight: 300, ...gold, lineHeight: 1, marginBottom: "6px" }}>{num}</span>
               <span style={{ ...mono, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase" as const, ...dim }}>{label}</span>
@@ -257,7 +257,7 @@ export default function Home() {
       <div className="marquee-section" style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "20px 0", overflow: "hidden", background: "rgba(255,255,255,0.012)" }}>
         <div className="marquee-track" style={{ display: "flex", whiteSpace: "nowrap", width: "max-content" }}>
           {[...Array(2)].flatMap((_, ri) =>
-            ["Anonymous Fan Access","Lifetime Referral Income","Auto Payment Splits","8% Platform Fee","Zero-Knowledge Verification","Crypto-Native Payouts","Creator Tiers","190 Countries","Built for Creators","Fan Code Identity"].map((item, i) => (
+            ["Anonymous Member Access","Lifetime Expansion Network","Auto Payment Splits","8% Platform Fee","Zero-Knowledge Verification","Crypto-Native Payouts","Power Tiers","190 Countries","Built for Creators","Member Code Identity"].map((item, i) => (
               <span key={`${ri}-${i}`} style={{ ...mono, display: "inline-flex", alignItems: "center", gap: "24px", padding: "0 40px", fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase" as const, ...dim }}>
                 <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "var(--gold-dim)", flexShrink: 0 }} />
                 {item}
@@ -271,21 +271,21 @@ export default function Home() {
       <div id="why">
         <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>
-            <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Why CIPHER
+            <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Why MULUK
           </div>
           <h2 className="reveal reveal-delay-1" style={{ ...disp, fontSize: "clamp(40px,5.5vw,72px)", fontWeight: 300, lineHeight: 1.0, letterSpacing: "-0.01em", marginBottom: "24px" }}>
             The industry has been taking<br />too much, <em style={{ fontStyle: "italic", ...gold }}>for too long.</em>
           </h2>
           <p className="reveal reveal-delay-2" style={{ fontSize: "15px", fontWeight: 300, lineHeight: 1.85, ...muted, maxWidth: "520px", marginBottom: "72px" }}>
-            We built CIPHER to fix every broken assumption in the creator economy. Not incrementally. Completely.
+            We built MULUK to fix every broken assumption in the creator economy. Not incrementally. Completely.
           </p>
 
           <div className="why-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
             {[
               { num:"01", title:"Fans stay", em:"anonymous. Always.", text:"No email. No account. No credit card trail. Every fan gets a unique code — FAN-4729 — that's their entire identity. They pay, they access. Nothing else required.", callout:"No forms. No tracking. No identity required — ever." },
               { num:"02", title:"Splits happen", em:"automatically.", text:"Every payment — card, crypto, wallet — splits in real time. Creator gets their share. Platform takes its cut. Referrer earns their commission. All in one transaction.", callout:"You refer a creator earning $10K/month → you earn $400/month. Forever. No cap." },
-              { num:"03", title:"Three tiers.", em:"Real unlocks.", text:"CIPHER, LEGEND, APEX — each tier is a completely different operating level. Different fees, different tools, different payout speed. Not vanity badges. Actual leverage.", callout:"APEX creators pay just 8%. No other platform comes close." },
-              { num:"04", title:"Get paid in", em:"190 countries.", text:"Whop if you want hosted checkout. Wise if you're in Africa or LatAm. USDC on Polygon if you want instant and borderless. Your earnings always land — no matter where you are.", callout:"Card, crypto, or wallet — your earnings reach you in seconds, anywhere on earth." },
+              { num:"03", title:"Three tiers.", em:"Real power.", text:"PRINCE, KING, EMPEROR — each tier is a completely different operating level. Different fees, different tools, different payout speed. Not vanity badges. Actual leverage.", callout:"EMPEROR creators pay just 8%. No other platform comes close." },
+              { num:"04", title:"Generate in", em:"190 countries.", text:"Whop if you want hosted checkout. Wise if you're in Africa or LatAm. USDC on Polygon if you want instant and borderless. Your earnings always land — no matter where you are.", callout:"Card, crypto, or wallet — your earnings reach you in seconds, anywhere on earth." },
             ].map(({ num, title, em, text, callout }, i) => (
               <div key={num} className={`reveal reveal-delay-${i % 2}`}
                 style={{ background: "var(--card)", padding: "48px 44px", position: "relative", overflow: "hidden", transition: "background 0.25s" }}
@@ -334,11 +334,11 @@ export default function Home() {
             {/* steps */}
             <div className="reveal reveal-delay-2">
               {[
-                ["01","Fan finds a creator","No signup wall. No email prompt. The page just loads. Creators share their cipher.so link anywhere — social, DMs, bio."],
-                ["02","Fan pays — anonymously","Card, crypto, or stablecoin. One tap. The system generates their Fan Code. FAN-4729 is born. No registration, no password, no email."],
-                ["03","Payment splits instantly","In the same moment the fan pays: creator wallet credited, platform fee deducted, referrer commission queued. Automated. Immutable. Real time."],
+                ["01","Member finds a creator","No signup wall. No email prompt. The page just loads. Creators share their muluk.so link anywhere — social, DMs, bio."],
+                ["02","Member pays — anonymously","Card, crypto, or stablecoin. One tap. The system generates their Member Code. MEM-4729 is born. No registration, no password, no email."],
+                ["03","Payment splits instantly","In the same moment the member pays: creator wallet credited, platform fee deducted, expansion network commission queued. Automated. Immutable. Real time."],
                 ["04","Creator withdraws their way","Bank transfer, Wise, USDC on Polygon, PayPal, or Whop-linked flows. Creators in Morocco, Nigeria, Pakistan — everyone gets paid."],
-                ["05","Referrers earn forever","Every creator you bring earns you a lifetime commission on everything they make. No caps. No expiry dates."],
+                ["05","Expansion network earns forever","Every creator you bring generates a lifetime commission on everything they make. No caps. No expiry dates."],
               ].map(([num, title, text], i) => (
                 <div key={num} style={{ display: "flex", gap: "28px", padding: "32px 0", borderBottom: i < 4 ? "1px solid var(--border)" : "none", transition: "padding-left 0.3s" }}
                   onMouseEnter={e => (e.currentTarget.style.paddingLeft = "8px")}
@@ -355,8 +355,8 @@ export default function Home() {
 
             {/* fan code card */}
             <div className="reveal reveal-delay-3 fan-demo-card" style={{ background: "var(--card)", border: "1px solid var(--border-mid)", borderRadius: "4px", padding: "40px", position: "sticky", top: "100px" }}>
-              <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase" as const, ...dim, marginBottom: "24px" }}>Fan identity</div>
-              <span style={{ ...mono, fontSize: "52px", fontWeight: 300, ...gold, letterSpacing: "0.05em", display: "block", marginBottom: "8px", lineHeight: 1 }}>FAN-4729</span>
+              <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase" as const, ...dim, marginBottom: "24px" }}>Member identity</div>
+              <span style={{ ...mono, fontSize: "52px", fontWeight: 300, ...gold, letterSpacing: "0.05em", display: "block", marginBottom: "8px", lineHeight: 1 }}>MEM-4729</span>
               <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.2em", ...dim, marginBottom: "32px" }}>Permanent · Anonymous · Active</div>
 
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
@@ -378,7 +378,7 @@ export default function Home() {
 
               <div style={{ height: "1px", background: "var(--border)", margin: "28px 0" }} />
               <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase" as const, ...dim, marginBottom: "14px" }}>Subscribed to</div>
-              {[["@darkwave.studio","Legend","var(--gold)","rgba(200,169,110,0.1)","rgba(200,169,110,0.2)"],["@void.frames","Apex","#d88888","rgba(200,76,76,0.08)","rgba(200,76,76,0.18)"],["@signal.raw","Cipher","#9898cc","rgba(140,140,200,0.08)","rgba(140,140,200,0.15)"]].map(([creator,tier,color,bg,border]) => (
+              {[["@darkwave.studio","King","var(--gold)","rgba(200,169,110,0.1)","rgba(200,169,110,0.2)"],["@void.frames","Emperor","#d88888","rgba(200,76,76,0.08)","rgba(200,76,76,0.18)"],["@signal.raw","Prince","#9898cc","rgba(140,140,200,0.08)","rgba(140,140,200,0.15)"]].map(([creator,tier,color,bg,border]) => (
                 <div key={creator as string} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)", fontSize: "13px" }}>
                   <span style={{ ...muted, fontWeight: 300 }}>{creator}</span>
                   <span style={{ ...mono, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "3px 10px", borderRadius: "2px", color: String(color), background: String(bg), border: `1px solid ${border}` }}>{tier}</span>
@@ -393,23 +393,23 @@ export default function Home() {
       <div id="tiers">
         <div style={{ padding: "clamp(60px,8vw,140px) clamp(20px,4vw,56px)", maxWidth: "1320px", margin: "0 auto" }}>
           <div className="reveal" style={{ ...mono, display: "flex", alignItems: "center", gap: "16px", fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px" }}>
-            <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Creator tiers
+            <span style={{ width: "32px", height: "1px", background: "var(--gold-dim)", display: "block" }} />Power tiers
           </div>
           <h2 className="reveal reveal-delay-1" style={{ ...disp, fontSize: "clamp(40px,5.5vw,72px)", fontWeight: 300, lineHeight: 1.0, letterSpacing: "-0.01em", marginBottom: "24px" }}>
-            Three levels.<br /><em style={{ fontStyle: "italic", ...gold }}>Real differences.</em>
+            Three tiers.<br /><em style={{ fontStyle: "italic", ...gold }}>One trajectory.</em>
           </h2>
           <p className="reveal reveal-delay-2" style={{ fontSize: "15px", fontWeight: 300, lineHeight: 1.85, ...muted, maxWidth: "520px", marginBottom: "72px" }}>
-            Not cosmetic upgrades — actual economic and tooling advantages at every level.
+            Heir builds your first income. Sovereign scales and controls it. Emperor runs the full infrastructure.
           </p>
 
           <div className="tiers-layout" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: "var(--border)", border: "1px solid var(--border)", borderRadius: "4px", overflow: "hidden" }}>
             {[
-              { 
-                tag: "Start",
-                name: "Cipher",
-                position: "Everything you need to reach $1K/mo",
-                cut: "You keep 88%",
-                standout: "No setup fees. No monthly fees. Pay only when you earn.",
+              {
+                tag: "I · HEIR",
+                name: "Heir",
+                position: "Build your first income.",
+                cut: "88% of every generation is yours.",
+                standout: "No upfront cost. No fees until you generate.",
                 socialProof: null,
                 upgradeNudge: null,
                 featured: false,
@@ -419,22 +419,22 @@ export default function Home() {
                 arrow: "#7878aa",
                 bg: "var(--card)",
                 bgHover: "var(--card-hover)",
-                cta: "Get Started →",
+                cta: "Enter Muluk →",
                 features: [
-                  "500 fans — room to build real income",
-                  "Video, photo, and text drops",
-                  "Real-time revenue and engagement tracking",
-                  "10% when your fans bring fans",
-                  "Weekly payouts — card, crypto, or bank",
+                  "500 members — your first loyal court",
+                  "Asset drops — video, photo, and text",
+                  "Command center — live revenue and signal tracking",
+                  "10% expansion network — every referral, for life",
+                  "Weekly settlements — card, crypto, or bank",
                 ]
               },
-              { 
-                tag: "Scale",
-                name: "Legend",
-                position: "Reach $10K/mo with AI that handles the busywork",
-                cut: "You keep 90%",
-                standout: "AI drafts. You approve. It ships.",
-                socialProof: "Most Cipher creators upgrade here.",
+              {
+                tag: "II · SOVEREIGN",
+                name: "Sovereign",
+                position: "Take control. Scale your revenue.",
+                cut: "90% of every generation is yours.",
+                standout: "AI generates. You approve. It ships.",
+                socialProof: "Most Heirs ascend here.",
                 upgradeNudge: "↑",
                 featured: true,
                 tagColor: "var(--gold)",
@@ -443,23 +443,23 @@ export default function Home() {
                 arrow: "var(--gold-dim)",
                 bg: "#131220",
                 bgHover: "#161528",
-                cta: "Upgrade to Legend →",
+                cta: "Ascend →",
                 features: [
-                  "Unlimited fans — no growth cap",
-                  "Live rooms for real-time engagement",
-                  "AI captions, scheduling, edits — saves 5+ hrs/week",
-                  "Auto-split revenue with collaborators",
-                  "48-hour payouts — 3× faster",
-                  "Dedicated success rep",
-                  "15% referral rate (vs 10%)",
+                  "Unlimited members — no ceiling on your court",
+                  "Live rooms — real-time direct line to your members",
+                  "AI asset production — reclaim 5+ hours weekly",
+                  "Automated revenue splits with collaborators",
+                  "48-hour settlements — 3× faster than Heir tier",
+                  "Dedicated command support",
+                  "15% expansion network rate",
                 ]
               },
-              { 
-                tag: "Elite",
-                name: "Apex",
-                position: "For creators earning $50K+/year who need full infrastructure",
-                cut: "You keep 92%",
-                standout: "Same-day payouts. 20% referral rate. Direct Slack with the team.",
+              {
+                tag: "III · EMPEROR",
+                name: "Emperor",
+                position: "Run your empire. Full infrastructure.",
+                cut: "92% of every generation is yours.",
+                standout: "Same-day settlements. 20% expansion network. Direct line to the founders.",
                 socialProof: null,
                 upgradeNudge: null,
                 featured: false,
@@ -469,15 +469,15 @@ export default function Home() {
                 arrow: "#aa6868",
                 bg: "var(--card)",
                 bgHover: "var(--card-hover)",
-                cta: "Request Access →",
+                cta: "Request Entry →",
                 features: [
-                  "Your domain — full brand ownership",
-                  "API access for custom integrations",
-                  "Instant payouts — same-day to your account",
-                  "20% referral rate (double Cipher)",
-                  "Team access with role-based permissions",
-                  "Direct input on product roadmap",
-                  "White-glove onboarding and migration",
+                  "Your domain — complete brand sovereignty",
+                  "Full API access — build your empire, your way",
+                  "Instant settlements — same-day, always",
+                  "20% expansion network rate — double Heir tier",
+                  "Team command access with role-based controls",
+                  "Direct line to product decisions",
+                  "White-glove onboarding and full asset migration",
                 ]
               },
             ].map(({ tag, name, position, cut, standout, socialProof, upgradeNudge, featured, tagColor, tagBg, tagBorder, arrow, bg, bgHover, cta, features }, i) => (
@@ -533,8 +533,8 @@ export default function Home() {
                   </button>
                 ) : (
                   <a href="/apply" onClick={() => {
-                      if (name === 'Legend') track.legendCtaClicked();
-                      else if (name === 'Apex') track.apexAccessRequested();
+                      if (name === 'Sovereign') track.legendCtaClicked();
+                      else if (name === 'Emperor') track.apexAccessRequested();
                       else track.pricingViewed();
                     }} style={{
                     display: "block",
@@ -557,7 +557,7 @@ export default function Home() {
             ))}
           </div>
           <div className="reveal reveal-delay-3" style={{ textAlign: "center", marginTop: "28px", fontSize: "13px", color: "rgba(255,255,255,0.5)" }}>
-            Switch tiers anytime — no lock-in, no penalties.
+            Switch tiers anytime — no lock-in, no constraints.
           </div>
         </div>
       </div>
@@ -579,7 +579,7 @@ export default function Home() {
 
       {/* ══ FOOTER ══ */}
       <footer style={{ borderTop: "1px solid var(--border)", padding: "48px clamp(20px,4vw,56px)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "24px" }}>
-        <div style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>CIPHER</div>
+        <div style={{ ...mono, fontSize: "15px", letterSpacing: "0.3em", ...gold, fontWeight: 500 }}>MULUK</div>
         <div style={{ display: "flex", gap: "32px" }}>
           {["Privacy","Terms","Contact"].map(l => (
             <a key={l} href="#" style={{ fontSize: "11px", ...dim, textDecoration: "none", letterSpacing: "0.08em", transition: "color 0.2s" }}
@@ -588,7 +588,7 @@ export default function Home() {
             >{l}</a>
           ))}
         </div>
-        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", ...dim }}>© 2025 CIPHER. All rights reserved.</div>
+        <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", ...dim }}>© 2025 MULUK. All rights reserved.</div>
       </footer>
     </>
   );

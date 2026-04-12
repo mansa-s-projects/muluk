@@ -29,9 +29,9 @@ type Props = {
 };
 
 const TIER_LABELS: Record<string, string> = {
-  apex: "APEX",
-  legend: "LEGEND",
-  cipher: "CIPHER",
+  apex: "EMPEROR",
+  legend: "KING",
+  cipher: "PRINCE",
 };
 
 const TIER_COLORS: Record<string, string> = {
@@ -102,7 +102,7 @@ function FanPageInner({ creator, contentItems }: Props) {
   };
 
   const tierColor = TIER_COLORS[creator.tier] ?? TIER_COLORS.cipher;
-  const tierLabel = TIER_LABELS[creator.tier] ?? "CIPHER";
+  const tierLabel = TIER_LABELS[creator.tier] ?? "PRINCE";
 
   return (
     <div

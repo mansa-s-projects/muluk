@@ -5,41 +5,50 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorProvider } from "@/app/dashboard/context/CreatorContext";
+import { CommandBar } from "./CommandBar";
 
 // ─── Design tokens ──────────────────────────────────────────────────────────
 const mono = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" } as const;
-const disp = { fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" } as const;
 
 // ─── Nav structure ───────────────────────────────────────────────────────────
+//
+// CREATOR navigation only.
+// Command Center is ADMIN-ONLY — it lives at /admin/command-center.
+// No duplicate destinations: Referrals appears once, Vault appears once.
+//
 const NAV_GROUPS = [
   {
-    label: "MAKE MONEY",
+    label: "MAIN",
     items: [
-      { key: "signals",  label: "Signal Board", href: "/dashboard/signals",     icon: "◈" },
-      { key: "vault",    label: "Vault",         href: "/dashboard/vault",       icon: "▦" },
-      { key: "bookings", label: "1:1 Bookings",  href: "/dashboard/bookings",   icon: "◷" },
-      { key: "series",   label: "Series",         href: "/dashboard/series",     icon: "▤" },
-      { key: "tips",     label: "Tip Jar",         href: "/dashboard/tips",      icon: "▲" },
+      { key: "content",     label: "Content",     href: "/dashboard/content",      icon: "▤" },
+      { key: "fans",        label: "Fans",         href: "/dashboard/members",      icon: "◍" },
+      { key: "direct-line", label: "Direct Line", href: "/dashboard/direct-line",  icon: "◎" },
+      { key: "earnings",    label: "Earnings",     href: "/dashboard/signals",      icon: "◈" },
+      { key: "referrals",   label: "Referrals",   href: "/dashboard/referrals",    icon: "◉" },
+      { key: "analytics",   label: "Analytics",   href: "/dashboard/presence",     icon: "◌" },
     ],
   },
   {
-    label: "GROW",
+    label: "MONETIZATION",
     items: [
-      { key: "rate-card", label: "Rate Card", href: "/dashboard/rate-card", icon: "◫" },
-      { key: "referrals", label: "Referrals", href: "/dashboard/referrals", icon: "◍" },
+      { key: "vault",    label: "Vault",     href: "/dashboard/vault",     icon: "▦" },
+      { key: "bookings", label: "Bookings",  href: "/dashboard/bookings",  icon: "◷" },
+      { key: "series",   label: "Series",    href: "/dashboard/series",    icon: "▣" },
+      { key: "tips",     label: "Tip Jar",   href: "/dashboard/tips",      icon: "◬" },
     ],
   },
   {
-    label: "MANAGE",
+    label: "BUSINESS",
     items: [
-      { key: "commissions", label: "Commissions", href: "/dashboard/commissions", icon: "◉" },
-      { key: "deals",       label: "Brand Deals",  href: "/dashboard/deals",       icon: "◎" },
+      { key: "commissions", label: "Commissions", href: "/dashboard/commissions", icon: "◫" },
+      { key: "deals",       label: "Brand Deals",  href: "/dashboard/deals",       icon: "◯" },
+      { key: "pay-links",   label: "Pay Links",    href: "/dashboard/rate-card",   icon: "◪" },
     ],
   },
   {
-    label: "INTELLIGENCE",
+    label: "SYSTEM",
     items: [
-      { key: "presence", label: "Live Fans", href: "/dashboard/presence", icon: "◌" },
+      { key: "settings", label: "Settings", href: "/dashboard/settings", icon: "◔" },
     ],
   },
 ] as const;
@@ -128,9 +137,9 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "8px 0", overflowY: "auto", minHeight: 0 }}>
-          {/* Workspace home */}
+          {/* Dashboard home */}
           <NavLink href="/dashboard" active={isActive("/dashboard")}>
-            Workspace
+            Dashboard
           </NavLink>
 
           {/* Grouped tool nav */}
@@ -409,6 +418,9 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
           {children}
         </CreatorProvider>
       </div>
+
+      {/* Global command bar — accessible from any dashboard page via "/" */}
+      <CommandBar userId={userId} />
     </>
   );
 }
