@@ -210,7 +210,7 @@ function Chips({ options, selected, onChange }: { options: string[]; selected: s
 
 function RadioCards({ options, selected, onChange }: { options: string[]; selected: string; onChange: (v: string) => void; }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "10px" }}>
+    <div className="apply-radio-cards">
       {options.map(o => {
         const active = selected === o;
         return (

@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
       supabase.from("creator_applications").select("id", { count: "exact", head: true }),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("status", "approved"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).gte("created_at", since),
-      supabase.from("fan_codes").select("id", { count: "exact", head: true }),
-      supabase.from("fan_codes").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }),
+      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }).gte("created_at", since),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }).gte("created_at", since),
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     if (queryErrors.length > 0) {
       console.error("[admin-stats] one or more aggregate queries failed", queryErrors);
-      return NextResponse.json({ error: "Failed to fetch platform stats" }, { status: 500 });
+      // Continue with partial data; missing metrics gracefully fall back to 0 below.
     }
 
     const tierStats = {
@@ -196,14 +196,25 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // Log admin action
-    await supabase.from("admin_audit_logs").insert({
-      ...(adminCheck ? { admin_id: user.id } : {}),
-      action: "view_platform_stats",
-      target_type: "platform",
-      target_id: "all",
-      details: { days, bypassUsed: !adminCheck && ALLOW_DEV_ADMIN_BYPASS, stats_summary: { creators: totalCreators, gmv: totalGMV } }
-    });
+    // Log admin action without blocking the response if audit insert fails.
+    if (adminCheck) {
+      const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+        admin_id: user.id,
+        action: "view_platform_stats",
+        target_type: "platform",
+        target_id: "all",
+        details: {
+          days,
+          bypassUsed: !adminCheck && ALLOW_DEV_ADMIN_BYPASS,
+          stats_summary: { creators: totalCreators, gmv: totalGMV },
+        },
+      });
+      if (auditError) {
+        console.warn("[admin-stats] audit log insert failed:", auditError.message);
+      }
+    } else if (ALLOW_DEV_ADMIN_BYPASS) {
+      console.warn("[admin-stats] skipped admin_audit_logs insert in bypass mode", { userId: user.id });
+    }
 
     return NextResponse.json({ success: true, stats });
 

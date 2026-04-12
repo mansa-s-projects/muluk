@@ -66,7 +66,7 @@ export default function TipsClient({ initialTips, monthlyEarnings, handle }: Pro
         </div>
 
         {/* ── Stats row ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+        <div className="dash-stats-4" style={{ marginBottom: "2rem" }}>
           <StatCard label="Total Earned" value={formatTip(totalEarned)} gold />
           <StatCard label="Total Tips" value={String(totalCount)} />
           <StatCard label="Top Tip" value={topTip ? formatTip(topTip.amount_cents) : "—"} />

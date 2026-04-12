@@ -144,6 +144,21 @@ export default function FanPageClient({
     }
   }, [initialPaymentSuccess, initialCode]);
 
+  // Presence ping — keeps the fan "online" in the admin view while they're on the page
+  useEffect(() => {
+    if (!verifiedCode) return;
+    const ping = () => {
+      fetch("/api/fan/ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: verifiedCode }),
+      }).catch(() => {});
+    };
+    ping(); // immediate ping on unlock
+    const id = setInterval(ping, 2 * 60 * 1000); // every 2 minutes
+    return () => clearInterval(id);
+  }, [verifiedCode]);
+
   useEffect(() => {
     if (!contentItems.length) {
       setSelectedContentId(null);

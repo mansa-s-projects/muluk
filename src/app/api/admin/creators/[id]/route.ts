@@ -56,13 +56,13 @@ export async function GET(
 
     const bansPromise = supabase
       .from("creator_bans")
-      .select("*, admin:admin_id(display_name)")
+      .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false });
 
     const notesPromise = supabase
       .from("admin_notes")
-      .select("*, admin:admin_id(display_name)")
+      .select("*")
       .eq("target_type", "creator")
       .eq("target_id", id)
       .order("created_at", { ascending: false });
@@ -82,9 +82,9 @@ export async function GET(
       .limit(50);
 
     const fanCodesPromise = supabase
-      .from("fan_codes")
-      .select("*")
-      .eq("creator_id", id)
+      .from("fan_codes_v2")
+      .select("*, content_items_v2!inner(creator_id)")
+      .eq("content_items_v2.creator_id", id)
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -184,7 +184,10 @@ export async function GET(
       notes: notes || [],
       content: content || [],
       transactions: transactions || [],
-      fanCodes: fanCodes || [],
+      fanCodes: (fanCodes || []).map((f) => ({
+        ...(f as Record<string, unknown>),
+        content_items_v2: undefined,
+      })),
       messages: messages || [],
       activity: activity || [],
       aiUsage: aiUsage || [],

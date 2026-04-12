@@ -32,7 +32,9 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(
+    searchParams.get("mode") === "signup" ? "signup" : "login"
+  );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -51,7 +53,7 @@ export default function LoginForm() {
         ? supabase.auth.signInWithPassword({ email, password })
         : supabase.auth.signUp({ email, password });
 
-    const { error: authError } = await action;
+    const { data: authDataFromAction, error: authError } = await action;
 
     setLoading(false);
 
@@ -61,6 +63,15 @@ export default function LoginForm() {
     }
 
     if (mode === "signup") {
+      // If signup immediately yields a user session, attach referral attribution now.
+      if (authDataFromAction.user) {
+        void fetch("/api/referrals/attach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "signup" }),
+        }).catch(() => {});
+      }
+
       setMessage("Account created. If email confirmation is enabled, check your inbox before signing in.");
       track.signedUp({ email });
       return;
@@ -71,6 +82,12 @@ export default function LoginForm() {
     if (authData.user) {
       identifyUser(authData.user.id, { email: authData.user.email ?? email });
       track.signedIn({ email });
+
+      void fetch("/api/referrals/attach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "login" }),
+      }).catch(() => {});
     }
 
     router.replace(nextPath);

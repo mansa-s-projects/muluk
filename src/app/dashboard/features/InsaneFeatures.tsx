@@ -1015,7 +1015,7 @@ export function DynamicPricingWidget() {
     <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "12px", padding: "18px" }}>
       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>AI PRICING OPTIMIZER</div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+      <div className="db-2col" style={{ gap: "8px", marginBottom: "12px" }}>
         <select 
           value={contentType} 
           onChange={e => setContentType(e.target.value)}
@@ -1069,7 +1069,7 @@ export function DynamicPricingWidget() {
           </div>
 
           {recommendation.dynamicPricing?.launch && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+            <div className="db-2col" style={{ gap: "8px", marginBottom: "12px" }}>
               <div style={{ padding: "8px", background: "rgba(76,200,140,0.08)", border: "1px solid rgba(76,200,140,0.2)", borderRadius: "6px", textAlign: "center" }}>
                 <div style={{ ...mono, fontSize: "8px", color: "#4cc88c", marginBottom: "2px" }}>LAUNCH (24H)</div>
                 <div style={{ fontSize: "16px", color: "#4cc88c" }}>${recommendation.dynamicPricing.launch}</div>

@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .from("fan_messages")
       .select(`
         *,
-        creator:creator_id(display_name, handle, user_id),
+        creator:creator_id(name, handle, user_id),
         fan_code_ref:fan_code(code)
       `, { count: "exact" });
 
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
         .from("fan_messages")
         .select(`
           *,
-          creator:creator_id(display_name, handle),
+          creator:creator_id(name, handle),
           fan_code_ref:fan_code(code, custom_name)
         `)
         .eq("creator_id", creatorId)
@@ -88,14 +88,17 @@ export async function GET(request: NextRequest) {
       thread = threadMessages || [];
     }
 
-    // Log admin action
-    await supabase.from("admin_audit_logs").insert({
+    // Log admin action without blocking response if audit insert is denied by RLS.
+    const { error: auditError } = await supabase.from("admin_audit_logs").insert({
       admin_id: user.id,
       action: "view_messages",
       target_type: "messages",
       target_id: creatorId || "all",
-      details: { creatorId, fanCode, search, page, limit }
+      details: { creatorId, fanCode, search, page, limit },
     });
+    if (auditError) {
+      console.warn("[admin-messages] audit log insert failed:", auditError.message);
+    }
 
     return NextResponse.json({
       messages: messages || [],

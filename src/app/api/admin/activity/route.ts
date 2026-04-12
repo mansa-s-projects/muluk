@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     // Also get some key platform stats for context
     const [creatorsCountResult, fansCountResult, activeBansResult] = await Promise.all([
       supabase.from("creator_applications").select("id", { count: "exact", head: true }),
-      supabase.from("fan_codes").select("id", { count: "exact", head: true }),
+      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }),
       supabase.from("creator_bans").select("id", { count: "exact", head: true }).eq("is_active", true)
     ]);
 

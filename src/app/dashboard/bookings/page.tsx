@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import AvailabilityClient from "./AvailabilityClient";
 import BookingsListClient from "./BookingsListClient";
 import type { AvailabilitySlot, Booking } from "@/lib/bookings";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 function getServiceDb() {
   return createClient(
@@ -68,15 +69,16 @@ export default async function BookingsDashboardPage() {
   })) as Booking[];
 
   return (
-    <div
-      style={{
-        minHeight:  "100vh",
-        background: "#020203",
-        fontFamily: "var(--font-body, 'Outfit', sans-serif)",
-        color:      "rgba(255,255,255,0.92)",
-        padding:    "36px 32px 80px",
-      }}
-    >
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profile?.handle ?? undefined}>
+      <div
+        style={{
+          minHeight:  "100vh",
+          background: "#020203",
+          fontFamily: "var(--font-body, 'Outfit', sans-serif)",
+          color:      "rgba(255,255,255,0.92)",
+          padding:    "36px 32px 80px",
+        }}
+      >
       {/* Page header */}
       <div style={{ marginBottom: 36 }}>
         <div
@@ -138,6 +140,7 @@ export default async function BookingsDashboardPage() {
           .bookings-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

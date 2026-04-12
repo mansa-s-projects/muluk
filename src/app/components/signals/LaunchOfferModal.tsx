@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Signal } from "./SignalCard";
 
 type ActionPlan = {
@@ -23,6 +24,7 @@ type Props = {
 };
 
 export default function LaunchOfferModal({ signal, onClose, onLaunched }: Props) {
+  const router = useRouter();
   const [plan, setPlan] = useState<ActionPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<Record<string, boolean>>({});
@@ -286,6 +288,30 @@ export default function LaunchOfferModal({ signal, onClose, onLaunched }: Props)
           >
             CLOSE
           </button>
+          {plan && (
+            <button
+              onClick={() => {
+                const params = new URLSearchParams({
+                  action: "create",
+                  title: plan.offer_title,
+                  price: String(plan.price),
+                });
+                router.push(`/dashboard/vault?${params.toString()}`);
+              }}
+              style={{
+                padding: "13px 18px",
+                background: "transparent",
+                border: "1px solid rgba(200,169,110,0.35)",
+                borderRadius: "4px",
+                color: "rgba(200,169,110,0.75)",
+                fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.14em",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              + VAULT ITEM
+            </button>
+          )}
           <button
             onClick={handleLaunch}
             disabled={loading}

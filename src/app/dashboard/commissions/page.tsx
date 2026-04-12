@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import CommissionsClient from "./CommissionsClient";
 import type { Commission } from "@/lib/commissions";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 function getServiceDb() {
   return createClient(
@@ -51,9 +52,11 @@ export default async function CommissionsDashboardPage() {
     .limit(50);
 
   return (
-    <CommissionsClient
-      initialCommissions={(commissions ?? []) as Commission[]}
-      handle={profile?.handle ?? ""}
-    />
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profile?.handle ?? undefined}>
+      <CommissionsClient
+        initialCommissions={(commissions ?? []) as Commission[]}
+        handle={profile?.handle ?? ""}
+      />
+    </DashboardShell>
   );
 }

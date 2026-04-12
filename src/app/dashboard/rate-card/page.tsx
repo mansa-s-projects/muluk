@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pricesFromCents } from "@/lib/rate-card-pricing";
 import RateCardClient from "./RateCardClient";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 export default async function RateCardPage() {
   const supabase = await createClient();
@@ -55,21 +56,23 @@ export default async function RateCardPage() {
     : null;
 
   return (
-    <RateCardClient
-      savedCard={
-        rateCard
-          ? {
-              id:         rateCard.id,
-              slug:       rateCard.slug,
-              title:      rateCard.title,
-              is_public:  rateCard.is_public,
-              view_count: rateCard.view_count,
-              created_at: rateCard.created_at,
-            }
-          : null
-      }
-      savedPrices={savedPrices}
-      savedStats={savedStats}
-    />
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
+      <RateCardClient
+        savedCard={
+          rateCard
+            ? {
+                id:         rateCard.id,
+                slug:       rateCard.slug,
+                title:      rateCard.title,
+                is_public:  rateCard.is_public,
+                view_count: rateCard.view_count,
+                created_at: rateCard.created_at,
+              }
+            : null
+        }
+        savedPrices={savedPrices}
+        savedStats={savedStats}
+      />
+    </DashboardShell>
   );
 }

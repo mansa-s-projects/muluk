@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
     const rawPage = Number(searchParams.get("page"));
     const rawLimit = Number(searchParams.get("limit"));
 
-    const sortableColumns = new Set(["created_at", "display_name", "handle", "status", "tier"]);
-    const sortBy = sortableColumns.has(rawSortBy) ? rawSortBy : "created_at";
+    const sortableColumns = new Set(["created_at", "name", "handle", "status", "tier"]);
+    const requestedSortBy = rawSortBy === "display_name" ? "name" : rawSortBy;
+    const sortBy = sortableColumns.has(requestedSortBy) ? requestedSortBy : "created_at";
     const sortOrder = rawSortOrder === "asc" ? "asc" : "desc";
     const page = Number.isFinite(rawPage) ? Math.max(1, Math.trunc(rawPage)) : 1;
     const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(1, Math.trunc(rawLimit))) : 20;
@@ -50,15 +51,18 @@ export async function GET(request: NextRequest) {
     // Build base query
     let query = supabase
       .from("creator_applications")
-      .select(`
+      .select(
+        `
         *,
         creator_wallets!left(balance, total_earnings),
         social_connections!left(platform, follower_count)
-      `, { count: "exact" });
+      `,
+        { count: "exact" }
+      );
 
     // Apply filters
     if (search) {
-      query = query.or(`display_name.ilike.%${search}%,handle.ilike.%${search}%,email.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%,handle.ilike.%${search}%,email.ilike.%${search}%`);
     }
 
     if (status !== "all") {
@@ -73,9 +77,36 @@ export async function GET(request: NextRequest) {
     query = query.order(sortBy, { ascending: sortOrder === "asc" });
 
     // Apply pagination
-    const { data: creators, error, count } = await query.range(offset, offset + limit - 1);
+    let { data: creators, error, count } = await query.range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    // If optional relation joins are not available in this environment, retry with a minimal query.
+    if (error) {
+      console.warn("[admin-creators] rich query failed, retrying minimal query:", error.message);
+
+      let fallbackQuery = supabase
+        .from("creator_applications")
+        .select("*", { count: "exact" });
+
+      if (search) {
+        fallbackQuery = fallbackQuery.or(`name.ilike.%${search}%,handle.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      if (status !== "all") {
+        fallbackQuery = fallbackQuery.eq("status", status);
+      }
+      if (tier !== "all") {
+        fallbackQuery = fallbackQuery.eq("tier", tier);
+      }
+
+      const fallback = await fallbackQuery
+        .order(sortBy, { ascending: sortOrder === "asc" })
+        .range(offset, offset + limit - 1);
+
+      if (fallback.error) throw fallback.error;
+
+      creators = fallback.data;
+      count = fallback.count;
+      error = null;
+    }
 
     const creatorIds = (creators || []).map((c) => c.user_id).filter(Boolean);
 
@@ -93,9 +124,9 @@ export async function GET(request: NextRequest) {
           .select("creator_id")
           .in("creator_id", creatorIds),
         supabase
-          .from("fan_codes")
-          .select("creator_id")
-          .in("creator_id", creatorIds),
+          .from("fan_codes_v2")
+          .select("content_items_v2!inner(creator_id)")
+          .in("content_items_v2.creator_id", creatorIds),
         supabase
           .from("transactions_v2")
           .select("creator_id, amount")
@@ -127,7 +158,10 @@ export async function GET(request: NextRequest) {
 
       const fanCountMap = new Map<string, number>();
       for (const row of fansResult.data || []) {
-        fanCountMap.set(row.creator_id, (fanCountMap.get(row.creator_id) || 0) + 1);
+        const content = (row as { content_items_v2?: { creator_id?: string } | Array<{ creator_id?: string }> }).content_items_v2;
+        const creatorId = Array.isArray(content) ? content[0]?.creator_id : content?.creator_id;
+        if (!creatorId) continue;
+        fanCountMap.set(creatorId, (fanCountMap.get(creatorId) || 0) + 1);
       }
 
       const txnStatsMap = new Map<string, { transaction_count: number; total_volume: number }>();
@@ -140,8 +174,10 @@ export async function GET(request: NextRequest) {
 
       creatorsWithBans = (creators || []).map((creator) => {
         const txn = txnStatsMap.get(creator.user_id) || { transaction_count: 0, total_volume: 0 };
+        const displayName = (creator as { display_name?: string; name?: string }).display_name || (creator as { name?: string }).name || "Unknown";
         return {
           ...creator,
+          display_name: displayName,
           ban_status: banMap.get(creator.user_id) || null,
           stats: {
             content_count: contentCountMap.get(creator.user_id) || 0,
@@ -153,14 +189,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Log admin action
-    await supabase.from("admin_audit_logs").insert({
+    // Log admin action without blocking response if audit insert is denied by RLS.
+    const { error: auditError } = await supabase.from("admin_audit_logs").insert({
       admin_id: user.id,
       action: "list_creators",
       target_type: "platform",
       target_id: "all",
-      details: { search, status, tier, page, limit }
+      details: { search, status, tier, page, limit },
     });
+    if (auditError) {
+      console.warn("[admin-creators] audit log insert failed:", auditError.message);
+    }
 
     return NextResponse.json({
       creators: creatorsWithBans,

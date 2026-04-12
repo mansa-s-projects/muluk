@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import DealsClient from "./DealsClient";
 import type { BrandDeal } from "@/lib/brand-deals";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 function getServiceDb() {
   return createClient(
@@ -47,9 +48,11 @@ export default async function DealsDashboardPage() {
   });
 
   return (
-    <DealsClient
-      initialDeals={(deals ?? []) as BrandDeal[]}
-      monthlyEarnings={(monthlyRaw ?? []) as { month: number; total_cents: number }[]}
-    />
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
+      <DealsClient
+        initialDeals={(deals ?? []) as BrandDeal[]}
+        monthlyEarnings={(monthlyRaw ?? []) as { month: number; total_cents: number }[]}
+      />
+    </DashboardShell>
   );
 }

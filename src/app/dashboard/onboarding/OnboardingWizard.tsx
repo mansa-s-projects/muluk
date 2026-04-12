@@ -1489,7 +1489,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         positioning, and what fans expect from you.
       </p>
       
-      <div style={{ ...styles.grid(2), marginBottom: "24px" }}>
+      <div className="onb-grid-2" style={{ marginBottom: "24px" }}>
         {NICHES.map(niche => (
           <div
             key={niche.id}
@@ -1566,7 +1566,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         Select the content formats you&apos;ll deliver. Different formats = different price points.
       </p>
       
-      <div style={{ ...styles.grid(2), marginBottom: "32px" }}>
+      <div className="onb-grid-2" style={{ marginBottom: "32px" }}>
         {CONTENT_TYPES.map(type => {
           const selected = data.contentTypes.includes(type.id);
           return (
@@ -1619,7 +1619,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         })}
       </div>
       
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+      <div className="onb-exp-row">
         <div>
           <label style={styles.label}>Experience Level</label>
           <div style={{ display: "flex", gap: "10px" }}>
@@ -1915,7 +1915,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: "32px", alignItems: "start" }}>
+        <div className="onb-profile-layout">
           {/* ── Left: form ── */}
           <div>
             {/* Banner */}
@@ -1992,7 +1992,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
 
             {/* Form fields */}
             <div style={{ display: "grid", gap: "14px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div className="onb-2col">
                 <div>
                   <label style={styles.label}>DISPLAY NAME *</label>
                   <input type="text" value={pi.displayName}
@@ -2024,7 +2024,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div className="onb-2col">
                 <div>
                   <label style={styles.label}>MAIN SPECIALTY</label>
                   <input type="text" value={pi.specialty}
@@ -2055,7 +2055,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.15em", color: "var(--gold-dim)" }}>
                   PRIMARY CTA BUTTON
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "12px" }}>
+                <div className="onb-cta-row">
                   <div>
                     <label style={styles.label}>BUTTON LABEL</label>
                     <input type="text" value={pi.ctaLabel}
@@ -2077,7 +2077,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
           </div>
 
           {/* ── Right: live preview ── */}
-          <div style={{ position: "sticky", top: "32px" }}>
+          <div className="onb-live-preview" style={{ position: "sticky", top: "32px" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.18em", color: "rgba(255,255,255,0.22)", marginBottom: "12px" }}>
               LIVE PREVIEW
             </div>
@@ -2124,7 +2124,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
           </div>
         )}
         
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        <div className="onb-grid-3" style={{ marginBottom: "24px" }}>
           <div style={styles.metric}>
             <div style={styles.metricLabel}>Strongest Platform</div>
             <div style={styles.metricValue}>{analysis.strongestPlatform}</div>
@@ -2139,7 +2139,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
           </div>
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+        <div className="onb-2col-16" style={{ marginBottom: "24px" }}>
           <div style={{
             ...styles.card,
             background: analysis.audienceQuality === "high" 
@@ -2265,7 +2265,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
           ✦ {blueprint.strategySummary}
         </div>
         
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+        <div className="onb-2col-16" style={{ marginBottom: "20px" }}>
           {/* Price Card */}
           <div style={{ ...styles.card, padding: "18px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
@@ -2802,7 +2802,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
 
   return (
     <div style={styles.page}>
-      <div style={styles.container}>
+      <div className="onb-container" style={styles.container}>
         {/* Progress bar */}
         <div style={styles.progressBar}>
           {Array.from({ length: totalSteps }).map((_, i) => (
@@ -2833,7 +2833,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
       </div>
       
       {/* Footer with navigation */}
-      <div style={styles.footer}>
+      <div className="onb-footer" style={styles.footer}>
         {step > 1 && (
           <button
             onClick={handleBack}
@@ -2850,6 +2850,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
         <button
           onClick={step === 8 ? handleLaunch : handleNext}
           disabled={loading || !canProceed()}
+          className="onb-cta-btn"
           style={{
             ...styles.button.primary,
             opacity: loading || !canProceed() ? 0.5 : 1,

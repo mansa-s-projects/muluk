@@ -447,7 +447,7 @@ export default function VaultClient({ creatorId, handle, initialItems }: Props) 
               </div>
 
               {/* Price + Status row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div className="dash-2col-14">
                 <div>
                   <label style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--muted)", display: "block", marginBottom: 8 }}>
                     Price (USD) *

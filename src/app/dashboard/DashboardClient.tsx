@@ -1405,6 +1405,43 @@ export default function DashboardClient({
                 </button>
               );
             })}
+
+            {/* ── Creator OS tool links ─────────────────────────── */}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "4px", paddingTop: "4px" }}>
+              {[
+                { label: "MAKE MONEY", items: [
+                  { label: "Signal Board",  href: "/dashboard/signals" },
+                  { label: "Vault",          href: "/dashboard/vault" },
+                  { label: "1:1 Bookings",  href: "/dashboard/bookings" },
+                  { label: "Series",         href: "/dashboard/series" },
+                  { label: "Tip Jar",        href: "/dashboard/tips" },
+                ]},
+                { label: "GROW", items: [
+                  { label: "Rate Card",     href: "/dashboard/rate-card" },
+                ]},
+                { label: "MANAGE", items: [
+                  { label: "Commissions",   href: "/dashboard/commissions" },
+                  { label: "Brand Deals",   href: "/dashboard/deals" },
+                ]},
+              ].map(group => (
+                <div key={group.label}>
+                  <div style={{ padding: "10px 20px 4px", fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.18em", color: "rgba(200,169,110,0.38)" }}>
+                    {group.label}
+                  </div>
+                  {group.items.map(({ label, href }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      style={{ display: "flex", alignItems: "center", padding: "9px 20px", fontSize: "13px", color: "rgba(255,255,255,0.44)", textDecoration: "none", transition: "all 0.15s", fontFamily: "var(--font-body)", fontWeight: 300 }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "rgba(200,169,110,0.8)"; e.currentTarget.style.background = "rgba(200,169,110,0.04)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.44)"; e.currentTarget.style.background = "transparent"; }}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </div>
           </nav>
 
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.055)" }}>
@@ -1544,7 +1581,7 @@ export default function DashboardClient({
                 <DailyBriefWidget />
 
                 {/* AI Content Ideas & Voice Clone Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div className="db-2col" style={{ gap: "16px" }}>
                   <ContentIdeasWidget />
                   <VoiceCloneWidget />
                 </div>
@@ -1555,7 +1592,7 @@ export default function DashboardClient({
                     {/* Next Actions Rail */}
                     <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.25)", borderRadius: "8px", padding: "20px" }}>
                       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "16px" }}>NEXT ACTIONS</div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px" }}>
+                      <div className="db-3col" style={{ gap: "12px" }}>
                         <button
                           type="button"
                           onClick={() => {
@@ -1642,7 +1679,7 @@ export default function DashboardClient({
                     )}
 
                     {/* Contextual stats */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "12px" }}>
+                    <div className="db-4col" style={{ gap: "12px" }}>
                       {[
                         { label: "Revenue", value: "—", sub: "No sales yet — drop is live" },
                         { label: "Fan Codes", value: String(fanCodeCount), sub: fanCodeCount > 0 ? "Identities ready to buy" : "Generate codes in Fans tab" },
@@ -1661,7 +1698,7 @@ export default function DashboardClient({
 
                 {/* Stats Grid — analytics mode only */}
                 {!isActivationMode && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "12px" }}>
+                <div className="db-4col" style={{ gap: "12px" }}>
                   {[
                     { label: "Total Earnings", value: money.format(wallet.total_earnings), sub: "Net processed" },
                     { label: "Balance Available", value: money.format(wallet.balance), sub: "Ready for payout" },
@@ -1679,7 +1716,7 @@ export default function DashboardClient({
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "18px" }}>
                   <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "10px" }}>SOCIAL REACH</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px" }}>
+                  <div className="db-12-1" style={{ gap: "12px" }}>
                     <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "12px", background: "rgba(255,255,255,0.02)" }}>
                       <div style={{ ...mono, fontSize: "10px", color: "var(--dim)", letterSpacing: "0.1em" }}>TOTAL COMBINED FOLLOWERS</div>
                       <div style={{ ...disp, fontSize: "38px", color: "var(--gold)", marginTop: "4px" }}>{effectiveReach.totalFollowers.toLocaleString()}</div>
@@ -1735,7 +1772,7 @@ export default function DashboardClient({
                     ))}
                   </div>
 
-                  <div style={{ marginTop: "18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="db-2col" style={{ marginTop: "18px", gap: "12px" }}>
                     <div style={{ border: "1px solid rgba(255,255,255,0.055)", borderRadius: "7px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
                       <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>30-DAY FORECAST</div>
                       <div style={{ ...disp, marginTop: "8px", fontSize: "30px", color: chartTrend === "up" ? "var(--gold)" : "#ff6a6a" }}>
@@ -1774,7 +1811,7 @@ export default function DashboardClient({
                 {isActivationMode ? (
                   <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "20px" }}>
                     <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "16px" }}>GET YOUR FIRST SALE</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    <div className="db-2col" style={{ gap: "16px" }}>
                       <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px" }}>
                         <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "#8dcfff", marginBottom: "10px" }}>POST THIS NOW (COPY → PASTE)</div>
                         <div style={{ fontSize: "13px", color: "var(--white)", lineHeight: 1.7, marginBottom: "12px" }}>
@@ -1859,7 +1896,7 @@ export default function DashboardClient({
                     <div style={{ padding: "24px", color: "var(--muted)" }}>No transactions yet. Share your page to activate your earnings stream.</div>
                   )}
                   {transactions.map(tx => (
-                    <div key={tx.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1fr 0.8fr", gap: "8px", padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
+                    <div key={tx.id} className="db-tx-row" style={{ gap: "8px", padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                       <div style={{ ...mono, fontSize: "11px", color: "var(--muted)" }}>{tx.fan_code ?? "FAN-UNKN"}</div>
                       <div style={{ ...disp, fontSize: "24px", color: "var(--gold)" }}>{money.format(tx.amount)}</div>
                       <div style={{ fontSize: "12px", color: "var(--muted)", textTransform: "capitalize" }}>{tx.type ?? "subscription"}</div>
@@ -1869,13 +1906,44 @@ export default function DashboardClient({
                   ))}
                 </div>
                 )}
+
+                {/* ── Creator OS quick-access ───────────────────────────── */}
+                <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "20px" }}>
+                  <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)", marginBottom: "16px" }}>CREATOR OS</div>
+                  <div className="db-4col" style={{ gap: "10px" }}>
+                    {[
+                      { label: "Signal Board", sub: "Fan interest map",       href: "/dashboard/signals",     icon: "◈" },
+                      { label: "Vault",         sub: "Digital products",       href: "/dashboard/vault",       icon: "▦" },
+                      { label: "1:1 Bookings",  sub: "Session scheduling",     href: "/dashboard/bookings",    icon: "◷" },
+                      { label: "Series",        sub: "Episodic content",       href: "/dashboard/series",      icon: "▤" },
+                      { label: "Tip Jar",        sub: "Fan support",            href: "/dashboard/tips",        icon: "▲" },
+                      { label: "Rate Card",     sub: "Brand deal pricing",     href: "/dashboard/rate-card",   icon: "◫" },
+                      { label: "Commissions",   sub: "Custom requests",        href: "/dashboard/commissions", icon: "◉" },
+                      { label: "Brand Deals",   sub: "Sponsor relationships",  href: "/dashboard/deals",       icon: "◎" },
+                    ].map(item => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "14px 16px", textDecoration: "none", display: "block", transition: "all 0.15s" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(200,169,110,0.3)"; e.currentTarget.style.background = "rgba(200,169,110,0.04)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                          <span style={{ ...mono, fontSize: "13px", color: "var(--gold-dim)" }}>{item.icon}</span>
+                          <span style={{ ...disp, fontSize: "15px", color: "var(--white)" }}>{item.label}</span>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--dim)" }}>{item.sub}</div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
             {activeSection === "content" && (
               <div style={{ display: "grid", gap: "12px" }}>
                 {/* Link to full content manager */}
-                <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ background: "#111120", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "8px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
                   <div>
                     <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "var(--gold-dim)" }}>CONTENT MANAGER</div>
                     <div style={{ fontSize: "16px", color: "var(--gold)", marginTop: "4px" }}>Full content management system</div>
@@ -1901,7 +1969,7 @@ export default function DashboardClient({
                 </div>
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                     <div>
                       <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.12em", color: "var(--gold-dim)" }}>QUICK UPLOAD</div>
                       <div style={{ fontSize: "14px", color: "var(--white)" }}>Set content to self-expire automatically</div>
@@ -1911,7 +1979,7 @@ export default function DashboardClient({
                     </button>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "12px" }}>
+                  <div className="db-2col" style={{ gap: "10px", marginTop: "12px" }}>
                     <input value={contentTitle} onChange={e => setContentTitle(e.target.value)} placeholder="Content title" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                     <input value={contentPrice} onChange={e => setContentPrice(e.target.value)} placeholder="Price" style={{ background: "#0d0d18", border: "1px solid rgba(255,255,255,0.1)", color: "var(--white)", borderRadius: "6px", padding: "10px" }} />
                   </div>
@@ -2024,7 +2092,7 @@ export default function DashboardClient({
                 {/* AI Fan Personas - Top of fans section */}
                 <FanPersonasWidget />
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: "10px" }}>
+                <div className="db-4col" style={{ gap: "10px" }}>
                   {[
                     { label: "Tracked fans", value: String(fanInsights.length), hint: `${crmCoverage} enriched with CRM notes` },
                     { label: "VIP fans", value: String(vipCount), hint: `${fanInsights.length ? Math.round((vipCount / fanInsights.length) * 100) : 0}% of total base` },
@@ -2095,7 +2163,7 @@ export default function DashboardClient({
                       const draft = getFanDraft(fan);
                       return (
                         <div key={fan.id} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "14px", background: "rgba(255,255,255,0.02)" }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "1.15fr 1fr 1fr auto", gap: "10px", alignItems: "start" }}>
+                          <div className="db-fan-row" style={{ gap: "10px", alignItems: "start" }}>
                             <div>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                                 <div style={{ ...mono, fontSize: "11px", color: "var(--gold)", letterSpacing: "0.1em" }}>{fan.code}</div>
@@ -2146,7 +2214,7 @@ export default function DashboardClient({
 
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "8px", padding: "16px" }}>
                   <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em" }}>PAYOUT COMMAND CENTER</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "12px", alignItems: "center", marginTop: "10px" }}>
+                  <div className="db-1-auto" style={{ gap: "12px", marginTop: "10px" }}>
                     <div>
                       <div style={{ ...disp, fontSize: "42px", color: "var(--gold)" }}>{money.format(wallet.balance)}</div>
                       <div style={{ fontSize: "12px", color: "var(--dim)" }}>Your next automatic payout: {formatDate(new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString())}</div>
@@ -2169,7 +2237,7 @@ export default function DashboardClient({
                   <div style={{ padding: "12px 14px", ...mono, fontSize: "10px", color: "var(--gold-dim)", letterSpacing: "0.12em", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>WITHDRAWAL HISTORY</div>
                   {withdrawals.length === 0 && <div style={{ padding: "14px", color: "var(--muted)" }}>No withdrawals yet.</div>}
                   {withdrawals.map(w => (
-                    <div key={w.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div key={w.id} className="db-4col" style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
                       <div style={{ ...disp, fontSize: "24px", color: "var(--gold)" }}>{money.format(w.amount)}</div>
                       <div style={{ fontSize: "12px", color: "var(--muted)" }}>{w.method}</div>
                       <div style={{ ...mono, fontSize: "11px", color: "var(--dim)" }}>{formatDate(w.created_at)}</div>
@@ -2207,7 +2275,7 @@ export default function DashboardClient({
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "20px", display: "grid", gap: "12px" }}>
                   <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.18em", color: "var(--gold-dim)" }}>CREATE NEW PAYMENT LINK</div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "10px", alignItems: "start" }}>
+                  <div className="db-1-auto" style={{ gap: "10px", alignItems: "start" }}>
                     <input
                       value={plTitle}
                       onChange={e => setPlTitle(e.target.value)}
@@ -2335,13 +2403,11 @@ export default function DashboardClient({
                     {payLinks.map((pl, idx) => (
                       <div
                         key={pl.id}
+                        className="db-1-auto"
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr auto",
                           gap: "12px",
                           padding: "14px 16px",
                           borderTop: idx > 0 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                          alignItems: "center",
                         }}
                       >
                         {/* Info */}
@@ -2388,7 +2454,7 @@ export default function DashboardClient({
                         </div>
 
                         {/* Actions */}
-                        <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
+                        <div style={{ display: "flex", gap: "6px", flexShrink: 0, flexWrap: "wrap" }}>
                           <button
                             type="button"
                             onClick={() => copyPayLinkUrl(pl.id)}
@@ -2433,7 +2499,7 @@ export default function DashboardClient({
                 {/* ── How it works ── */}
                 <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "20px" }}>
                   <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.14em", color: "var(--gold-dim)", marginBottom: "14px" }}>HOW IT WORKS</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                  <div className="db-3col" style={{ gap: "12px" }}>
                     {[
                       { n: "01", title: "Upload + price", body: "Choose text or file content, set your price, then click Generate Link." },
                       { n: "02", title: "Share", body: "Copy your /pay/[id] URL and share it anywhere — posts, stories, DMs, bios." },
@@ -2462,7 +2528,7 @@ export default function DashboardClient({
                     )}
                   </div>
                   
-                  <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "12px", marginTop: "10px" }}>
+                  <div className="db-2col" style={{ gap: "12px", marginTop: "10px" }}>
                     <div>
                       <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "7px", padding: "10px", ...mono, color: "var(--gold)", fontSize: "12px", wordBreak: "break-all" }}>{referralLink}</div>
                       <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
@@ -3032,6 +3098,25 @@ export default function DashboardClient({
             z-index: 200;
             backdrop-filter: blur(12px);
           }
+        }
+        /* ── mobile-responsive grid helpers ── */
+        .db-2col { display: grid; grid-template-columns: 1fr 1fr; }
+        .db-3col { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .db-4col { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); }
+        .db-1-auto { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+        .db-12-1 { display: grid; grid-template-columns: 1.2fr 1fr; }
+        .db-fan-row { display: grid; grid-template-columns: 1.15fr 1fr 1fr auto; }
+        .db-tx-row { display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr 0.8fr; align-items: center; }
+        @media (max-width: 640px) {
+          .db-2col, .db-3col, .db-12-1 { grid-template-columns: 1fr; }
+          .db-4col { grid-template-columns: 1fr 1fr; }
+          .db-1-auto { grid-template-columns: 1fr; }
+          .db-1-auto > button, .db-1-auto > a { width: 100%; text-align: center; }
+          .db-tx-row { grid-template-columns: 1fr 1fr; }
+          .db-fan-row { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+          .db-4col, .db-tx-row, .db-fan-row { grid-template-columns: 1fr; }
         }
       `}</style>
     </>

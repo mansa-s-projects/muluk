@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import TipsClient from "./TipsClient";
 import type { Tip } from "@/lib/tips";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 function getServiceDb() {
   return createClient(
@@ -71,10 +72,12 @@ export default async function TipsDashboardPage() {
   }
 
   return (
-    <TipsClient
-      initialTips={(tipsRes.data ?? []) as Tip[]}
-      monthlyEarnings={(monthlyRes.data ?? []) as { month: number; total_cents: number; tip_count: number }[]}
-      handle={profileRes.data?.handle ?? ""}
-    />
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profileRes.data?.handle ?? undefined}>
+      <TipsClient
+        initialTips={(tipsRes.data ?? []) as Tip[]}
+        monthlyEarnings={(monthlyRes.data ?? []) as { month: number; total_cents: number; tip_count: number }[]}
+        handle={profileRes.data?.handle ?? ""}
+      />
+    </DashboardShell>
   );
 }

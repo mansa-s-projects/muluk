@@ -281,7 +281,7 @@ export default function SeriesClient({ initialSeries, initialEpisodes, monthlyEa
         </div>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem", marginBottom: "2rem" }}>
+        <div className="dash-stats-4" style={{ marginBottom: "2rem" }}>
           <StatCard label="Total Revenue" value={`$${(totalRevenue / 100).toFixed(2)}`} gold />
           <StatCard label="Total Sales"   value={String(totalSales)} />
           <StatCard label="Published"     value={String(published)} />

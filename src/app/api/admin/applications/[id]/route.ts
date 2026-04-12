@@ -33,7 +33,7 @@ export async function GET(
 
     const { data: application, error } = await supabase
       .from("creator_applications")
-      .select("*, auth.users!inner(email)")
+      .select("*")
       .eq("id", id)
       .single();
 

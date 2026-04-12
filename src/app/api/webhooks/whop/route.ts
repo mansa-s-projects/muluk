@@ -265,6 +265,28 @@ async function handlePaymentCompleted(
     await supabase.from("transactions_v2").insert(txPayload);
   }
 
+  // ── Referral intelligence attribution (non-blocking) ─────────────────────
+  await supabase
+    .rpc("increment_referral_revenue", {
+      p_referred_id: content.creator_id,
+      p_amount: amount,
+      p_event_type: "purchase",
+      p_metadata: {
+        source: "whop_webhook",
+        whop_payment_id: whopPaymentId,
+        fan_code: normalizedCode,
+        content_id: content.id,
+      },
+    })
+    .then(({ error }) => {
+      if (error) {
+        console.warn("[whop-webhook] referral attribution failed", {
+          creatorId: content.creator_id,
+          error: error.message,
+        });
+      }
+    });
+
   // ── Mark fan code as paid (unlock access) ─────────────────────────────────
   if (!fanCode.is_paid) {
     await supabase

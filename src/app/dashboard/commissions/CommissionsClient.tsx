@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import type { Commission } from "@/lib/commissions";
 import { formatPrice } from "@/lib/commissions";
 
@@ -320,6 +321,17 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
                 <div style={{ color: "var(--gold)", fontFamily: "var(--font-mono)", fontSize: "0.75rem", wordBreak: "break-all" }}>
                   {`https://whop.com/checkout/${selected.whop_checkout_id}/`}
                 </div>
+              </div>
+            )}
+            {selected.status === "accepted" && (
+              <div style={{ marginTop: "1rem", padding: "0.875rem 1rem", background: "rgba(200,169,110,0.04)", border: "1px solid rgba(200,169,110,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+                <span style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.8rem" }}>Offer this as a recurring session?</span>
+                <Link
+                  href="/dashboard/bookings"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "0.14em", color: "rgba(200,169,110,0.75)", textDecoration: "none", border: "1px solid rgba(200,169,110,0.25)", borderRadius: 4, padding: "6px 12px", whiteSpace: "nowrap" }}
+                >
+                  + 1:1 BOOKINGS
+                </Link>
               </div>
             )}
             {selected.status === "paid" && (

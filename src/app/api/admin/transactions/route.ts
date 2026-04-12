@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       .from("transactions_v2")
       .select(`
         *,
-        creator:creator_id(display_name, handle),
+        creator:creator_id(name, handle),
         content:content_id(title, price),
         fan_code_ref:fan_code_id(code)
       `, { count: "exact" });
@@ -94,14 +94,17 @@ export async function GET(request: NextRequest) {
       totalCreatorEarnings: successfulTxns.reduce((sum, t) => sum + (t.creator_earnings || 0), 0),
     };
 
-    // Log admin action
-    await supabase.from("admin_audit_logs").insert({
+    // Log admin action without blocking response if audit insert is denied by RLS.
+    const { error: auditError } = await supabase.from("admin_audit_logs").insert({
       admin_id: user.id,
       action: "view_transactions",
       target_type: "transactions",
       target_id: creatorId || "all",
-      details: { filters: { creatorId, status, paymentMethod }, page, limit }
+      details: { filters: { creatorId, status, paymentMethod }, page, limit },
     });
+    if (auditError) {
+      console.warn("[admin-transactions] audit log insert failed:", auditError.message);
+    }
 
     return NextResponse.json({
       transactions: allTransactions,

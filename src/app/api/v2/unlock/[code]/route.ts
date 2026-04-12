@@ -55,6 +55,14 @@ export async function GET(
     file_url: fanCode.is_paid ? content.file_url : null,
   };
 
+  // ── Record fan presence on successful paid unlock ─────────────────────
+  if (fanCode.is_paid) {
+    await supabase
+      .from("fan_codes_v2")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", fanCode.id);
+  }
+
   return NextResponse.json({
     success: true,
     data: {

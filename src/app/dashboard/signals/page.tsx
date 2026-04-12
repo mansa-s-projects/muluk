@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignalBoardClient from "./SignalBoardClient";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 
 export const metadata = {
   title: "Signal Board — CIPHER",
@@ -22,5 +23,9 @@ export default async function SignalBoardPage() {
     redirect("/dashboard/onboarding");
   }
 
-  return <SignalBoardClient />;
+  return (
+    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
+      <SignalBoardClient />
+    </DashboardShell>
+  );
 }

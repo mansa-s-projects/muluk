@@ -43,10 +43,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("admin_audit_logs")
-      .select(`
-        *,
-        admin:admin_id(email:auth.users!inner(email))
-      `, { count: "exact" });
+      .select("*", { count: "exact" });
 
     // Apply filters
     if (adminId) {
@@ -88,6 +85,7 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       page,
       totalPages: Math.ceil((count || 0) / limit),
+      uniqueActions,
       filters: {
         actions: uniqueActions
       }

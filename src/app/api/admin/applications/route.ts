@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = supabase
       .from("creator_applications")
-      .select("*, auth.users!inner(email)", { count: "exact" });
+      .select("*", { count: "exact" });
 
     if (status !== "all") {
       query = query.eq("status", status);

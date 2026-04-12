@@ -203,3 +203,50 @@ body::after {
   }
   .apply-right { padding: 32px 24px !important; }
 }
+
+/* ── Apply page radio cards ─────────────────────────────────────────── */
+.apply-radio-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (max-width: 480px) {
+  .apply-radio-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Onboarding Wizard responsive grids ─────────────────────────────── */
+.onb-grid-2          { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.onb-grid-3          { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.onb-profile-layout  { display: grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: start; }
+.onb-exp-row         { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.onb-2col            { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.onb-cta-row         { display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px; }
+.onb-2col-16         { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 640px) {
+  .onb-grid-2,
+  .onb-grid-3,
+  .onb-profile-layout,
+  .onb-exp-row,
+  .onb-2col,
+  .onb-cta-row,
+  .onb-2col-16        { grid-template-columns: 1fr !important; }
+  .onb-live-preview   { display: none !important; }
+  .onb-footer         { flex-wrap: wrap !important; }
+  .onb-cta-btn        { min-width: 100% !important; flex: 1 1 100% !important; }
+  .onb-container      { padding-left: 16px !important; padding-right: 16px !important; }
+}
+
+/* ── Dashboard responsive grids ─────────────────────────────────────── */
+.dash-stats-4    { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.dash-settings   { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+.dash-2col       { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-2col-14    { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+@media (max-width: 768px) {
+  .dash-settings  { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 640px) {
+  .dash-stats-4   { grid-template-columns: repeat(2, 1fr) !important; }
+  .dash-2col,
+  .dash-2col-14   { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 380px) {
+  .dash-stats-4   { grid-template-columns: 1fr !important; }
+}

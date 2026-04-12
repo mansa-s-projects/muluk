@@ -301,7 +301,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
   ] as const;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: "24px", maxWidth: "1200px" }}>
+    <div className="dash-settings" style={{ maxWidth: "1200px" }}>
       {/* Sidebar */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {tabs.map(tab => (
@@ -488,7 +488,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
 
             {/* Form Fields */}
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="dash-2col">
                 <div>
                   <label style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", display: "block", marginBottom: "6px" }}>DISPLAY NAME</label>
                   <input
@@ -550,7 +550,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="dash-2col">
                 <div>
                   <label style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", display: "block", marginBottom: "6px" }}>CATEGORY</label>
                   <select
@@ -760,7 +760,7 @@ export function SettingsPage({ initialData }: { initialData: SettingsData }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ background: "#111120", border: "1px solid rgba(255,255,255,0.055)", borderRadius: "12px", padding: "24px" }}>
               <div style={{ ...mono, fontSize: "10px", color: "var(--gold-dim)", marginBottom: "16px" }}>PAYOUT METHOD</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+              <div className="dash-2col" style={{ gap: "12px" }}>
                 {PAYOUT_METHODS.map(method => (
                   <button
                     key={method.value}
