@@ -147,6 +147,7 @@ function WaitlistForm({ id }: { id: string }): React.JSX.Element {
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function Home() {
+  const isWhitelistOnly = true;
 
   /* scroll reveal */
   useEffect(() => {
@@ -502,26 +503,56 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <a href="/apply" onClick={() => {
-                    if (name === 'Legend') track.legendCtaClicked();
-                    else if (name === 'Apex') track.apexAccessRequested();
-                    else track.pricingViewed();
-                  }} style={{ 
-                  display: "block",
-                  marginTop: "32px",
-                  padding: "14px 24px",
-                  textAlign: "center",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  letterSpacing: "0.1em",
-                  textDecoration: "none",
-                  borderRadius: "3px",
-                  transition: "all 0.2s",
-                  ...(featured 
-                    ? { background: "var(--gold)", color: "#0a0800", border: "1px solid var(--gold)" }
-                    : { background: "transparent", color: "rgba(255,255,255,0.7)", border: "1px solid var(--border-mid)" }
-                  )
-                }}>{cta}</a>
+                {isWhitelistOnly ? (
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    title="Whitelist mode active"
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      marginTop: "32px",
+                      padding: "14px 24px",
+                      textAlign: "center",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      letterSpacing: "0.1em",
+                      textDecoration: "none",
+                      borderRadius: "3px",
+                      transition: "all 0.2s",
+                      cursor: "not-allowed",
+                      opacity: 0.45,
+                      ...(featured
+                        ? { background: "var(--gold)", color: "#0a0800", border: "1px solid var(--gold)" }
+                        : { background: "transparent", color: "rgba(255,255,255,0.7)", border: "1px solid var(--border-mid)" }
+                      )
+                    }}
+                  >
+                    {cta}
+                  </button>
+                ) : (
+                  <a href="/apply" onClick={() => {
+                      if (name === 'Legend') track.legendCtaClicked();
+                      else if (name === 'Apex') track.apexAccessRequested();
+                      else track.pricingViewed();
+                    }} style={{
+                    display: "block",
+                    marginTop: "32px",
+                    padding: "14px 24px",
+                    textAlign: "center",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    letterSpacing: "0.1em",
+                    textDecoration: "none",
+                    borderRadius: "3px",
+                    transition: "all 0.2s",
+                    ...(featured
+                      ? { background: "var(--gold)", color: "#0a0800", border: "1px solid var(--gold)" }
+                      : { background: "transparent", color: "rgba(255,255,255,0.7)", border: "1px solid var(--border-mid)" }
+                    )
+                  }}>{cta}</a>
+                )}
               </div>
             ))}
           </div>
