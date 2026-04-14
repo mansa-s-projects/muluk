@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Limited Photoset Drop",
+    "description": "Only 5 available. Never sold again after this.",
+    "price": 4999,
+    "max_slots": 5,
+    "expires_hours": 72
+  },
+  {
+    "title": "Flash Sale Pack",
+    "description": "48-hour window only. Discounted bundle.",
+    "price": 1999,
+    "max_slots": 20,
+    "expires_hours": 48
+  }
+]

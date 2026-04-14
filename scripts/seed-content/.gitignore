@@ -1,0 +1,14 @@
+# Ignore all raw media files inside seed-content
+# Keep JSON configs and README
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.pdf

@@ -26,12 +26,13 @@ export interface PlatformStats {
     totalFans: number; newCreatorsThisPeriod: number; newFansThisPeriod: number;
     tierDistribution: { cipher: number; legend: number; apex: number };
     creatorGrowth: number; fanGrowth: number;
+    activeCreators: number; onlineFans: number;
   };
   content: { totalItems: number; activeItems: number; newItemsThisPeriod: number; averagePrice: number; contentGrowth: number };
   finances: {
     totalGMV: number; periodGMV: number; totalPlatformFees: number;
     totalCreatorEarnings: number; totalTransactions: number; periodTransactions: number;
-    averageTransactionValue: number; gmvGrowth: number;
+    averageTransactionValue: number; gmvGrowth: number; revenue30d: number;
   };
   engagement: { totalMessages: number; periodMessages: number; activeBans: number };
   period: { days: number; since: string; generatedAt: string };
@@ -44,7 +45,7 @@ export interface Creator {
   stats: { content_count: number; fan_count: number; transaction_count: number; total_volume: number };
 }
 export interface RealtimeEvent {
-  id: string; event_type: string; user_id: string; user_type: string;
+  id: string; event_type: string; message?: string; user_id: string; user_type: string;
   metadata: Record<string, unknown>; severity: 'info' | 'warning' | 'critical'; created_at: string;
 }
 export type System = 'overview' | 'creator-intel' | 'revenue-intel' | 'risk' | 'funnel' | 'creators' | 'fans' | 'messages' | 'audit';

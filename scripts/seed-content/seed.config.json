@@ -1,0 +1,8 @@
+{
+  "defaultPrice": 999,
+  "defaultDropSlots": 10,
+  "defaultDropExpiresHours": 48,
+  "storageBucketAssets": "creator-content",
+  "storageBucketVault": "vault-originals",
+  "dryRun": false
+}

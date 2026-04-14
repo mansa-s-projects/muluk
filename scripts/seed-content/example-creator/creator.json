@@ -1,0 +1,6 @@
+{
+  "handle": "example-creator",
+  "displayName": "Example Creator",
+  "defaultAssetPrice": 500,
+  "defaultVaultPrice": 1500
+}

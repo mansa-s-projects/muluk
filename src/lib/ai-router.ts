@@ -49,7 +49,6 @@ export const TASK_TIERS: Record<string, TaskTier> = {
   content_creation: "balanced",
   price_analysis: "fast",
   chat_assistant: "fast",
-  image_analysis: "balanced",
   caption_generation: "fast",
   handle_generation: "fast",
   niche_recommendation: "fast",
