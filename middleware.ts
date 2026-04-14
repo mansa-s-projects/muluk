@@ -150,30 +150,12 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
     return response;
   }
 
-  // ── Creator routes (/dashboard, /onboarding) ─────────────────
-  if (isCreatorRoute(pathname)) {
+  // ── Let Layouts Handle Role Navigation (/dashboard vs /fan) ──
+  if (isCreatorRoute(pathname) || isFanRoute(pathname)) {
     if (!user) return redirectTo(request, "/login");
-    if (!hasMinimumRole(role, "creator")) {
-      // Fan trying to reach creator dashboard → send to fan dashboard
-      const url = request.nextUrl.clone();
-      url.pathname = "/fan";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
-    // Creator role but not yet approved → hold at /pending
-    if (user.app_metadata?.is_approved !== true) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/pending";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
-    response.headers.set("X-User-Role", role);
-    return response;
-  }
-
-  // ── Fan routes (/fan) ─────────────────────────────────────────
-  if (isFanRoute(pathname)) {
-    if (!user) return redirectTo(request, "/login");
+    // Note: the exact role redirection is now handled safely by 
+    // getSafeProfile() inside src/app/dashboard/layout.tsx 
+    // and src/app/fan/layout.tsx
     response.headers.set("X-User-Role", role);
     return response;
   }

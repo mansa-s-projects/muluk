@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { getSafeProfile } from "@/lib/auth/safe-profile";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
@@ -9,26 +8,25 @@ export const metadata: Metadata = {
 
 /**
  * Fan dashboard layout.
- * Middleware already enforces authentication for /fan routes,
- * but we re-verify here for defence-in-depth and to surface the role.
+ * We rely on getSafeProfile to check the database role securely.
  */
 export default async function FanLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, profile } = await getSafeProfile();
 
-  if (!user) {
+  if (!user || !profile) {
     redirect("/login?next=/fan");
   }
 
-  // Role is forwarded by middleware via request header
-  const headersList = await headers();
-  const role = headersList.get("X-User-Role") ?? "fan";
+  const role = profile.role || "fan";
 
   // Admins who land on /fan should be redirected to their panel
   if (role === "admin" || role === "super_admin") {
-    redirect("/admin");
+    redirect("/admin/dashboard");
+  }
+
+  // Creators should go to creator dashboard
+  if (role === "creator") {
+    redirect("/dashboard");
   }
 
   return <>{children}</>;

@@ -15,7 +15,11 @@
       "Bash(ls src/components/Instant*.tsx)",
       "Bash(ls supabase/migrations/053*)",
       "Bash(npm uninstall:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(taskkill /F /IM next.exe)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(taskkill //F //IM next.exe)"
     ]
   }
 }

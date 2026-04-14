@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: HandleParams): Promise<Metada
     .select("name, bio, category, avatar_url")
     .eq("handle", clean)
     .eq("status", "approved")
-    .single();
+    .maybeSingle();
 
   if (!creator) {
     return {
@@ -72,14 +72,18 @@ export default async function HandlePage({
     notFound();
   }
 
-  const { data: creator } = await supabase
+  const { data: creator, error: creatorError } = await supabase
     .from("creator_applications")
     .select("user_id, name, handle, bio, category, tier, phantom_mode, created_at, avatar_url, banner_url, website, location")
     .eq("handle", clean)
     .eq("status", "approved")
-    .single();
+    .maybeSingle();
 
-  if (!creator) notFound();
+  if (creatorError) {
+    console.error("[fan-page] creator fetch error", creatorError);
+  }
+
+  if (!creator) return notFound();
 
   const { data: contentItems } = await supabase
     .from("content_items_v2")
