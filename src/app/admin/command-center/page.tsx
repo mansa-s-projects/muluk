@@ -161,7 +161,7 @@ export default function AdminCommandCenter() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
               <KPI label="Total Fans" value={stats ? String(stats.users.totalFans) : '—'} sub="registered" icon={Users} />
               <KPI label="Pending Apps" value={stats ? String(stats.users.pendingApplications) : '—'} sub="awaiting review" icon={Activity} />
-              <KPI label="Conversion" value={stats ? `${stats.engagement.conversionRate.toFixed(1)}%` : '—'} sub="fan → paid" icon={Zap} />
+              <KPI label="Conversion" value={stats ? `${(stats.users.totalFans > 0 ? (stats.finances.totalTransactions / stats.users.totalFans) * 100 : 0).toFixed(1)}%` : '—'} sub="fan → paid" icon={Zap} />
             </div>
 
             {/* Event stream + quick links */}

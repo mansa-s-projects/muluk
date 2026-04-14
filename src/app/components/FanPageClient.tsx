@@ -36,6 +36,14 @@ type SocialConnection = {
   url: string | null;
 };
 
+type SubscriptionOffer = {
+  id: string;
+  title: string;
+  price_label: string | null;
+  description: string | null;
+  whop_link: string | null;
+};
+
 type Props = {
   creator: Creator;
   contentItems: ContentItem[];
@@ -43,6 +51,7 @@ type Props = {
   socialConnections: SocialConnection[];
   initialPaymentSuccess: boolean;
   initialCode?: string;
+  subscriptionOffers?: SubscriptionOffer[];
 };
 
 const FAN_CODE_RE = /^FAN-[A-Z2-9]{10}$/;
@@ -109,6 +118,7 @@ export default function FanPageClient({
   socialConnections,
   initialPaymentSuccess,
   initialCode,
+  subscriptionOffers = [],
 }: Props) {
   const tier = tierStyle(creator.tier);
 
@@ -1302,6 +1312,117 @@ export default function FanPageClient({
                 Tweet it
               </a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Subscription tiers ─────────────────────────────────────── */}
+      {subscriptionOffers.length > 0 && (
+        <div
+          style={{
+            maxWidth: 640,
+            margin: "0 auto",
+            padding: "0 20px 80px",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 9,
+              letterSpacing: "0.28em",
+              textTransform: "uppercase" as const,
+              color: "rgba(255,255,255,0.2)",
+              marginBottom: 16,
+            }}
+          >
+            Subscribe
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {subscriptionOffers.map((offer) => (
+              <div
+                key={offer.id}
+                style={{
+                  background: "rgba(200,169,110,0.04)",
+                  border: "1px solid rgba(200,169,110,0.14)",
+                  borderRadius: 10,
+                  padding: "20px 22px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: "rgba(255,255,255,0.85)",
+                      marginBottom: offer.description ? 4 : 0,
+                    }}
+                  >
+                    {offer.title}
+                  </div>
+                  {offer.description && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "rgba(255,255,255,0.35)",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {offer.description}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+                  {offer.price_label && (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono), monospace",
+                        fontSize: 12,
+                        color: "#c8a96e",
+                        whiteSpace: "nowrap" as const,
+                      }}
+                    >
+                      {offer.price_label}
+                    </span>
+                  )}
+                  {offer.whop_link ? (
+                    <a
+                      href={offer.whop_link}
+                      style={{
+                        display: "inline-block",
+                        padding: "10px 18px",
+                        background: "#c8a96e",
+                        color: "#0a0800",
+                        fontFamily: "var(--font-mono), monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase" as const,
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        borderRadius: 6,
+                        whiteSpace: "nowrap" as const,
+                      }}
+                    >
+                      Subscribe
+                    </a>
+                  ) : (
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono), monospace",
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.2)",
+                      }}
+                    >
+                      Coming soon
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

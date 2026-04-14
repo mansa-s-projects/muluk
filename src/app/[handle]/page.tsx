@@ -111,6 +111,16 @@ export default async function HandlePage({
     .eq("creator_id", creator.user_id)
     .order("connected_at", { ascending: false });
 
+  // Fetch recurring subscription offers (identified by "/" in price_label)
+  const { data: subscriptionOffers } = await supabase
+    .from("offers")
+    .select("id, title, price_label, description, whop_link")
+    .eq("creator_id", creator.user_id)
+    .eq("status", "published")
+    .ilike("price_label", "%/%")
+    .order("created_at", { ascending: false })
+    .limit(3);
+
   const payment = typeof query.payment === "string" ? query.payment : undefined;
   const codeFromQuery = typeof query.code === "string" ? query.code : undefined;
 
@@ -150,6 +160,13 @@ export default async function HandlePage({
       }))}
       initialPaymentSuccess={payment === "success"}
       initialCode={codeFromQuery}
+      subscriptionOffers={(subscriptionOffers ?? []).map((o) => ({
+        id:          o.id as string,
+        title:       o.title as string,
+        price_label: (o.price_label ?? null) as string | null,
+        description: (o.description ?? null) as string | null,
+        whop_link:   (o.whop_link ?? null) as string | null,
+      }))}
     />
   );
 }

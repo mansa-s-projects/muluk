@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendCreatorApprovalEmail, sendCreatorRejectionEmail } from "@/lib/notifications/resend";
 
 // Get single application details
 export async function GET(
@@ -145,11 +146,27 @@ export async function PATCH(
         push_enabled: false,
       }, { onConflict: "creator_id" });
 
-      // TODO: Send approval email
-      console.log(`Application ${id} approved - email should be sent to ${application.email}`);
+      // Send approval email (non-blocking — log on failure, never throw)
+      if (application.email) {
+        sendCreatorApprovalEmail({
+          name: application.name ?? "Creator",
+          to: application.email,
+        }).catch((err: unknown) =>
+          console.error(`[admin/applications] approval email failed for ${id}:`, err)
+        );
+      } else {
+        console.warn(`[admin/applications] no email on application ${id} — skipping approval email`);
+      }
     } else if (status === "rejected") {
-      // TODO: Send rejection email
-      console.log(`Application ${id} rejected - email should be sent to ${application.email}`);
+      if (application.email) {
+        sendCreatorRejectionEmail({
+          name: application.name ?? "Applicant",
+          to: application.email,
+          reason: adminNotes ?? undefined,
+        }).catch((err: unknown) =>
+          console.error(`[admin/applications] rejection email failed for ${id}:`, err)
+        );
+      }
     }
 
     return NextResponse.json({
