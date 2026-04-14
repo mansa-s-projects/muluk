@@ -7,7 +7,9 @@
     "dev:raw": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx tsx scripts/seed_from_folders.ts",
+    "seed:dry": "npx tsx scripts/seed_from_folders.ts --dry-run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

@@ -293,7 +293,7 @@ export default function PayLinkClient({
   function startPolling() {
     const storedTs =
       typeof window !== "undefined"
-        ? sessionStorage.getItem("cipher_checkout_started")
+        ? sessionStorage.getItem("muluk_checkout_started")
         : null;
     const since = storedTs
       ? new Date(parseInt(storedTs, 10)).toISOString()
@@ -337,7 +337,7 @@ export default function PayLinkClient({
   function startCheckout() {
     if (!checkoutUrl) return;
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("cipher_checkout_started", Date.now().toString());
+      sessionStorage.setItem("muluk_checkout_started", Date.now().toString());
     }
     setState("redirecting");
     window.location.href = checkoutUrl;
@@ -716,7 +716,7 @@ export default function PayLinkClient({
             color: "rgba(255,255,255,0.18)",
           }}
         >
-          Secured by Cipher · Powered by Whop
+          Secured by MULUK · Payments by Whop
         </div>
       </div>
     </>

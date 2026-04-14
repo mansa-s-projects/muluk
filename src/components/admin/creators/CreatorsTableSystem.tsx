@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Download, Ban, UserPlus } from 'lucide-react';
-import { Creator, t, fetchJsonOrThrow, Spinner, Card, TierPill, StatusPill, Pill, numf, $f } from '../shared';
+import { Creator, ActionModalData, t, fetchJsonOrThrow, Spinner, Card, TierPill, StatusPill, Pill, numf, $f } from '../shared';
 
-interface ActionModal {
-  type: string;
-  target?: Creator;
-  targets?: Creator[];
-  amount?: number;
-}
-
-export function CreatorsTableSystem({ onAction }: { onAction: (m: ActionModal) => void }) {
+export function CreatorsTableSystem({ onAction }: { onAction: (m: ActionModalData) => void }) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -77,7 +70,7 @@ export function CreatorsTableSystem({ onAction }: { onAction: (m: ActionModal) =
             <button onClick={() => {
               const targets = selected
                 .map(id => creators.find(x => x.user_id === id))
-                .filter(Boolean);
+                .filter((c): c is Creator => c !== undefined);
               if (targets.length > 0) {
                 onAction({ type: 'ban_creators_bulk', targets });
               }

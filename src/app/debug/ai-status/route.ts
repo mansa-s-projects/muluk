@@ -6,7 +6,7 @@ export async function GET() {
     // OpenRouter - used for ALL AI features
     openrouter: {
       keySet: !!process.env.OPENROUTER_API_KEY,
-      referer: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+      referer: process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip",
     },
     // Supabase (for saving generated content)
     supabase: {

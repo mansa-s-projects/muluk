@@ -1,15 +1,8 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, AlertTriangle, Radio } from 'lucide-react';
-import { PlatformStats, RealtimeEvent, t, numf, $f, ago, Card, SectionLabel, Spinner, GMVTicker, Pill, SeverityDot } from '../shared';
+import { PlatformStats, RealtimeEvent, ActionModalData, t, numf, $f, ago, Card, SectionLabel, Spinner, GMVTicker, Pill, SeverityDot } from '../shared';
 
-interface ActionModal {
-  type: string;
-  target?: unknown;
-  targets?: unknown[];
-  amount?: number;
-}
-
-export function OverviewSystem({ stats, events, onAction }: { stats: PlatformStats | null; events: RealtimeEvent[]; onAction: (m: ActionModal) => void }) {
+export function OverviewSystem({ stats, events, onAction }: { stats: PlatformStats | null; events: RealtimeEvent[]; onAction: (m: ActionModalData) => void }) {
   if (!stats) return <Spinner />;
   const incidents = events.filter(e => e.severity === 'critical' || e.severity === 'warning').slice(0, 8);
   const liveActivity = events.slice(0, 20);

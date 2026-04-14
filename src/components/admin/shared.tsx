@@ -49,6 +49,13 @@ export interface RealtimeEvent {
 }
 export type System = 'overview' | 'creator-intel' | 'revenue-intel' | 'risk' | 'funnel' | 'creators' | 'fans' | 'messages' | 'audit';
 
+export interface ActionModalData {
+  type: string;
+  target?: Creator;
+  targets?: Creator[];
+  amount?: number;
+}
+
 // SCORE ENGINE
 export function scoreCreator(c: Creator) {
   const { content_count: cc, fan_count: fc, transaction_count: tc, total_volume: tv } = c.stats;
@@ -206,12 +213,6 @@ export function GMVTicker({ value }: { value: number }) {
   return <span style={{ fontFamily: t.serif, fontSize: 42, fontWeight: 300, color: t.goldBright, letterSpacing: '-0.02em', lineHeight: 1 }}>{$f(display)}</span>;
 }
 
-interface ActionModalData {
-  type: string;
-  target?: Creator;
-  targets?: Creator[];
-  amount?: number;
-}
 
 export function ActionModal({ modal, onClose, onSuccess }: { modal: ActionModalData; onClose: () => void; onSuccess: () => void }) {
   const [reason, setReason] = useState('');

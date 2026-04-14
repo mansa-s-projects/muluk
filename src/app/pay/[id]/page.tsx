@@ -1,6 +1,7 @@
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { getBaseUrl } from "@/lib/utils/getBaseUrl";
 import PayLinkClient from "./PayLinkClient";
 import type { PayLink } from "./PayLinkClient";
 
@@ -34,10 +35,11 @@ const fetchPayLinkCached = cache(fetchPayLink);
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params;
   const link = await fetchPayLinkCached(id);
-  if (!link) return { title: "Not Found" };
+  if (!link) return { title: "Not Found — MULUK" };
   return {
-    title: link.title,
+    title: `${link.title} — MULUK`,
     description: link.description ?? "Exclusive content — unlock after purchase.",
+    robots: { index: false, follow: false },
   };
 }
 
@@ -51,25 +53,16 @@ export default async function PayLinkPage({ params }: PageProps) {
   // Inject redirect_url into the Whop checkout URL
   let checkoutUrl: string | null = whop_checkout_url ?? null;
   if (checkoutUrl) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "";
-    if (!baseUrl) {
-      if (process.env.NODE_ENV !== "production") {
-        console.error("NEXT_PUBLIC_BASE_URL is not configured");
+    try {
+      const baseUrl = getBaseUrl();
+      const redirectTarget = `${baseUrl}/pay/${payLink.slug ?? payLink.id}?success=1`;
+      const parsed = new URL(checkoutUrl);
+      if (!parsed.searchParams.has("redirect_url")) {
+        parsed.searchParams.set("redirect_url", redirectTarget);
+        checkoutUrl = parsed.toString();
       }
-      // In production, skip injecting redirectTarget to avoid relative URLs
-      checkoutUrl = whop_checkout_url ?? null;
-    } else {
-      try {
-        new URL(baseUrl); // Validate it's a proper URL
-        const redirectTarget = `${baseUrl}/pay/${payLink.slug ?? payLink.id}?success=1`;
-        const parsed = new URL(checkoutUrl);
-        if (!parsed.searchParams.has("redirect_url")) {
-          parsed.searchParams.set("redirect_url", redirectTarget);
-          checkoutUrl = parsed.toString();
-        }
-      } catch {
-        // leave checkoutUrl as-is if URL parsing fails
-      }
+    } catch {
+      // leave checkoutUrl as-is if URL parsing fails
     }
   }
 

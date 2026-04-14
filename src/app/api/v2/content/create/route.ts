@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   }
 
   // ── Build unlock URL ──────────────────────────────────────────────────────
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip";
   const unlockUrl = `${baseUrl}/unlock/${code}`;
 
   return NextResponse.json({

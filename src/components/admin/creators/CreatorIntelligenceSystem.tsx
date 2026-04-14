@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Eye, AlertTriangle, Star, Ban, X, Mail, Link, Wallet, UserCheck, FileText } from 'lucide-react';
-import { Creator, t, fetchJsonOrThrow, scoreCreator, ScoreBar, LifecyclePill, TierPill, Pill, Card, SectionLabel, Spinner, numf, $f, ago } from '../shared';
+import { Creator, ActionModalData, t, fetchJsonOrThrow, scoreCreator, ScoreBar, LifecyclePill, TierPill, Pill, Card, SectionLabel, Spinner, numf, $f, ago } from '../shared';
 
 interface Transaction {
   status: string;
@@ -18,14 +18,23 @@ interface AdminNote {
   created_at: string;
 }
 
-export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionModal) => void }) {
+interface CreatorDetails {
+  creator?: { email?: string; referral_handle?: string };
+  stats?: { totalContent?: number; totalFans?: number; totalTransactions?: number; isCurrentlyBanned?: boolean };
+  wallet?: { balance?: number; total_earnings?: number };
+  transactions?: Transaction[];
+  socials?: SocialAccount[];
+  notes?: AdminNote[];
+}
+
+export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionModalData) => void }) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'churn' | 'revenue' | 'engagement' | 'health'>('churn');
   const [filter, setFilter] = useState<'all' | 'at_risk' | 'dormant' | 'no_conversion'>('all');
   const [selected, setSelected] = useState<Creator | null>(null);
-  const [details, setDetails] = useState<Record<string, unknown> | null>(null);
+  const [details, setDetails] = useState<CreatorDetails | null>(null);
   const [detailsError, setDetailsError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -50,9 +59,9 @@ export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionMo
     setDetails(null);
     setDetailsError(null);
     try {
-      const d = await fetchJsonOrThrow<{ success?: boolean; profile?: unknown }>(`/api/admin/creators/${c.user_id}`);
+      const d = await fetchJsonOrThrow<{ success?: boolean; profile?: CreatorDetails }>(`/api/admin/creators/${c.user_id}`);
       if (d.success && d.profile) {
-        setDetails(d.profile);
+        setDetails(d.profile as unknown as CreatorDetails & Record<string, unknown>);
       } else {
         setDetailsError('Failed to load creator details');
       }
@@ -189,7 +198,7 @@ export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionMo
                     { label: 'Content Items', value: details.stats?.totalContent, color: t.white },
                     { label: 'Fans', value: details.stats?.totalFans, color: t.blue },
                     { label: 'Sales', value: details.stats?.totalTransactions, color: t.white },
-                    { label: 'Total Volume', value: $f((details.transactions as Transaction[] || []).reduce((s: number, tx: Transaction) => s + (tx.status === 'success' ? (tx.amount || 0) : 0), 0)), color: t.gold },
+                    { label: 'Total Volume', value: $f((details.transactions || []).reduce((s: number, tx: Transaction) => s + (tx.status === 'success' ? (tx.amount || 0) : 0), 0)), color: t.gold },
                   ].map(s => (
                     <Card key={s.label} style={{ padding: 14, border: s.label === 'Fans' ? `1px solid ${t.blue}33` : undefined }}>
                       <div style={{ fontFamily: t.mono, fontSize: 9, color: t.dim, textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: 6 }}>{s.label}</div>
@@ -199,7 +208,7 @@ export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionMo
                 </div>
                 {/* Wallet + Withdraw */}
                 {details.wallet && (() => {
-                  const bal = details.wallet.balance || 0;
+                  const bal = details.wallet?.balance || 0;
                   const canWithdraw = bal > 0;
                   return (
                     <Card style={{ border: canWithdraw ? `1px solid ${t.green}33` : `1px solid ${t.rim}` }}>
@@ -235,18 +244,18 @@ export function CreatorIntelligenceSystem({ onAction }: { onAction: (m: ActionMo
                   );
                 })()}
                 {/* Socials */}
-                {details.socials?.length > 0 && (
+                {(details.socials?.length ?? 0) > 0 && (
                   <Card><SectionLabel>Connected Socials</SectionLabel>
                     <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-                      {details.socials.map((s: SocialAccount) => <div key={s.platform} style={{ padding: '5px 10px', background: t.faint, borderRadius: 5, fontFamily: t.mono, fontSize: 10, color: t.muted }}><span style={{ textTransform: 'capitalize' }}>{s.platform}</span> · <span style={{ color: t.gold }}>{numf(s.follower_count || 0)}</span></div>)}
+                      {(details.socials || []).map((s: SocialAccount) => <div key={s.platform} style={{ padding: '5px 10px', background: t.faint, borderRadius: 5, fontFamily: t.mono, fontSize: 10, color: t.muted }}><span style={{ textTransform: 'capitalize' }}>{s.platform}</span> · <span style={{ color: t.gold }}>{numf(s.follower_count || 0)}</span></div>)}
                     </div>
                   </Card>
                 )}
                 {/* Admin Notes */}
-                {details.notes?.length > 0 && (
-                  <Card style={{ padding: 14 }}><SectionLabel>Admin Notes ({details.notes.length})</SectionLabel>
+                {(details.notes?.length ?? 0) > 0 && (
+                  <Card style={{ padding: 14 }}><SectionLabel>Admin Notes ({details.notes?.length})</SectionLabel>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 160, overflowY: 'auto' }}>
-                      {details.notes.slice(0, 5).map((n: AdminNote) => (
+                      {(details.notes || []).slice(0, 5).map((n: AdminNote) => (
                         <div key={n.id} style={{ padding: '8px 10px', background: t.faint, borderRadius: 6, borderLeft: `2px solid ${t.goldDim}` }}>
                           <div style={{ fontFamily: t.sans, fontSize: 12, color: t.muted, marginBottom: 3 }}>{n.note}</div>
                           <div style={{ fontFamily: t.mono, fontSize: 9, color: t.dim }}>{ago(n.created_at)}</div>

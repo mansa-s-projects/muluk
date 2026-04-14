@@ -1,14 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { RealtimeEvent, Creator, t, scoreCreator, Card, SectionLabel, SeverityDot, Pill, LifecyclePill, StatusPill, $f, Spinner, ago } from '../shared';
+import { RealtimeEvent, Creator, ActionModalData, t, scoreCreator, Card, SectionLabel, SeverityDot, Pill, LifecyclePill, StatusPill, $f, Spinner, ago } from '../shared';
 
-interface ActionModal {
-  type: string;
-  target?: Creator;
-  targets?: Creator[];
-  amount?: number;
-}
-
-export function RiskModerationSystem({ events, onAction }: { events: RealtimeEvent[]; onAction: (m: ActionModal) => void }) {
+export function RiskModerationSystem({ events, onAction }: { events: RealtimeEvent[]; onAction: (m: ActionModalData) => void }) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { fetch('/api/admin/creators?limit=100').then(r => r.json()).then(d => { setCreators(d.creators || []); setLoading(false); }).catch(() => setLoading(false)); }, []);

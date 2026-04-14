@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { provisionWhopCheckout } from "@/lib/whop";
+import { getBaseUrl } from "@/lib/utils/getBaseUrl";
 
 /**
  * GET /api/payment-links
@@ -78,19 +79,11 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Validate baseUrl before attempting Whop provisioning
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim() || "";
-  let baseUrlValid = false;
-  if (baseUrl) {
-    try {
-      new URL(baseUrl);
-      baseUrlValid = true;
-    } catch {
-      console.error("Invalid NEXT_PUBLIC_BASE_URL:", baseUrl);
-    }
-  }
-
-  if (!baseUrlValid) {
-    console.error("NEXT_PUBLIC_BASE_URL is missing or invalid");
+  let baseUrl: string;
+  try {
+    baseUrl = getBaseUrl();
+  } catch {
+    console.error("NEXT_PUBLIC_BASE_URL / NEXT_PUBLIC_SITE_URL is missing or invalid");
     return NextResponse.json(
       { error: "Server misconfiguration: payment provisioning unavailable" },
       { status: 500 }

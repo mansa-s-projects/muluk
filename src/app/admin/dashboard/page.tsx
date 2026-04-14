@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LayoutDashboard, Users, BarChart2, Shield, AlertTriangle, RefreshCw, Crosshair, Target, Brain, Radio, MessageSquare, ClipboardList } from 'lucide-react';
-import { System, PlatformStats, RealtimeEvent, t, ActionModal, fetchJsonOrThrow, $f } from '@/components/admin/shared';
+import { System, PlatformStats, RealtimeEvent, ActionModalData, t, ActionModal, fetchJsonOrThrow, $f } from '@/components/admin/shared';
 
 // Import newly refactored systems
 import { OverviewSystem } from '@/components/admin/overview/OverviewSystem';
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [actionModal, setActionModal] = useState<any>(null);
+  const [actionModal, setActionModal] = useState<ActionModalData | null>(null);
 
   const fetchStats = useCallback(async () => {
     try { const d = await fetchJsonOrThrow<{ success?: boolean; stats?: PlatformStats }>('/api/admin/stats?days=30'); if (d.success && d.stats) setStats(d.stats); } catch {}

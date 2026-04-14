@@ -1,5 +1,5 @@
 # CIPHER — Project Status
-> Last updated: April 9, 2026
+> Last updated: April 14, 2026
 
 ---
 
@@ -7,7 +7,7 @@
 
 | Check | Status | Notes |
 |---|---|---|
-| `npm run build` | ✅ PASSING | 119/119 pages, 0 errors |
+| `npm run build` | ✅ PASSING | 129/129 pages, 0 errors |
 | `npm run lint` | ✅ PASSING (0 errors) | 70 pre-existing warnings remain |
 | `supabase db push` | ✅ PASSING | All 47 migrations applied — use `npx supabase db push` (supabase not in PATH) |
 
@@ -27,7 +27,7 @@
 | Vercel: `RESEND_API_KEY` | ✅ Set in .env.local | Verify Vercel copy matches |
 | Vercel: `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST` | ✅ Set in .env.local | Verify Vercel copy matches |
 | Vercel: OAuth credentials (Twitter, IG, TikTok, Telegram, YouTube) | ⚠️ Partially set | YouTube ✅, others empty — see OAuth section below |
-| OAuth callbacks updated to prod domain | ❌ MANUAL STEP | Each provider dashboard must have `https://cipher-theta-ruddy.vercel.app/api/auth/<platform>/callback` |
+| OAuth callbacks updated to prod domain | ❌ MANUAL STEP | Each provider dashboard must have `https://muluk.vip/api/auth/<platform>/callback` |
 | Production deploy executed | ❌ BLOCKED | Blocked by OAuth callback URLs + confirm Vercel env vars match |
 | Post-deploy smoke test | ❌ BLOCKED | Blocked by deploy |
 
@@ -201,7 +201,7 @@ NEXT_PUBLIC_SITE_URL                    ✅ set locally — update to prod domai
 2. ~~Fix setAll cookie bug in 4 series routes~~ — ✅ Done. Build confirmed passing.
 3. ~~Add `WHOP_API_KEY`~~ — ✅ Done (was WHOP_COMPANY_ID, renamed).
 4. ~~Remove OpenAI / use OpenRouter~~ — ✅ Done. Marketing agent now uses `OPENROUTER_API_KEY`.
-5. **Update OAuth callback URLs** to prod domain (`https://cipher-theta-ruddy.vercel.app/api/auth/<platform>/callback`) in each provider dashboard; update `*_CALLBACK_URL` env vars in Vercel
+5. **Update OAuth callback URLs** to prod domain (`https://muluk.vip/api/auth/<platform>/callback`) in each provider dashboard; update `*_CALLBACK_URL` env vars in Vercel
 6. **Confirm all other Vercel env vars** match `.env.local` — especially `TOKEN_ENCRYPTION_KEY` (same 64-char hex) and `WHOP_WEBHOOK_SECRET`
 7. **Execute production deploy** (`git push` to Vercel-linked branch)
 8. **Run smoke test**: landing → waitlist → login → apply → dashboard loop
