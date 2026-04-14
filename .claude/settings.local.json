@@ -9,7 +9,13 @@
       "Bash(grep -n \"CREATE TABLE.*creator_profiles\\\\|ALTER TABLE.*creator_profiles\" \"c:\\\\Users\\\\mehdi\\\\Desktop\\\\MULUK\\\\supabase\\\\migrations\"/*.sql)",
       "Bash(grep -l \"creator_applications\\\\|creator_profiles\" \"c:\\\\Users\\\\mehdi\\\\Desktop\\\\MULUK\\\\supabase\\\\migrations\"/*.sql)",
       "Bash(grep -n \"CREATE TABLE.*creator_applications\" \"c:\\\\Users\\\\mehdi\\\\Desktop\\\\MULUK\\\\supabase\\\\migrations\"/*.sql)",
-      "Bash(awk '{print $NF}')"
+      "Bash(awk '{print $NF}')",
+      "Bash(grep -i \"is_approved\" c:/Users/mehdi/Desktop/MULUK/supabase/migrations/*.sql)",
+      "Bash(xargs grep:*)",
+      "Bash(ls src/components/Instant*.tsx)",
+      "Bash(ls supabase/migrations/053*)",
+      "Bash(npm uninstall:*)",
+      "Bash(git add:*)"
     ]
   }
 }

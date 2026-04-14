@@ -9,7 +9,7 @@ import { isValidRole } from "./permissions";
 export const PUBLIC_ROUTES = new Set(["/", "/login", "/apply"]);
 
 const PUBLIC_PREFIXES   = ["/book", "/booking", "/r", "/vault", "/commission", "/tips", "/series"];
-const ADMIN_PREFIXES    = ["/admin", "/setup-admin"];
+const ADMIN_PREFIXES    = ["/admin"];
 const DEBUG_PREFIXES    = ["/debug"];
 const CREATOR_PREFIXES  = ["/dashboard", "/onboarding"];
 const FAN_PREFIXES      = ["/fan"];

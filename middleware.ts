@@ -26,6 +26,12 @@ function redirectTo(request: NextRequest, pathname: string): NextResponse {
   return NextResponse.redirect(url);
 }
 
+function privateResponse(response: NextResponse): NextResponse {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
 // ─────────────────────────────────────────────────────────────
 // MAIN HANDLER
 // ─────────────────────────────────────────────────────────────
@@ -45,7 +51,7 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // ── Build mutable response so cookies can be refreshed ──────
+  // ── Build mutable response so session cookies are refreshed ─
   const response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -72,8 +78,8 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Read role from JWT app_metadata — no extra DB query needed.
-  // The sync_role_to_jwt trigger keeps this current on every role change.
+  // Read role from JWT app_metadata — no extra DB query.
+  // Kept fresh by the sync_role_to_jwt trigger on every role change.
   const role = getRoleFromUser(user);
 
   // ── Debug routes: invisible in production ───────────────────
@@ -82,18 +88,41 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   }
 
   // ── Admin routes ─────────────────────────────────────────────
-  // Return 404 (not 401/403) for all non-admins — security by obscurity.
-  // Three gates must all pass:
-  //   1. User is authenticated
-  //   2. JWT role is admin or super_admin
-  //   3. Email is in the admin_allowlist (defence-in-depth; one DB query)
   if (isAdminRoute(pathname)) {
-    if (!user) {
-      return new NextResponse(null, { status: 404 });
+    // /admin/login is the public entry point for the admin system.
+    // Everyone can see it — but authenticated admins skip straight to the dashboard.
+    if (pathname === "/admin/login") {
+      if (user && hasMinimumRole(role, "admin")) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/admin/dashboard";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+      // Not yet an admin — show the login page
+      return response;
     }
+
+    // All other /admin/* routes enforce three sequential gates:
+    //
+    //  Gate 1 — Must be authenticated.
+    //           Unauthenticated users are redirected to the login page
+    //           (not 404, so an admin who is logged out can get back in).
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    //  Gate 2 — Must hold the admin or super_admin role.
+    //           Wrong-role users get 404 — they should not know this panel exists.
     if (!hasMinimumRole(role, "admin")) {
       return new NextResponse(null, { status: 404 });
     }
+
+    //  Gate 3 — Email must be in the admin_allowlist (defence-in-depth).
+    //           Even if someone gains the admin role via the DB, they still
+    //           need their email explicitly allowlisted by a super_admin.
     if (!user.email) {
       return new NextResponse(null, { status: 404 });
     }
@@ -102,24 +131,40 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
       return new NextResponse(null, { status: 404 });
     }
 
+    // All gates passed — attach role header and harden response
     response.headers.set("X-User-Role", role);
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    response.headers.set("Cache-Control", "private, no-store");
+    return privateResponse(response);
+  }
+
+  // ── /pending — approval holding page ────────────────────────
+  // Unauthenticated users hit the catch-all below → /login.
+  // Authenticated users who are already approved skip straight
+  // to the dashboard so they never see a stale pending screen.
+  if (pathname === "/pending") {
+    if (user && user.app_metadata?.is_approved === true) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
     return response;
   }
 
   // ── Creator routes (/dashboard, /onboarding) ─────────────────
-  // Requires authentication AND creator (or higher) role.
-  // Fans who land here are redirected to their own dashboard.
   if (isCreatorRoute(pathname)) {
-    if (!user) {
-      return redirectTo(request, "/login");
-    }
+    if (!user) return redirectTo(request, "/login");
     if (!hasMinimumRole(role, "creator")) {
-      // Fan trying to access creator dashboard — send to fan dashboard
+      // Fan trying to reach creator dashboard → send to fan dashboard
       const url = request.nextUrl.clone();
       url.pathname = "/fan";
-      url.searchParams.delete("next");
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    // Creator role but not yet approved → hold at /pending
+    if (user.app_metadata?.is_approved !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pending";
+      url.search = "";
       return NextResponse.redirect(url);
     }
     response.headers.set("X-User-Role", role);
@@ -127,35 +172,27 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
   }
 
   // ── Fan routes (/fan) ─────────────────────────────────────────
-  // Any authenticated user can access the fan dashboard.
   if (isFanRoute(pathname)) {
-    if (!user) {
-      return redirectTo(request, "/login");
-    }
+    if (!user) return redirectTo(request, "/login");
     response.headers.set("X-User-Role", role);
     return response;
   }
 
   // ── Marketing routes ─────────────────────────────────────────
   if (isMarketingRoute(pathname)) {
-    if (!user) {
-      return redirectTo(request, "/login");
-    }
+    if (!user) return redirectTo(request, "/login");
     response.headers.set("X-User-Role", role);
     return response;
   }
 
   // ── All other non-public routes ───────────────────────────────
-  if (!isPublicRoute(pathname)) {
-    if (!user) {
-      return redirectTo(request, "/login");
-    }
+  if (!isPublicRoute(pathname) && !user) {
+    return redirectTo(request, "/login");
   }
 
-  // ── SEO: noindex on all authenticated/private areas ──────────
+  // ── SEO: noindex on all private areas ────────────────────────
   if (shouldNoIndex(pathname)) {
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    response.headers.set("Cache-Control", "private, no-store");
+    privateResponse(response);
   }
 
   if (user) {
@@ -171,7 +208,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and static file extensions
     "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|map|txt|xml|woff|woff2|ttf)$).*)",
   ],
 };

@@ -93,21 +93,23 @@ export async function createWhopProduct(name: string, description?: string): Pro
  * Returns the plan including the checkout access_pass slug for building checkout URLs.
  */
 export async function createWhopPlan(params: {
-  product_id: string;
-  price_cents: number;
+  product_id:   string;
+  price_cents:  number;
   redirect_url: string;
   description?: string;
+  metadata?:    Record<string, string>;
 }): Promise<WhopPlan> {
   return whopFetch<WhopPlan>("/plans", {
     method: "POST",
     body: JSON.stringify({
-      product_id: params.product_id,
-      plan_type: "one_time",
+      product_id:    params.product_id,
+      plan_type:     "one_time",
       initial_price: (params.price_cents / 100).toFixed(2),
-      currency: "usd",
+      currency:      "usd",
       billing_period: 0,
-      redirect_url: params.redirect_url,
-      description: params.description ?? "",
+      redirect_url:  params.redirect_url,
+      description:   params.description ?? "",
+      ...(params.metadata ? { metadata: params.metadata } : {}),
     }),
   });
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorProvider } from "@/app/dashboard/context/CreatorContext";
 import { CommandBar } from "./CommandBar";
+import InstantLinkButton from "@/components/InstantLinkButton";
 
 // ─── Design tokens ──────────────────────────────────────────────────────────
 const mono = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" } as const;
@@ -31,10 +32,12 @@ const NAV_GROUPS = [
   {
     label: "MONETIZATION",
     items: [
-      { key: "vault",    label: "Vault",     href: "/dashboard/vault",     icon: "▦" },
-      { key: "bookings", label: "Bookings",  href: "/dashboard/bookings",  icon: "◷" },
-      { key: "series",   label: "Series",    href: "/dashboard/series",    icon: "▣" },
-      { key: "tips",     label: "Tip Jar",   href: "/dashboard/tips",      icon: "◬" },
+      { key: "vault",      label: "Vault",     href: "/dashboard/vault",                      icon: "▦" },
+      { key: "bookings",   label: "Bookings",  href: "/dashboard/bookings",                   icon: "◷" },
+      { key: "series",     label: "Series",    href: "/dashboard/series",                     icon: "▣" },
+      { key: "tips",       label: "Tip Jar",   href: "/dashboard/tips",                       icon: "◬" },
+      { key: "pricing",    label: "Pricing",   href: "/dashboard/monetization/pricing",       icon: "◈" },
+      { key: "pay-links",  label: "Pay Links", href: "/dashboard/monetization/pay-links",     icon: "◪" },
     ],
   },
   {
@@ -42,7 +45,6 @@ const NAV_GROUPS = [
     items: [
       { key: "commissions", label: "Commissions", href: "/dashboard/commissions", icon: "◫" },
       { key: "deals",       label: "Brand Deals",  href: "/dashboard/deals",       icon: "◯" },
-      { key: "pay-links",   label: "Pay Links",    href: "/dashboard/rate-card",   icon: "◪" },
     ],
   },
   {
@@ -421,6 +423,9 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
 
       {/* Global command bar — accessible from any dashboard page via "/" */}
       <CommandBar userId={userId} />
+
+      {/* Floating instant pay link generator */}
+      <InstantLinkButton />
     </>
   );
 }

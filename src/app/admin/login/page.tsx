@@ -1,108 +1,148 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useTransition, useState, useRef } from "react";
+import { adminLoginAction } from "./actions";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setError(null);
 
-    const supabase = createClient();
+    const formData = new FormData(e.currentTarget);
 
-    try {
-      // 1. Sign in
-      const { data: authData, error: authError } = 
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-      if (authError) throw authError;
-
-      // 2. Check if user is admin
-      const { data: adminData, error: adminError } = await supabase
-        .from("admin_users")
-        .select("role")
-        .eq("user_id", authData.user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        await supabase.auth.signOut();
-        throw new Error("Invalid credentials or insufficient permissions");
+    startTransition(async () => {
+      const result = await adminLoginAction(formData);
+      // adminLoginAction redirects on success — we only reach here on error
+      if (result?.error) {
+        setError(result.error);
       }
-
-      // 3. Redirect to command center
-      router.push("/admin/command-center");
-      router.refresh();
-
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-      <div className="w-full max-w-md p-8 bg-[#111] border border-[#222] rounded-xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#d4af37] mb-2">MULUK</h1>
-          <p className="text-gray-400">Admin Command Center</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-[#060610] px-4">
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(200,169,110,0.10) 0%, transparent 70%)",
+        }}
+      />
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded text-red-400 text-sm">
-            {error}
+      <div className="relative w-full max-w-md">
+        {/* Gold top line */}
+        <div
+          aria-hidden
+          className="absolute top-0 left-8 right-8 h-px"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(200,169,110,0.6), transparent)",
+          }}
+        />
+
+        <div className="rounded-2xl border border-white/[0.07] bg-[#0f0f1e] shadow-2xl px-10 py-12">
+          {/* Logo */}
+          <div className="text-center mb-10">
+            <div
+              className="mx-auto mb-4 w-11 h-11 rounded-full flex items-center justify-center text-xl"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(200,169,110,0.18), rgba(200,169,110,0.04))",
+                border: "1px solid rgba(200,169,110,0.28)",
+                color: "#c8a96e",
+              }}
+            >
+              ✦
+            </div>
+            <h1
+              className="text-3xl font-light tracking-widest mb-1"
+              style={{ color: "#c8a96e", fontFamily: "var(--font-display, serif)" }}
+            >
+              MULUK
+            </h1>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-white/30 font-mono">
+              Admin Access
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label htmlFor="admin-email" className="block text-sm text-gray-400 mb-1">Email</label>
-            <input
-              id="admin-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#333] rounded text-white focus:border-[#d4af37] focus:outline-none"
-              placeholder="admin@example.com"
-            />
-          </div>
+          {/* Error banner */}
+          {error && (
+            <div
+              role="alert"
+              className="mb-6 px-4 py-3 rounded-lg text-sm text-red-400 border"
+              style={{
+                background: "rgba(224,85,85,0.08)",
+                borderColor: "rgba(224,85,85,0.22)",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-          <div>
-            <label htmlFor="admin-password" className="block text-sm text-gray-400 mb-1">Password</label>
-            <input
-              id="admin-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-[#0a0a0a] border border-[#333] rounded text-white focus:border-[#d4af37] focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
+          {/* Login form */}
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-5" noValidate>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="admin-email"
+                className="block text-[10px] tracking-[0.2em] uppercase text-white/35 font-mono"
+              >
+                Email
+              </label>
+              <input
+                id="admin-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                disabled={isPending}
+                className="w-full px-4 py-3 rounded-md text-sm text-white/90 bg-white/[0.03] border border-white/[0.09] outline-none transition-all placeholder:text-white/20 focus:border-[rgba(200,169,110,0.4)] focus:ring-2 focus:ring-[rgba(200,169,110,0.07)] disabled:opacity-50"
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#d4af37] hover:bg-[#c4a030] text-black font-semibold rounded transition-colors disabled:opacity-50"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
+            <div className="space-y-1.5">
+              <label
+                htmlFor="admin-password"
+                className="block text-[10px] tracking-[0.2em] uppercase text-white/35 font-mono"
+              >
+                Password
+              </label>
+              <input
+                id="admin-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                disabled={isPending}
+                className="w-full px-4 py-3 rounded-md text-sm text-white/90 bg-white/[0.03] border border-white/[0.09] outline-none transition-all placeholder:text-white/20 focus:border-[rgba(200,169,110,0.4)] focus:ring-2 focus:ring-[rgba(200,169,110,0.07)] disabled:opacity-50"
+                placeholder="••••••••••"
+              />
+            </div>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Admin access is restricted.</p>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full py-3 mt-2 rounded-md text-[11px] tracking-[0.18em] uppercase font-mono font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: isPending ? "rgba(200,169,110,0.10)" : "#c8a96e",
+                color: isPending ? "#c8a96e" : "#0a0800",
+                border: "1px solid #c8a96e",
+              }}
+            >
+              {isPending ? "Verifying…" : "Sign In"}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <p className="mt-8 text-center text-[9px] tracking-[0.12em] uppercase text-white/20 font-mono">
+            Admin access is restricted and monitored.
+          </p>
         </div>
       </div>
     </div>

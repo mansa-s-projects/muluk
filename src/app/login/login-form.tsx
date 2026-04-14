@@ -90,7 +90,15 @@ export default function LoginForm() {
       }).catch(() => {});
     }
 
-    router.replace(nextPath);
+    // Gate: only approved users reach the dashboard
+    const { data: profile } = await supabase
+      .from("users")
+      .select("is_approved")
+      .eq("id", authData.user?.id ?? "")
+      .maybeSingle();
+
+    const destination = profile?.is_approved === true ? nextPath : "/pending";
+    router.replace(destination);
     router.refresh();
   };
 

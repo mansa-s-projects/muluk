@@ -95,8 +95,11 @@ export async function POST(req: Request) {
 
   // ── payment.completed ─────────────────────────────────────────────────────
   if (eventType === "payment.completed") {
-    // Route by metadata priority: vault → commission → tip → fan_code
+    // Route by metadata priority: instant_link → booking → vault → commission → tip → fan_code
     const paymentMeta = (data.metadata as Record<string, unknown>) ?? {};
+    if (paymentMeta.instant_link_payment === "true") {
+      return handleInstantLinkPaymentCompleted(supabase, data, paymentMeta);
+    }
     if (paymentMeta.booking_id && paymentMeta.booking_payment === "true") {
       return handleBookingPaymentCompleted(supabase, data, paymentMeta);
     }
@@ -897,4 +900,57 @@ async function handleSeriesPurchaseCompleted(
     `[whop-webhook] series purchase paid — id=${purchaseId} payment=${whopPaymentId}`
   );
   return NextResponse.json({ received: true, action: "series_purchase_confirmed" });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Instant pay link — mark instant_purchases row as paid so fan can unlock
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function handleInstantLinkPaymentCompleted(
+  supabase: ReturnType<typeof getSupabase>,
+  data: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+) {
+  const whopPaymentId = String(data.id ?? "");
+  const buyerToken    = String(metadata.buyer_token ?? "");
+  const linkId        = String(metadata.link_id     ?? "");
+
+  if (!whopPaymentId || !buyerToken || !linkId) {
+    return NextResponse.json({ error: "Missing instant link payment data" }, { status: 400 });
+  }
+
+  // Idempotency — skip if already paid
+  const { data: existing } = await supabase
+    .from("instant_purchases")
+    .select("status")
+    .eq("buyer_token", buyerToken)
+    .eq("link_id", linkId)
+    .single();
+
+  if (!existing) {
+    return NextResponse.json({ received: true, action: "instant_purchase_not_found" });
+  }
+  if (existing.status === "paid") {
+    return NextResponse.json({ received: true, action: "instant_purchase_duplicate_skipped" });
+  }
+
+  const { error: updateErr } = await supabase
+    .from("instant_purchases")
+    .update({
+      status:          "paid",
+      whop_payment_id: whopPaymentId,
+      paid_at:         new Date().toISOString(),
+    })
+    .eq("buyer_token", buyerToken)
+    .eq("link_id", linkId);
+
+  if (updateErr) {
+    console.error("[whop-webhook] instant purchase update failed", updateErr);
+    return NextResponse.json({ error: "Failed to confirm instant purchase" }, { status: 500 });
+  }
+
+  console.info(
+    `[whop-webhook] instant link paid — link=${linkId} token=${buyerToken.slice(0, 8)}… payment=${whopPaymentId}`
+  );
+  return NextResponse.json({ received: true, action: "instant_link_unlocked" });
 }
