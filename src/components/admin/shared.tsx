@@ -2,6 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 // TYPES
+export interface FanRow {
+  id?: string;
+  fan_code_id: string;
+  code: string;
+  display_name: string | null;
+  email: string | null;
+  lifetime_spend: number;
+  purchase_count: number;
+  last_purchase_at: string | null;
+  created_at: string;
+  is_online?: boolean;
+  creator_name?: string;
+  creator_handle?: string;
+  content_title?: string;
+  payment_method?: string;
+  last_seen_at?: string;
+  paid_at?: string;
+}
 export interface PlatformStats {
   users: {
     totalCreators: number; approvedCreators: number; pendingApplications: number;

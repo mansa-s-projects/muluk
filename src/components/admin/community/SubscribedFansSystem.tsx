@@ -40,9 +40,9 @@ export function SubscribedFansSystem() {
       const q = search.toLowerCase();
       list = list.filter(f =>
         f.code.toLowerCase().includes(q) ||
-        f.creator_name.toLowerCase().includes(q) ||
+        (f.creator_name?.toLowerCase() ?? '').includes(q) ||
         (f.creator_handle ?? '').toLowerCase().includes(q) ||
-        f.content_title.toLowerCase().includes(q)
+        (f.content_title?.toLowerCase() ?? '').includes(q)
       );
     }
     return list;
