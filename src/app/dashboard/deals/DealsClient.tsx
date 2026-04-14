@@ -213,7 +213,22 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
         ) : (
           <div style={{ background: "var(--card)", border: "1px solid var(--rim)", borderRadius: 16, overflow: "hidden" }}>
             {deals.length === 0 ? (
-              <div style={{ padding: "4rem", textAlign: "center", color: "var(--muted)" }}>No deals yet. Add your first one.</div>
+              <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "12px", opacity: 0.25 }}>◯</div>
+                <p style={{ color: "var(--muted)", margin: "0 0 6px", fontSize: "0.9rem", fontWeight: 500 }}>
+                  No brand deals yet
+                </p>
+                <p style={{ color: "var(--dim)", margin: "0 0 20px", fontSize: "0.78rem", lineHeight: 1.6 }}>
+                  Log your first partnership — track value, status, and deadlines in one place.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {/* new deal modal opens via header button */}}
+                  style={{ padding: "9px 20px", background: "rgba(200,169,110,0.1)", border: "1px solid rgba(200,169,110,0.25)", borderRadius: 8, color: "var(--gold, #c8a96e)", fontSize: "0.75rem", fontFamily: "var(--font-mono, monospace)", letterSpacing: "0.1em", cursor: "pointer" }}
+                >
+                  + ADD DEAL
+                </button>
+              </div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>

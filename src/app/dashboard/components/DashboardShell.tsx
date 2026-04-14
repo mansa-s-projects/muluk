@@ -69,6 +69,10 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
   const router = useRouter();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Close mobile nav on route change
+  React.useEffect(() => { setMobileNavOpen(false); }, [pathname]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -84,8 +88,49 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
 
   return (
     <>
+      {/* ── Mobile top bar (hidden on desktop via media query) ─────────────── */}
+      <style>{`
+        @media (min-width: 768px) { .dash-mobile-bar { display: none !important; } .dash-overlay { display: none !important; } }
+        @media (max-width: 767px) { .dash-sidebar { transform: translateX(-100%); transition: transform 0.22s ease; } .dash-sidebar.open { transform: translateX(0); } .dash-main { margin-left: 0 !important; padding-top: 52px; } }
+      `}</style>
+
+      <div
+        className="dash-mobile-bar"
+        style={{ position: "fixed", top: 0, left: 0, right: 0, height: "52px", background: "rgba(8,8,15,0.98)", borderBottom: "1px solid rgba(255,255,255,0.055)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", zIndex: 200, backdropFilter: "blur(12px)" }}
+      >
+        <Link href="/dashboard" style={{ ...mono, fontSize: "13px", fontWeight: 500, letterSpacing: "0.3em", color: "var(--gold, #c8a96e)", textDecoration: "none" }}>
+          MULUK
+        </Link>
+        <button
+          type="button"
+          aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+          onClick={() => setMobileNavOpen((v) => !v)}
+          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "7px 10px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "4px" }}
+        >
+          {mobileNavOpen ? (
+            <span style={{ ...mono, fontSize: "14px", color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>✕</span>
+          ) : (
+            <>
+              <span style={{ width: "18px", height: "1.5px", background: "rgba(255,255,255,0.5)", display: "block" }} />
+              <span style={{ width: "18px", height: "1.5px", background: "rgba(255,255,255,0.5)", display: "block" }} />
+              <span style={{ width: "14px", height: "1.5px", background: "rgba(255,255,255,0.5)", display: "block" }} />
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileNavOpen && (
+        <div
+          className="dash-overlay"
+          onClick={() => setMobileNavOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 150 }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
+        className={`dash-sidebar${mobileNavOpen ? " open" : ""}`}
         style={{
           width: "220px",
           position: "fixed",
@@ -96,7 +141,7 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
           borderRight: "1px solid rgba(255,255,255,0.055)",
           display: "flex",
           flexDirection: "column",
-          zIndex: 100,
+          zIndex: 160,
           backdropFilter: "blur(12px)",
           overflowY: "auto",
           minHeight: 0,
@@ -415,7 +460,7 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
       </aside>
 
       {/* Main content offset */}
-      <div style={{ marginLeft: "220px" }}>
+      <div className="dash-main" style={{ marginLeft: "220px" }}>
         <CreatorProvider userId={userId} userEmail={userEmail} handle={handle ?? ""}>
           {children}
         </CreatorProvider>

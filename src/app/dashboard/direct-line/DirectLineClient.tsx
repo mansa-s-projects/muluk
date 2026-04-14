@@ -94,6 +94,8 @@ export default function DirectLineClient({ userId }: { userId: string }) {
 
   const [activeConvId, setActiveConvId] = useState<string | null>(toParam);
   const [newMsg, setNewMsg] = useState(isOffer ? "Hey, I have an exclusive offer for you — " : "");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const { conversations, loading: loadingConvs, markRead } = useConversations(userId);
   const { messages, loading: loadingMsgs, sending, send, bottomRef } = useMessages(userId, activeConvId);
@@ -103,17 +105,43 @@ export default function DirectLineClient({ userId }: { userId: string }) {
   const handleSelectConv = (fanId: string) => {
     setActiveConvId(fanId);
     markRead(fanId);
+    setSuggestions([]);
   };
 
   const handleSend = async () => {
     if (!newMsg.trim()) return;
     const text = newMsg.trim();
     setNewMsg("");
+    setSuggestions([]);
     await send(text);
   };
 
   const handleOffer = () => {
     setNewMsg("Hey, I have an exclusive offer for you — [OFFER: ");
+  };
+
+  const handleSuggestReply = async () => {
+    if (!activeConv || !messages.length) return;
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+    try {
+      const res = await fetch("/api/ai/direct-line/suggest-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fanName: activeConv.display_name ?? "Fan",
+          lastMessages: messages.slice(-6).map((m) => ({ body: m.body, isOwn: m.sender_id === userId })),
+          fanSpend: activeConv.total_spent ?? 0,
+          fanStatus: activeConv.status ?? "unknown",
+        }),
+      });
+      const data = await res.json();
+      if (data.suggestions) setSuggestions(data.suggestions);
+    } catch {
+      // silently fail — non-critical feature
+    } finally {
+      setLoadingSuggestions(false);
+    }
   };
 
   return (
@@ -167,12 +195,38 @@ export default function DirectLineClient({ userId }: { userId: string }) {
               <div ref={bottomRef} />
             </div>
 
+            {/* AI Suggestions */}
+            {suggestions.length > 0 && (
+              <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.04)", background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ ...mono, fontSize: "9px", letterSpacing: "0.16em", color: "rgba(200,169,110,0.45)", marginBottom: "2px" }}>AI SUGGESTIONS</div>
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setNewMsg(s); setSuggestions([]); }}
+                    style={{ textAlign: "left", padding: "8px 12px", background: "rgba(200,169,110,0.04)", border: "1px solid rgba(200,169,110,0.12)", borderRadius: "7px", color: "rgba(255,255,255,0.65)", fontSize: "12px", cursor: "pointer", ...body, lineHeight: 1.5 }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Composer */}
             <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "#0d0d0d" }}>
               <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
                 <button type="button" onClick={handleOffer}
                   style={{ padding: "9px 12px", background: "transparent", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "6px", color: GOLD, fontSize: "11px", cursor: "pointer", ...mono, whiteSpace: "nowrap", flexShrink: 0 }}>
                   + Offer
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSuggestReply}
+                  disabled={loadingSuggestions || !messages.length}
+                  style={{ padding: "9px 12px", background: "transparent", border: "1px solid rgba(200,169,110,0.15)", borderRadius: "6px", color: loadingSuggestions ? "rgba(200,169,110,0.35)" : "rgba(200,169,110,0.6)", fontSize: "11px", cursor: loadingSuggestions || !messages.length ? "not-allowed" : "pointer", ...mono, whiteSpace: "nowrap", flexShrink: 0 }}
+                  title="AI suggest reply"
+                >
+                  {loadingSuggestions ? "…" : "✦ AI"}
                 </button>
                 <textarea
                   value={newMsg}

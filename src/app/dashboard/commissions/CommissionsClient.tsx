@@ -160,8 +160,14 @@ export default function CommissionsClient({ initialCommissions, handle }: Props)
         {/* ── Table ── */}
         <div style={{ background: "var(--card)", border: "1px solid var(--rim)", borderRadius: 16, overflow: "hidden" }}>
           {filtered.length === 0 ? (
-            <div style={{ padding: "4rem", textAlign: "center", color: "var(--muted)" }}>
-              No{filter !== "all" ? ` ${filter}` : ""} commissions yet.
+            <div style={{ padding: "4rem 2rem", textAlign: "center" }}>
+              <div style={{ fontSize: "2rem", marginBottom: "12px", opacity: 0.25 }}>◫</div>
+              <p style={{ color: "var(--muted)", margin: "0 0 6px", fontSize: "0.9rem", fontWeight: 500 }}>
+                No{filter !== "all" ? ` ${filter}` : ""} commissions yet
+              </p>
+              <p style={{ color: "var(--dim)", margin: 0, fontSize: "0.78rem", lineHeight: 1.6 }}>
+                Share your profile link — fans will send commission requests here.
+              </p>
             </div>
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>

@@ -162,31 +162,38 @@ cipher/
 
 ## 5. IN PROGRESS / TODO (❌)
 
+> Items previously listed as TODO that are now **fully shipped**: email notifications (Resend), content file uploads (Supabase Storage), fan messaging / Direct Line, subscription tiers, AI onboarding wizard, PostHog analytics, Vault/Drops, Bookings, Series, Commissions, Brand Deals, Referrals, Signals, Members, Presence, Instant Pay Links, Tip Jar, dashboard error boundary, loading skeletons for all dashboard pages, improved empty states (commissions/deals/series), AI auto-reply suggestions in Direct Line, mobile responsive nav.
+
 ### Critical
 - [ ] **Production Deployment**
-  - Add OPENROUTER_API_KEY to Vercel
-  - Add SUPABASE_SERVICE_ROLE_KEY to Vercel
-  - Final smoke test
+  - Confirm `OPENROUTER_API_KEY` → Vercel env (currently uses Anthropic directly in some routes)
+  - Confirm `SUPABASE_SERVICE_ROLE_KEY` → Vercel env
+  - Confirm `TOKEN_ENCRYPTION_KEY` (64-char hex) → Vercel env
+  - Full smoke test on production URL before first creator invite
 
-### Features
-- [ ] Email notifications (Resend integration)
-- [ ] Real social media auto-posting (currently mocked)
-- [ ] Content file uploads (currently placeholder URLs)
-- [ ] Fan messaging system (DM interface)
-- [ ] Subscription tiers (currently only unlocks)
+### In Progress
+
+- [ ] **Social media auto-posting** — Twitter + Telegram real calls exist (`/api/social/auto-share`); Instagram and TikTok require separate OAuth token flow (Graph API / TikTok Content Posting API) — not yet built
+
+### Crypto / Global Payouts
+
+- [ ] **Crypto rails** — withdrawal settings accept `crypto` method, `/api/v2/crypto/initiate` has architecture comments for USDC / Polygon / Solana / Lightning but returns a mock response; no on-chain integration yet
+- [ ] **190-country routing** — no country-based payout routing implemented; currently manual Whop/Wise/PayPal withdrawal only
 
 ### AI Enhancements
-- [ ] AI onboarding wizard UI
-- [ ] Auto-reply suggestions for fan messages
-- [ ] Weekly email reports
-- [ ] Smart content scheduling (auto-post at optimal times)
-- [ ] Trend prediction
+
+- [x] **Auto-reply suggestions** — `✦ AI` button in Direct Line composer calls `/api/ai/direct-line/suggest-reply`; shows 3 tap-to-fill suggestions above composer
+- [ ] **Weekly email digest** — Resend is live but no scheduled weekly report job
+- [ ] **Smart content scheduling** — content calendar UI exists, but no "auto-post at optimal time" engine
+- [ ] **Trend prediction** — signals board shows engagement data but no forward-looking trend model
 
 ### Polish
-- [ ] Mobile responsiveness pass
-- [ ] Loading state improvements
-- [ ] Error boundary handling
-- [ ] Analytics tracking (PostHog)
+
+- [x] **Error boundary** — `src/app/dashboard/error.tsx` catches all unhandled errors under `/dashboard/*`
+- [x] **Loading skeletons** — `DashboardPageLoading` skeleton added to all 12 dashboard subdirectory routes
+- [x] **Empty states** — commissions, deals, and series now show icon + description + CTA instead of bare text
+- [x] **Mobile nav** — hamburger + slide-out sidebar + overlay added to `DashboardShell`; auto-closes on route change
+- [ ] **Fan page OG image** — `generateMetadata` exists on `[handle]` page but OG images are static placeholders; dynamic creator card not yet built
 
 ---
 
