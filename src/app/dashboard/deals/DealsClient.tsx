@@ -200,7 +200,7 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
                         </div>
                         {d.deadline && (
                           <div style={{ color: "var(--muted)", fontSize: "0.75rem", marginTop: "0.25rem" }}>
-                            Due {new Date(d.deadline).toLocaleDateString()}
+                            Due {new Date(d.deadline).toLocaleDateString("en-US")}
                           </div>
                         )}
                       </div>
@@ -260,7 +260,7 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
                         </span>
                       </td>
                       <td style={{ padding: "1rem 1.25rem", color: "var(--muted)", fontSize: "0.8125rem" }}>
-                        {d.deadline ? new Date(d.deadline).toLocaleDateString() : "—"}
+                        {d.deadline ? new Date(d.deadline).toLocaleDateString("en-US") : "—"}
                       </td>
                       <td style={{ padding: "1rem 1.25rem" }}>
                         <button onClick={(e) => { e.stopPropagation(); deleteDeal(d.id); }} style={{ background: "none", border: "none", color: "var(--dim)", cursor: "pointer", fontSize: "0.875rem" }}>✕</button>
@@ -306,7 +306,7 @@ export default function DealsClient({ initialDeals, monthlyEarnings }: Props) {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.5rem" }}>
               {selected.contact_name  && <DRow label="Contact"     value={selected.contact_name} />}
               {selected.contact_email && <DRow label="Email"       value={selected.contact_email} />}
-              {selected.deadline      && <DRow label="Deadline"    value={new Date(selected.deadline).toLocaleDateString()} />}
+              {selected.deadline      && <DRow label="Deadline"    value={new Date(selected.deadline).toLocaleDateString("en-US")} />}
             </div>
             {selected.deliverables && (
               <Section title="Deliverables">{selected.deliverables}</Section>
