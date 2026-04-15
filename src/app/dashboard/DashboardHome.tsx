@@ -18,7 +18,7 @@ const QUICK_LINKS = [
   { label: "Settings",    sub: "Account & integrations",      href: "/dashboard/settings",     icon: "◔" },
 ];
 
-export default function DashboardHome() {
+export default function DashboardHome({ userId: _userId }: { userId: string }) {
   return (
     <div style={{ padding: "40px 36px", minHeight: "100vh", background: "#08080f" }}>
       {/* Header */}
