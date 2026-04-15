@@ -615,7 +615,7 @@ export default function FanPageClient({
                     {socialConnections.map((s, idx) => (
                       <a
                         key={`${s.platform ?? "social"}-${idx}`}
-                        href={s.url || undefined}
+                        href={s.url ?? "#"}
                         target="_blank"
                         rel="noreferrer"
                         style={{
