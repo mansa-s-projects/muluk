@@ -227,7 +227,7 @@ export default function Home() {
           <span style={{ display: "block", ...disp, fontSize: "clamp(64px,11vw,148px)", fontWeight: 300, lineHeight: 0.88, letterSpacing: "-0.01em", color: "rgba(255,255,255,0.92)" }}>
             <em style={{ fontStyle: "italic", ...gold, fontWeight: 300 }}>MULUK</em>
           </span>
-          <span style={{ display: "block", ...disp, fontSize: "clamp(14px,2.2vw,26px)", fontWeight: 300, fontStyle: "italic", ...muted, marginTop: "20px", letterSpacing: "0.04em" }}>The operating system for creators who reign.</span>
+          <span style={{ display: "block", ...disp, fontSize: "clamp(14px,2.2vw,26px)", fontWeight: 300, fontStyle: "italic", ...muted, marginTop: "20px", letterSpacing: "0.04em" }}>The platform they were afraid to build.</span>
         </h1>
 
         {/* desc */}
