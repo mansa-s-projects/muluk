@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { sendCreatorApprovalEmail, sendCreatorRejectionEmail } from "@/lib/notifications/resend";
 
 // Get single application details
@@ -145,6 +146,19 @@ export async function PATCH(
         email_marketing: false,
         push_enabled: false,
       }, { onConflict: "creator_id" });
+
+      // Grant creator access: set app_metadata so middleware + login form pass
+      if (application.user_id) {
+        const service = createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        await service.auth.admin.updateUserById(application.user_id, {
+          app_metadata: { is_approved: true, role: "creator" },
+        }).catch((err: unknown) =>
+          console.error(`[admin/applications] failed to set app_metadata for user ${application.user_id}:`, err)
+        );
+      }
 
       // Send approval email (non-blocking — log on failure, never throw)
       if (application.email) {

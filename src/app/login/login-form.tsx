@@ -90,14 +90,28 @@ export default function LoginForm() {
       }).catch(() => {});
     }
 
-    // Gate: only approved users reach the dashboard
-    const { data: profile } = await supabase
-      .from("users")
-      .select("is_approved")
-      .eq("id", authData.user?.id ?? "")
-      .maybeSingle();
+    // Gate: only approved creators reach the dashboard.
+    // Primary check: app_metadata.is_approved (set by approval route).
+    // Fallback: creator_applications.status for applications approved before
+    // the app_metadata fix was deployed.
+    const isApprovedByMeta = authData.user?.app_metadata?.is_approved === true;
 
-    const destination = profile?.is_approved === true ? nextPath : "/pending";
+    let destination = "/pending";
+    if (isApprovedByMeta) {
+      destination = nextPath;
+    } else {
+      const { data: creatorApp } = await supabase
+        .from("creator_applications")
+        .select("status")
+        .eq("user_id", authData.user?.id ?? "")
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (creatorApp?.status === "approved") {
+        destination = nextPath;
+      }
+    }
+
     router.replace(destination);
     router.refresh();
   };
