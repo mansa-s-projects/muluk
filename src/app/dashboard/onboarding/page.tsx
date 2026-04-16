@@ -51,12 +51,18 @@ export default async function CreatorOnboardingPage() {
   // (indicates they're already established and ready to launch)
   if ((socialRows || []).length >= 2) {
     // Mark onboarding as completed and redirect to dashboard
-    await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .update({ onboarding_completed: true })
-      .eq("id", user.id)
-      .catch(() => {});
-    redirect("/dashboard");
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Failed to mark onboarding completed:", error);
+      // Continue to onboarding instead of redirecting on error
+      // so the check doesn't loop
+    } else if (data) {
+      redirect("/dashboard");
+    }
   }
 
   const socialConnections: SocialConnection[] = (socialRows || []).map((row) => ({
