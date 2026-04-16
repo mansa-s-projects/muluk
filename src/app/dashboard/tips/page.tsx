@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
@@ -69,9 +70,24 @@ export default async function TipsDashboardPage() {
           <h2 className="text-2xl font-bold text-white">Welcome, {profile?.username || "Creator"}!</h2>
           <p className="text-zinc-400">You need an approved handle to fully accept tips on your public profile, but you can configure your payment links now.</p>
           <div className="pt-4">
-            <button className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors">
-              Generate Tip Link
-            </button>
+            <Link
+              href="/dashboard/monetization/pay-links"
+              style={{
+                display: "inline-block",
+                padding: "11px 28px",
+                background: "#c8a96e",
+                color: "#0a0800",
+                borderRadius: "4px",
+                fontFamily: "var(--font-mono, 'DM Mono', monospace)",
+                fontSize: "11px",
+                fontWeight: 500,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                textDecoration: "none",
+              }}
+            >
+              Generate Tip Link →
+            </Link>
           </div>
         </div>
       ) : (
