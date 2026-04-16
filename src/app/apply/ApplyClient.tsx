@@ -477,19 +477,29 @@ export default function Apply() {
               <p style={{ fontSize: "15px", fontWeight: 300, ...muted, lineHeight: 1.8, maxWidth: "380px", margin: "0 auto 40px" }}>
                 We&apos;ll review <strong style={{ color: "rgba(255,255,255,0.7)", fontWeight: 400 }}>{form.email}</strong> and get back to you within 48 hours. Check your inbox for a confirmation.
               </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginBottom: "40px" }}>
                 {["Founding creator badge", "Fees locked for life", "Personal onboarding"].map(perk => (
                   <span key={perk} style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "7px 14px", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "2px", ...gold, background: "var(--gold-glow)" }}>{perk}</span>
                 ))}
               </div>
-              <button
-                onClick={() => router.push("/")}
-                style={{ marginTop: "48px", background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "3px", color: "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "12px 24px", transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--muted)"; }}
-              >
-                ← Back to muluk.vip
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+                <button
+                  onClick={() => router.push(`/login?mode=signup&next=/dashboard/onboarding`)}
+                  style={{ background: "var(--gold)", border: "none", color: "#0a0800", ...mono, fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "14px 32px", borderRadius: "2px", cursor: "pointer", transition: "opacity 0.2s", width: "100%", maxWidth: "280px" }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                >
+                  Create account →
+                </button>
+                <button
+                  onClick={() => router.push("/")}
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "2px", color: "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "12px 24px", transition: "all 0.2s", cursor: "pointer", width: "100%", maxWidth: "280px" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--muted)"; }}
+                >
+                  ← Back to muluk.vip
+                </button>
+              </div>
             </div>
           )}
 

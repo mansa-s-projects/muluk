@@ -90,6 +90,53 @@ export default function CreatorOnboardingClient({ initialValues, existingAnalysi
 
   return (
     <div style={{ minHeight: "100vh", background: "#020203", color: "rgba(255,255,255,0.92)", padding: "48px 24px 72px" }}>
+      {/* Progress Bar */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", marginBottom: "48px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          {[
+            { label: "Application", done: true },
+            { label: "Onboarding", done: false },
+            { label: "Dashboard", done: false },
+          ].map((step, idx, arr) => (
+            <div key={step.label} style={{ display: "flex", alignItems: "center", flex: 1, gap: "12px" }}>
+              <div style={{
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                background: step.done ? "var(--gold)" : "rgba(200,169,110,0.2)",
+                border: `1px solid ${step.done ? "var(--gold)" : "rgba(200,169,110,0.3)"}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                color: step.done ? "#120c00" : "var(--gold-dim)",
+                fontWeight: step.done ? 600 : 400,
+              }}>
+                {step.done ? "✓" : idx + 1}
+              </div>
+              <span style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: step.done ? "var(--gold)" : "rgba(255,255,255,0.4)",
+              }}>
+                {step.label}
+              </span>
+              {idx < arr.length - 1 && (
+                <div style={{
+                  flex: 1,
+                  height: "1px",
+                  background: step.done ? "var(--gold)" : "rgba(200,169,110,0.15)",
+                  marginLeft: "12px",
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div style={{ maxWidth: "1100px", margin: "0 auto", display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: "24px" }}>
         <section style={{ background: "#0f0f1e", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "28px" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--gold-dim)", marginBottom: "10px" }}>
@@ -204,6 +251,7 @@ export default function CreatorOnboardingClient({ initialValues, existingAnalysi
             </div>
           )}
         </section>
+      </div>
       </div>
     </div>
   );

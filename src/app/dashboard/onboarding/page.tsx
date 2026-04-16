@@ -47,6 +47,18 @@ export default async function CreatorOnboardingPage() {
 
   if (appErr) console.error("creator_applications query failed:", appErr);
 
+  // Auto-skip onboarding if user has 2+ social connections connected
+  // (indicates they're already established and ready to launch)
+  if ((socialRows || []).length >= 2) {
+    // Mark onboarding as completed and redirect to dashboard
+    await supabase
+      .from("profiles")
+      .update({ onboarding_completed: true })
+      .eq("id", user.id)
+      .catch(() => {});
+    redirect("/dashboard");
+  }
+
   const socialConnections: SocialConnection[] = (socialRows || []).map((row) => ({
     platform: row.platform as SocialConnection["platform"],
     connected: true,

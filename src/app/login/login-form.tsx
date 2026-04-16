@@ -111,7 +111,19 @@ export default function LoginForm() {
 
     let destination = "/pending";
     if (isApprovedByMeta) {
-      destination = nextPath;
+      // Check if onboarding is completed
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", authData.user?.id ?? "")
+        .maybeSingle();
+      
+      // If approved but onboarding not done, send to onboarding
+      if (profile?.onboarding_completed === true) {
+        destination = nextPath;
+      } else {
+        destination = "/dashboard/onboarding";
+      }
     } else {
       const { data: creatorApp } = await supabase
         .from("creator_applications")
@@ -121,7 +133,19 @@ export default function LoginForm() {
         .maybeSingle();
 
       if (creatorApp?.status === "approved") {
-        destination = nextPath;
+        // Check if onboarding is completed
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", authData.user?.id ?? "")
+          .maybeSingle();
+        
+        // If approved but onboarding not done, send to onboarding
+        if (profile?.onboarding_completed === true) {
+          destination = nextPath;
+        } else {
+          destination = "/dashboard/onboarding";
+        }
       }
     }
 

@@ -3,10 +3,14 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 function getServiceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error(`Missing Supabase credentials: url=${!!url}, key=${!!key}`);
+  }
+  
+  return createServiceClient(url, key);
 }
 
 function safeCode(seed: string, userId: string): string {
@@ -167,7 +171,18 @@ export async function GET() {
       leaderboard,
       fetched_at: new Date().toISOString(),
     });
-  } catch {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Referral stats error:", errorMsg);
+    
+    // More specific error responses
+    if (errorMsg.includes("API key")) {
+      return NextResponse.json({ error: "API key misconfigured. Contact support." }, { status: 500 });
+    }
+    if (errorMsg.includes("Missing Supabase")) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+    
     return NextResponse.json({ error: "Failed to fetch referral stats" }, { status: 500 });
   }
 }
