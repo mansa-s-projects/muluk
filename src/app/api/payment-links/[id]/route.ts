@@ -24,10 +24,14 @@ export async function PATCH(req: Request, { params }: Params) {
   if (typeof body.is_active === "boolean") allowed.is_active = body.is_active;
   if (typeof body.title === "string") {
     const trimmed = body.title.trim();
-    if (trimmed.length > 0) {
-      allowed.title = trimmed;
-    }
+    if (trimmed.length > 0) allowed.title = trimmed;
   }
+  if (typeof body.whop_checkout_url === "string") {
+    allowed.whop_checkout_url = body.whop_checkout_url.trim() || null;
+    if (body.whop_checkout_url.trim()) allowed.is_live = true;
+  }
+  if (typeof body.whop_product_id === "string") allowed.whop_product_id = body.whop_product_id.trim() || null;
+  if (typeof body.whop_checkout_id === "string") allowed.whop_checkout_id = body.whop_checkout_id.trim() || null;
   if (Object.keys(allowed).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
   }

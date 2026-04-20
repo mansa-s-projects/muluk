@@ -36,6 +36,8 @@ export default function PayLinksClient({ initialLinks }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [reprovisioning, setReprovisioning] = useState<string | null>(null);
+  const [reprovisionError, setReprovisionError] = useState<Record<string, string>>({});
 
   async function createLink() {
     if (!form.title.trim()) { setError("Title is required"); return; }
@@ -68,6 +70,27 @@ export default function PayLinksClient({ initialLinks }: Props) {
       setCreating(false);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function reprovision(link: PayLink) {
+    setReprovisioning(link.id);
+    setReprovisionError((prev) => ({ ...prev, [link.id]: "" }));
+    try {
+      const res = await fetch(`/api/payment-links/${link.id}/reprovision`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) {
+        setReprovisionError((prev) => ({ ...prev, [link.id]: json.error ?? "Provisioning failed" }));
+        return;
+      }
+      // Refresh list
+      const listRes = await fetch("/api/payment-links");
+      if (listRes.ok) {
+        const listJson = await listRes.json();
+        setLinks(listJson.items ?? []);
+      }
+    } finally {
+      setReprovisioning(null);
     }
   }
 
@@ -172,14 +195,31 @@ export default function PayLinksClient({ initialLinks }: Props) {
                       <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>{link.purchase_count ?? 0} sales</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => copyLink(link)}
-                    disabled={!link.slug && !link.whop_checkout_url}
-                    style={{ ...mono, fontSize: "11px", padding: "8px 14px", background: copied === link.id ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.05)", border: `1px solid ${copied === link.id ? "rgba(74,222,128,0.3)" : "rgba(255,255,255,0.1)"}`, color: copied === link.id ? "#4ade80" : "rgba(255,255,255,0.5)", borderRadius: "6px", cursor: (!link.slug && !link.whop_checkout_url) ? "not-allowed" : "pointer", letterSpacing: "0.06em", whiteSpace: "nowrap" }}
-                  >
-                    {copied === link.id ? "Copied!" : "Copy Link"}
-                  </button>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                    {!link.whop_checkout_url && (
+                      <button
+                        onClick={() => reprovision(link)}
+                        disabled={reprovisioning === link.id}
+                        title="Auto-create Whop product & checkout URL"
+                        style={{ ...mono, fontSize: "11px", padding: "8px 14px", background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.25)", color: "#c8a96e", borderRadius: "6px", cursor: reprovisioning === link.id ? "not-allowed" : "pointer", letterSpacing: "0.06em", whiteSpace: "nowrap", opacity: reprovisioning === link.id ? 0.6 : 1 }}
+                      >
+                        {reprovisioning === link.id ? "Provisioning…" : "⚡ Connect Whop"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => copyLink(link)}
+                      disabled={!link.slug && !link.whop_checkout_url}
+                      style={{ ...mono, fontSize: "11px", padding: "8px 14px", background: copied === link.id ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.05)", border: `1px solid ${copied === link.id ? "rgba(74,222,128,0.3)" : "rgba(255,255,255,0.1)"}`, color: copied === link.id ? "#4ade80" : "rgba(255,255,255,0.5)", borderRadius: "6px", cursor: (!link.slug && !link.whop_checkout_url) ? "not-allowed" : "pointer", letterSpacing: "0.06em", whiteSpace: "nowrap" }}
+                    >
+                      {copied === link.id ? "Copied!" : "Copy Link"}
+                    </button>
+                  </div>
                 </div>
+                {reprovisionError[link.id] && (
+                  <div style={{ marginTop: "8px", ...mono, fontSize: "10px", color: "#f87171", letterSpacing: "0.08em" }}>
+                    {reprovisionError[link.id]}
+                  </div>
+                )}
               </div>
             ))}
           </div>

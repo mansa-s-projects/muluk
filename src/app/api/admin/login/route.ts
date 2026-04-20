@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   const { data: adminRow } = await service
     .from("admin_users")
-    .select("id")
+    .select("id, role")
     .eq("user_id", data.user.id)
     .maybeSingle();
 
@@ -44,6 +44,15 @@ export async function POST(req: Request) {
     await supabase.auth.signOut();
     return NextResponse.json({ message: "Access denied" }, { status: 403 });
   }
+
+  // Stamp the JWT with the admin role so the layout's getRoleFromUser check passes.
+  // The client must call refreshSession() after this to receive the updated JWT.
+  const adminRole = (adminRow as { id: string; role?: string }).role ?? "admin";
+  await service.auth.admin.updateUserById(data.user.id, {
+    app_metadata: { role: adminRole },
+  }).catch((err: unknown) =>
+    console.error("[admin/login] failed to stamp app_metadata role:", err)
+  );
 
   return NextResponse.json({ success: true });
 }

@@ -99,7 +99,7 @@ function IncidentBanner({ count }: { count: number }) {
     <div style={{ background: t.redD, border: `1px solid ${t.red}44`, borderRadius: 8, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
       <AlertTriangle size={16} style={{ color: t.red }} />
       <span style={{ fontFamily: t.mono, fontSize: 12, color: t.red, letterSpacing: '0.1em' }}>{count} ACTIVE INCIDENT{count > 1 ? 'S' : ''} — review Risk & Moderation</span>
-      <Link href="/admin/dashboard" style={{ marginLeft: 'auto', fontFamily: t.mono, fontSize: 10, color: t.red, textDecoration: 'underline' }}>VIEW →</Link>
+      <Link href="/admin/applications" style={{ marginLeft: 'auto', fontFamily: t.mono, fontSize: 10, color: t.red, textDecoration: 'underline' }}>VIEW →</Link>
     </div>
   );
 }
@@ -167,9 +167,8 @@ export default function AdminCommandCenter() {
         </div>
         <nav style={{ display: 'flex', gap: 4, marginLeft: 32 }}>
           {[
-            { label: 'God Mode', href: '/admin/dashboard' },
+            { label: 'Command Center', href: '/admin/command-center' },
             { label: 'Applications', href: '/admin/applications' },
-            { label: 'Setup', href: '/admin/setup' },
           ].map((item) => (
             <Link key={item.href} href={item.href} style={{ fontFamily: t.mono, fontSize: 10, color: t.dim, letterSpacing: '0.1em', padding: '6px 12px', borderRadius: 6, border: `1px solid ${t.rim}`, textDecoration: 'none' }}>
               {item.label}
@@ -216,12 +215,8 @@ export default function AdminCommandCenter() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ fontFamily: t.mono, fontSize: 9, color: t.goldDim, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4 }}>Quick Nav</div>
                 {[
-                  { label: 'Overview', sub: 'Full God Mode dashboard', href: '/admin/dashboard' },
-                  { label: 'Creator Intel', sub: 'Scores & signals', href: '/admin/dashboard' },
-                  { label: 'Risk & Moderation', sub: 'Fraud & anomalies', href: '/admin/dashboard' },
+                  { label: 'Command Center', sub: 'Real-time operations', href: '/admin/command-center' },
                   { label: 'Applications', sub: 'Pending creator apps', href: '/admin/applications' },
-                  { label: 'Growth Funnel', sub: 'PostHog & automation', href: '/admin/dashboard' },
-                  { label: 'Audit Logs', sub: 'Admin actions', href: '/admin/dashboard' },
                 ].map((item) => (
                   <Link key={item.label} href={item.href} style={{ display: 'block', padding: '14px 16px', background: t.deep, border: `1px solid ${t.rim}`, borderRadius: 8, textDecoration: 'none', transition: 'border-color 0.15s' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(200,169,110,0.3)'; }}

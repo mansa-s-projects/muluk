@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition, useState, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLoginPage() {
   const [isPending, startTransition] = useTransition();
@@ -36,7 +37,11 @@ export default function AdminLoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        window.location.href = "/admin/dashboard";
+        // Refresh the session so the updated JWT (with app_metadata.role) is
+        // picked up by the middleware and admin layout before navigation.
+        const supabase = createClient();
+        await supabase.auth.refreshSession();
+        window.location.href = "/admin/applications";
       }
     });
   }
