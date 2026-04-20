@@ -22,7 +22,7 @@ export { hasMinimumRole };
 
 export const PUBLIC_ROUTES = new Set(["/", "/login", "/apply"]);
 
-const PUBLIC_PREFIXES   = ["/book", "/booking", "/r", "/vault", "/commission", "/tips", "/series", "/join"];
+const PUBLIC_PREFIXES   = ["/book", "/booking", "/r", "/vault", "/commission", "/tips", "/series", "/join", "/pay", "/offer"];
 const ADMIN_PREFIXES    = ["/admin"];
 const DEBUG_PREFIXES    = ["/debug"];
 const CREATOR_PREFIXES  = ["/dashboard", "/onboarding"];
@@ -33,8 +33,22 @@ function matchesPrefixes(pathname: string, prefixes: string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+const ALL_KNOWN_PREFIXES = [
+  ...ADMIN_PREFIXES,
+  ...DEBUG_PREFIXES,
+  ...CREATOR_PREFIXES,
+  ...FAN_PREFIXES,
+  ...MARKETING_PREFIXES,
+  ...PUBLIC_PREFIXES,
+];
+
 export function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.has(pathname) || matchesPrefixes(pathname, PUBLIC_PREFIXES);
+  if (PUBLIC_ROUTES.has(pathname)) return true;
+  if (matchesPrefixes(pathname, PUBLIC_PREFIXES)) return true;
+  // Single-segment paths that don't match any known prefix are /:handle fan profiles
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 1 && !matchesPrefixes(pathname, ALL_KNOWN_PREFIXES)) return true;
+  return false;
 }
 
 export function isAdminRoute(pathname: string): boolean {
