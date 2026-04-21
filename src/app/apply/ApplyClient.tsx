@@ -1,556 +1,641 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-/* ─────────────────────────────────────────
-   TYPES
-───────────────────────────────────────── */
-type FormData = {
-  // step 1
+type Platform = "tiktok" | "instagram" | "youtube" | "twitter" | "other";
+type Recommendation = "APPROVE_PRIORITY" | "APPROVE" | "WAITLIST" | "REJECT";
+
+type ApplyPayload = {
   name: string;
-  handle: string;
-  category: string;
-  // step 2
-  country: string;
-  payout: string;
-  // step 3
-  content: string[];
-  audience: string;
-  bio: string;
-  // meta
   email: string;
+  primaryPlatform: Platform;
+  handle: string;
+  secondaryPlatforms: string[];
+  niche: string;
+  nicheCustom: string;
+  shortDescription: string;
+  audienceSize: string;
+  monthlyEarnings: string;
+  whyJoinMuluk: string;
 };
 
-const CATEGORIES = ["Music", "Art & Design", "Photography", "Film & Video", "Writing", "Podcasting", "Gaming", "Fitness", "Cooking", "Education", "Comedy", "Fashion", "Tech", "Other"];
-const CONTENT_TYPES = ["Photos", "Videos", "Audio", "Live streams", "Written posts", "Exclusive downloads", "1-on-1 messages", "Tutorials"];
-const PAYOUT_METHODS = ["Whop", "Wise", "USDC (Polygon)", "PayPal"];
-const AUDIENCE_SIZES = ["Under 1K", "1K–10K", "10K–50K", "50K–100K", "100K–500K", "500K+"];
-const COUNTRIES = ["United Arab Emirates", "United States", "United Kingdom", "Morocco", "Nigeria", "France", "Germany", "Canada", "Australia", "Saudi Arabia", "Egypt", "South Africa", "Brazil", "India", "Pakistan", "Indonesia", "Philippines", "Other"];
-
-/* ─────────────────────────────────────────
-   CURSOR
-───────────────────────────────────────── */
-function Cursor() {
-  useEffect(() => {
-    const dot  = document.getElementById("muluk-cursor");
-    const ring = document.getElementById("muluk-ring");
-    if (!dot || !ring) return;
-    let mx = -200, my = -200, rx = -200, ry = -200, raf: number;
-    const move = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
-    document.addEventListener("mousemove", move);
-    const tick = () => {
-      rx += (mx - rx) * 0.11; ry += (my - ry) * 0.11;
-      dot.style.left  = mx + "px"; dot.style.top  = my + "px";
-      ring.style.left = rx + "px"; ring.style.top = ry + "px";
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { document.removeEventListener("mousemove", move); cancelAnimationFrame(raf); };
-  }, []);
-  return null;
-}
-
-/* ─────────────────────────────────────────
-   STEP INDICATOR
-───────────────────────────────────────── */
-function Steps({ current, total }: { current: number; total: number }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "56px" }}>
-      {Array.from({ length: total }).map((_, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{
-            width: i < current ? "24px" : i === current ? "32px" : "24px",
-            height: "2px",
-            background: i < current ? "var(--gold)" : i === current ? "var(--gold)" : "rgba(255,255,255,0.1)",
-            borderRadius: "2px",
-            transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
-          }} />
-          {i < total - 1 && (
-            <div style={{ width: "16px", height: "1px", background: "rgba(255,255,255,0.08)" }} />
-          )}
-        </div>
-      ))}
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.2em", color: "var(--dim)", marginLeft: "8px" }}>
-        {String(current + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
-      </span>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────
-   FIELD COMPONENTS
-───────────────────────────────────────── */
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: "28px" }}>
-      <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase" as const, color: error ? "#c84c4c" : "var(--gold-dim)", marginBottom: "10px" }}>
-        {label} {error && <span style={{ color: "#c84c4c" }}>— {error}</span>}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  borderRadius: "3px",
-  color: "rgba(255,255,255,0.92)",
-  fontFamily: "var(--font-body)",
-  fontSize: "15px",
-  fontWeight: 300,
-  padding: "14px 18px",
-  outline: "none",
-  transition: "border-color 0.2s, box-shadow 0.2s",
-};
-
-function Input({ value, onChange, placeholder, prefix }: { value: string; onChange: (v: string) => void; placeholder?: string; prefix?: string; }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-      {prefix && (
-        <span style={{ position: "absolute", left: "18px", fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--gold-dim)", pointerEvents: "none" }}>{prefix}</span>
-      )}
-      <input
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          ...inputStyle,
-          paddingLeft: prefix ? "36px" : "18px",
-          borderColor: focused ? "rgba(200,169,110,0.45)" : "rgba(255,255,255,0.10)",
-          boxShadow: focused ? "0 0 0 3px rgba(200,169,110,0.07)" : "none",
-        }}
-      />
-    </div>
-  );
-}
-
-function Select({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: string[]; placeholder?: string; }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={{
-        ...inputStyle,
-        WebkitAppearance: "none",
-        appearance: "none",
-        borderColor: focused ? "rgba(200,169,110,0.45)" : "rgba(255,255,255,0.10)",
-        boxShadow: focused ? "0 0 0 3px rgba(200,169,110,0.07)" : "none",
-      }}
-    >
-      {placeholder && <option value="" style={{ background: "#0d0d18" }}>{placeholder}</option>}
-      {options.map(o => <option key={o} value={o} style={{ background: "#0d0d18" }}>{o}</option>)}
-    </select>
-  );
-}
-
-function Textarea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string; }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <textarea
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={4}
-      style={{
-        ...inputStyle,
-        resize: "none",
-        lineHeight: 1.7,
-        borderColor: focused ? "rgba(200,169,110,0.45)" : "rgba(255,255,255,0.10)",
-        boxShadow: focused ? "0 0 0 3px rgba(200,169,110,0.07)" : "none",
-      }}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-    />
-  );
-}
-
-function Chips({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (v: string[]) => void; }) {
-  const toggle = (o: string) => {
-    onChange(selected.includes(o) ? selected.filter(s => s !== o) : [...selected, o]);
+type ApiResponse = {
+  success: boolean;
+  recommendation: Recommendation;
+  message: string;
+  redirectTo: string;
+  scores: {
+    engagement_score: number;
+    niche_score: number;
+    offer_readiness_score: number;
+    overall_score: number;
   };
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-      {options.map(o => {
-        const active = selected.includes(o);
-        return (
-          <button
-            key={o}
-            type="button"
-            onClick={() => toggle(o)}
-            style={{
-              background: active ? "var(--gold-glow)" : "rgba(255,255,255,0.03)",
-              border: `1px solid ${active ? "rgba(200,169,110,0.4)" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: "2px",
-              color: active ? "var(--gold)" : "var(--muted)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              letterSpacing: "0.1em",
-              padding: "8px 14px",
-              transition: "all 0.2s",
-              cursor: "pointer",
-            }}
-          >
-            {o}
-          </button>
-        );
-      })}
-    </div>
-  );
+};
+
+function toDecision(recommendation: Recommendation): "approved" | "waitlist" | "rejected" {
+  if (recommendation === "APPROVE" || recommendation === "APPROVE_PRIORITY") {
+    return "approved";
+  }
+  if (recommendation === "WAITLIST") {
+    return "waitlist";
+  }
+  return "rejected";
 }
 
-function RadioCards({ options, selected, onChange }: { options: string[]; selected: string; onChange: (v: string) => void; }) {
-  return (
-    <div className="apply-radio-cards">
-      {options.map(o => {
-        const active = selected === o;
-        return (
-          <button
-            key={o}
-            type="button"
-            onClick={() => onChange(o)}
-            style={{
-              background: active ? "var(--gold-glow)" : "rgba(255,255,255,0.02)",
-              border: `1px solid ${active ? "rgba(200,169,110,0.4)" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: "3px",
-              color: active ? "var(--gold)" : "var(--muted)",
-              fontFamily: active ? "var(--font-mono)" : "var(--font-body)",
-              fontSize: "13px",
-              fontWeight: active ? 500 : 300,
-              letterSpacing: active ? "0.08em" : 0,
-              padding: "14px 18px",
-              textAlign: "left" as const,
-              transition: "all 0.2s",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            <span style={{ width: "16px", height: "16px", borderRadius: "50%", border: `1px solid ${active ? "var(--gold)" : "rgba(255,255,255,0.2)"}`, background: active ? "var(--gold)" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {active && <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#0a0800" }} />}
-            </span>
-            {o}
-          </button>
-        );
-      })}
-    </div>
-  );
+const PLATFORMS: Array<{ id: Platform; label: string }> = [
+  { id: "tiktok", label: "TikTok" },
+  { id: "instagram", label: "Instagram" },
+  { id: "youtube", label: "YouTube" },
+  { id: "twitter", label: "Twitter" },
+  { id: "other", label: "Other" },
+];
+
+const NICHES = [
+  { id: "fitness", label: "Fitness" },
+  { id: "business", label: "Business" },
+  { id: "beauty", label: "Beauty" },
+  { id: "coaching", label: "Coaching" },
+  { id: "education", label: "Education" },
+  { id: "finance", label: "Finance" },
+  { id: "fashion", label: "Fashion" },
+  { id: "lifestyle", label: "Lifestyle" },
+  { id: "gaming", label: "Gaming" },
+  { id: "other", label: "Other" },
+] as const;
+
+const AUDIENCE_OPTIONS = [
+  "Under 1K",
+  "1K-10K",
+  "10K-50K",
+  "50K-100K",
+  "100K+",
+];
+
+function EmptyErrors() {
+  return {} as Record<string, string>;
 }
 
-/* ─────────────────────────────────────────
-   MAIN PAGE
-───────────────────────────────────────── */
-export default function Apply() {
+export default function ApplyClient() {
   const router = useRouter();
-  const [step, setStep]         = useState(0);
-  const [loading, setLoading]   = useState(false);
-  const [errors, setErrors]     = useState<Record<string, string>>({});
-  const [serverErr, setServerErr] = useState("");
-  const contentRef              = useRef<HTMLDivElement>(null);
-
-  const [form, setForm] = useState<FormData>({
-    name: "", handle: "", category: "",
-    country: "", payout: "",
-    content: [], audience: "", bio: "",
+  const [form, setForm] = useState<ApplyPayload>({
+    name: "",
     email: "",
+    primaryPlatform: "tiktok",
+    handle: "",
+    secondaryPlatforms: [],
+    niche: "fitness",
+    nicheCustom: "",
+    shortDescription: "",
+    audienceSize: "",
+    monthlyEarnings: "",
+    whyJoinMuluk: "",
   });
 
-  const set = (key: keyof FormData) => (val: string | string[]) =>
-    setForm(f => ({ ...f, [key]: val }));
+  const [errors, setErrors] = useState<Record<string, string>>(EmptyErrors());
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [result, setResult] = useState<ApiResponse | null>(null);
 
-  /* scroll to top on step change */
-  useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [step]);
+  const canShowCustomNiche = form.niche === "other";
 
-  /* validation */
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (step === 0) {
-      if (!form.name.trim())    e.name     = "required";
-      if (!form.handle.trim())  e.handle   = "required";
-      if (!form.category)       e.category = "required";
-    }
-    if (step === 1) {
-      if (!form.country)        e.country  = "required";
-      if (!form.payout)         e.payout   = "required";
-      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRe.test(form.email)) e.email = "valid email required";
-    }
-    if (step === 2) {
-      if (!form.content.length) e.content  = "select at least one";
-      if (!form.audience)       e.audience = "required";
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
+  const selectedSecondaryLabel = useMemo(() => {
+    if (!form.secondaryPlatforms.length) return "No secondary platforms";
+    return form.secondaryPlatforms.join(" · ");
+  }, [form.secondaryPlatforms]);
 
-  const next = async () => {
+  function setField<K extends keyof ApplyPayload>(key: K, value: ApplyPayload[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleSecondary(platform: Platform) {
+    if (platform === form.primaryPlatform) return;
+    setForm((prev) => {
+      const next = new Set(prev.secondaryPlatforms);
+      if (next.has(platform)) next.delete(platform);
+      else next.add(platform);
+      return { ...prev, secondaryPlatforms: Array.from(next) };
+    });
+  }
+
+  function validate(): boolean {
+    const nextErrors: Record<string, string> = EmptyErrors();
+
+    if (!form.name.trim()) nextErrors.name = "Required";
+    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      nextErrors.email = "Valid email required";
+    }
+    if (!form.handle.trim()) nextErrors.handle = "Required";
+    if (!form.shortDescription.trim()) nextErrors.shortDescription = "Required";
+    if (!form.audienceSize) nextErrors.audienceSize = "Required";
+    if (!form.whyJoinMuluk.trim()) nextErrors.whyJoinMuluk = "Required";
+    if (form.niche === "other" && !form.nicheCustom.trim()) {
+      nextErrors.nicheCustom = "Tell us your niche";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setServerError("");
+
     if (!validate()) return;
-    if (step < 3) { setStep(s => s + 1); return; }
 
-    /* submit */
-    setLoading(true);
-    setServerErr("");
+    setSubmitting(true);
     try {
-      const res = await fetch("/api/apply", {
+      const response = await fetch("/api/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      let data: Record<string, unknown> = {};
-      try { data = await res.json(); } catch { /* non-JSON response */ }
-      if (!res.ok) {
-        setServerErr((data.error as string) || "Something went wrong. Please try again.");
+
+      const data = (await response.json()) as ApiResponse & { error?: string };
+      if (!response.ok) {
+        setServerError(data.error ?? "Submission failed. Please try again.");
         return;
       }
-      setStep(4);
+
+      setResult(data);
+
+      if (toDecision(data.recommendation) === "approved") {
+        setTimeout(() => router.push("/dashboard/onboarding"), 1300);
+      }
     } catch {
-      setServerErr("Network error. Please check your connection and try again.");
+      setServerError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
-  };
+  }
 
-  const back = () => { setErrors({}); setStep(s => s - 1); };
+  if (result) {
+    const decision = toDecision(result.recommendation);
+    const stateTone =
+      decision === "approved"
+        ? { color: "#50d48a", accent: "You're in. Let's get your first sale." }
+        : decision === "waitlist"
+        ? { color: "#c8a96e", accent: "You're on the list. We'll unlock access soon." }
+        : { color: "#e37f7f", accent: "Not the right fit right now. Stay close." };
 
-  /* styles */
-  const mono  = { fontFamily: "var(--font-mono)" } as const;
-  const disp  = { fontFamily: "var(--font-display)" } as const;
-  const gold  = { color: "var(--gold)" } as const;
-  const muted = { color: "var(--muted)" } as const;
+    return (
+      <div className="apply-page apply-result">
+        <div className="apply-noise" />
+        <div className="apply-shell result-shell">
+          <p className="eyebrow">Creator Qualification</p>
+          <h1 className="title">{stateTone.accent}</h1>
+          <p className="subtitle">Your application was scored by MULUK intelligence and routed to the right access state.</p>
+
+          <div className="score-grid">
+            <ScoreTile label="Engagement" value={result.scores.engagement_score} />
+            <ScoreTile label="Niche" value={result.scores.niche_score} />
+            <ScoreTile label="Offer Readiness" value={result.scores.offer_readiness_score} />
+            <ScoreTile label="Overall" value={result.scores.overall_score} highlight />
+          </div>
+
+          <div className="result-cta-row">
+            {decision === "approved" ? (
+              <button className="btn-primary" onClick={() => router.push("/dashboard/onboarding")}>Continue To Onboarding</button>
+            ) : (
+              <button className="btn-primary" onClick={() => router.push("/")}>Back To Home</button>
+            )}
+            <button className="btn-ghost" onClick={() => setResult(null)}>Edit Application</button>
+          </div>
+
+          <p className="result-note" style={{ color: stateTone.color }}>
+            Recommendation: {result.recommendation}
+          </p>
+        </div>
+        <ApplyStyles />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div id="muluk-cursor" style={{ position: "fixed", width: "8px", height: "8px", background: "var(--gold)", borderRadius: "50%", pointerEvents: "none", zIndex: 99999, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)", mixBlendMode: "screen" }} />
-      <div id="muluk-ring"   style={{ position: "fixed", width: "32px", height: "32px", border: "1px solid rgba(200,169,110,0.4)", borderRadius: "50%", pointerEvents: "none", zIndex: 99998, top: "-100px", left: "-100px", transform: "translate(-50%,-50%)" }} />
-      <Cursor />
-
-      <div className="apply-grid" style={{ minHeight: "100vh", background: "#020203", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-
-        {/* ── LEFT PANEL — branding ── */}
-        <div className="apply-left" style={{ background: "var(--surface)", borderRight: "1px solid var(--border)", padding: "56px 64px", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "sticky", top: 0, height: "100vh" }}>
-
-          {/* logo */}
-          <Link href="/" style={{ ...mono, fontSize: "17px", fontWeight: 500, letterSpacing: "0.3em", ...gold, textDecoration: "none" }}>MULUK</Link>
-
-          {/* center content */}
-          <div>
-            <div style={{ ...mono, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase" as const, color: "var(--gold-dim)", marginBottom: "28px", display: "flex", alignItems: "center", gap: "12px" }}>
-              <span style={{ width: "24px", height: "1px", background: "var(--gold-dim)", display: "block" }} />
-              Creator application
-            </div>
-            <h1 style={{ ...disp, fontSize: "clamp(40px,4vw,58px)", fontWeight: 300, lineHeight: 1.0, letterSpacing: "-0.01em", marginBottom: "24px" }}>
-              {step === 0 && <><em style={{ ...gold, fontStyle: "italic" }}>Who</em> are you?</>}
-              {step === 1 && <>Where do you<br /><em style={{ ...gold, fontStyle: "italic" }}>get paid?</em></>}
-              {step === 2 && <>What do you<br /><em style={{ ...gold, fontStyle: "italic" }}>create?</em></>}
-              {step === 3 && <>Almost<br /><em style={{ ...gold, fontStyle: "italic" }}>there.</em></>}
-              {step === 4 && <>You&apos;re<br /><em style={{ ...gold, fontStyle: "italic" }}>in.</em></>}
-            </h1>
-            <p style={{ fontSize: "14px", fontWeight: 300, lineHeight: 1.8, ...muted, maxWidth: "320px" }}>
-              {step === 0 && "Tell us about yourself. Your handle is your identity on MULUK."}
-              {step === 1 && "We support Whop, Wise, crypto, and PayPal. No Whop payout profile required to apply."}
-              {step === 2 && "What kind of content do you create and how big is your current audience?"}
-              {step === 3 && "Review your application. We'll reach out within 48 hours."}
-              {step === 4 && "Founding creator access confirmed. Your fee is locked in for life."}
-            </p>
-
-            {/* step perks */}
-            {step < 4 && (
-              <div style={{ marginTop: "48px", display: "flex", flexDirection: "column", gap: "14px" }}>
-                {[
-                  ["Fees locked in for life", step >= 0],
-                  ["Founding creator badge", step >= 0],
-                  ["Personal onboarding", step >= 1],
-                  ["Lifetime referral income", step >= 2],
-                ].map(([text, active]) => (
-                  <div key={text as string} style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", fontWeight: 300, color: active ? "var(--muted)" : "rgba(255,255,255,0.15)", transition: "color 0.4s" }}>
-                    <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1px solid ${active ? "rgba(200,169,110,0.3)" : "rgba(255,255,255,0.08)"}`, background: active ? "var(--gold-glow)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.4s" }}>
-                      {active && <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="var(--gold)" strokeWidth="2"><polyline points="2,5 4,7 8,3" /></svg>}
-                    </div>
-                    {text as string}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* bottom quote */}
-          <div style={{ ...disp, fontSize: "13px", fontStyle: "italic", color: "var(--dim)", lineHeight: 1.7 }}>
-            &quot;The first 500 creators get fees locked<br />in for life. You&apos;re early.&quot;
-          </div>
+    <div className="apply-page">
+      <div className="apply-noise" />
+      <div className="apply-shell">
+        <div className="apply-head">
+          <Link href="/" className="brand">MULUK</Link>
+          <p className="eyebrow">Creator Application</p>
+          <h1 className="title">A monetization layer for creators across all platforms.</h1>
+          <p className="subtitle">Apply for gated access. We filter hard, activate fast, and optimize for first-money momentum.</p>
         </div>
 
-        {/* ── RIGHT PANEL — form ── */}
-        <div ref={contentRef} className="apply-right" style={{ padding: "56px 64px", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <form className="apply-form" onSubmit={onSubmit}>
+          <Field label="Name" error={errors.name}>
+            <input value={form.name} onChange={(e) => setField("name", e.target.value)} className="input" placeholder="Full name" />
+          </Field>
 
-          {step < 4 && <Steps current={step} total={4} />}
+          <Field label="Email" error={errors.email}>
+            <input value={form.email} onChange={(e) => setField("email", e.target.value)} className="input" placeholder="you@domain.com" type="email" />
+          </Field>
 
-          {/* ── STEP 0 — identity ── */}
-          {step === 0 && (
-            <div style={{ animation: "fadeUp 0.5s ease forwards" }}>
-              <Field label="Full name" error={errors.name}>
-                <Input value={form.name} onChange={set("name")} placeholder="El Mehdi" />
-              </Field>
-              <Field label="Creator handle" error={errors.handle}>
-                <Input value={form.handle} onChange={set("handle")} placeholder="yourhandle" prefix="@" />
-              </Field>
-              <Field label="Category" error={errors.category}>
-                <Select value={form.category} onChange={set("category")} options={CATEGORIES} placeholder="Select your category" />
-              </Field>
-            </div>
-          )}
-
-          {/* ── STEP 1 — payout + email ── */}
-          {step === 1 && (
-            <div style={{ animation: "fadeUp 0.5s ease forwards" }}>
-              <Field label="Email address" error={errors.email}>
-                <Input value={form.email} onChange={set("email")} placeholder="you@email.com" />
-              </Field>
-              <Field label="Country" error={errors.country}>
-                <Select value={form.country} onChange={set("country")} options={COUNTRIES} placeholder="Select your country" />
-              </Field>
-              <Field label="Preferred payout method" error={errors.payout}>
-                <RadioCards options={PAYOUT_METHODS} selected={form.payout} onChange={set("payout")} />
-              </Field>
-            </div>
-          )}
-
-          {/* ── STEP 2 — content ── */}
-          {step === 2 && (
-            <div style={{ animation: "fadeUp 0.5s ease forwards" }}>
-              <Field label="Content types" error={errors.content}>
-                <Chips options={CONTENT_TYPES} selected={form.content} onChange={val => set("content")(val)} />
-              </Field>
-              <Field label="Current audience size" error={errors.audience}>
-                <RadioCards options={AUDIENCE_SIZES} selected={form.audience} onChange={set("audience")} />
-              </Field>
-              <Field label="Bio — tell fans who you are (optional)">
-                <Textarea value={form.bio} onChange={set("bio")} placeholder="I create dark ambient music and visual art..." />
-              </Field>
-            </div>
-          )}
-
-          {/* ── STEP 3 — review ── */}
-          {step === 3 && (
-            <div style={{ animation: "fadeUp 0.5s ease forwards" }}>
-              <div style={{ background: "var(--card)", border: "1px solid var(--border-mid)", borderRadius: "4px", overflow: "hidden", marginBottom: "32px" }}>
-                {[
-                  ["Name", form.name],
-                  ["Handle", `@${form.handle}`],
-                  ["Category", form.category],
-                  ["Email", form.email],
-                  ["Country", form.country],
-                  ["Payout", form.payout],
-                  ["Content", (form.content as string[]).join(", ")],
-                  ["Audience", form.audience],
-                ].map(([label, val]) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderBottom: "1px solid var(--border)" }}>
-                    <span style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)" }}>{label}</span>
-                    <span style={{ fontSize: "13px", fontWeight: 300, ...muted, textAlign: "right" as const, maxWidth: "260px" }}>{val || "—"}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background: "var(--gold-glow)", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "3px", padding: "16px 20px", ...mono, fontSize: "12px", ...gold, lineHeight: 1.6 }}>
-                By applying you agree to MULUK&apos;s creator terms. We&apos;ll review your application and reach out within 48 hours.
-              </div>
-            </div>
-          )}
-
-          {/* ── STEP 4 — success ── */}
-          {step === 4 && (
-            <div style={{ textAlign: "center", padding: "40px 0", animation: "fadeUp 0.6s ease forwards" }}>
-              <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "var(--gold-glow)", border: "1px solid rgba(200,169,110,0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 32px" }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5"><polyline points="20 6 9 17 4 12" /></svg>
-              </div>
-              <h2 style={{ ...disp, fontSize: "48px", fontWeight: 300, fontStyle: "italic", ...gold, marginBottom: "16px", lineHeight: 1 }}>Application sent.</h2>
-              <p style={{ fontSize: "15px", fontWeight: 300, ...muted, lineHeight: 1.8, maxWidth: "380px", margin: "0 auto 40px" }}>
-                We&apos;ll review <strong style={{ color: "rgba(255,255,255,0.7)", fontWeight: 400 }}>{form.email}</strong> and get back to you within 48 hours. Check your inbox for a confirmation.
-              </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginBottom: "40px" }}>
-                {["Founding creator badge", "Fees locked for life", "Personal onboarding"].map(perk => (
-                  <span key={perk} style={{ ...mono, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "7px 14px", border: "1px solid rgba(200,169,110,0.2)", borderRadius: "2px", ...gold, background: "var(--gold-glow)" }}>{perk}</span>
-                ))}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+          <Field label="Primary Platform">
+            <div className="chip-row">
+              {PLATFORMS.map((platform) => (
                 <button
-                  onClick={() => router.push(`/login?mode=signup&next=/dashboard/onboarding`)}
-                  style={{ background: "var(--gold)", border: "none", color: "#0a0800", ...mono, fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "14px 32px", borderRadius: "2px", cursor: "pointer", transition: "opacity 0.2s", width: "100%", maxWidth: "280px" }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                  type="button"
+                  key={platform.id}
+                  className={`chip ${form.primaryPlatform === platform.id ? "active" : ""}`}
+                  onClick={() => {
+                    setField("primaryPlatform", platform.id);
+                    setForm((prev) => ({
+                      ...prev,
+                      secondaryPlatforms: prev.secondaryPlatforms.filter((item) => item !== platform.id),
+                    }));
+                  }}
                 >
-                  Create account →
+                  {platform.label}
                 </button>
-                <button
-                  onClick={() => router.push("/")}
-                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "2px", color: "var(--muted)", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, padding: "12px 24px", transition: "all 0.2s", cursor: "pointer", width: "100%", maxWidth: "280px" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)"; e.currentTarget.style.color = "var(--muted)"; }}
-                >
-                  ← Back to muluk.vip
-                </button>
-              </div>
+              ))}
             </div>
-          )}
+          </Field>
 
-          {/* ── NAV BUTTONS ── */}
-          {step < 4 && (
-            <div style={{ marginTop: "auto", paddingTop: "48px" }}>
-              {serverErr && (
-                <div style={{ marginBottom: "16px", padding: "12px 16px", background: "rgba(200,60,60,0.08)", border: "1px solid rgba(200,60,60,0.25)", borderRadius: "3px", fontFamily: "var(--font-mono)", fontSize: "12px", color: "#c84c4c", letterSpacing: "0.05em" }}>
-                  {serverErr}
-                </div>
-              )}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              {step > 0
-                ? <button onClick={back} style={{ background: "transparent", border: "none", ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", padding: "12px 0", transition: "color 0.2s" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "var(--muted)")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "var(--dim)")}
-                  >← Back</button>
-                : <Link href="/" style={{ ...mono, fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" as const, color: "var(--dim)", textDecoration: "none" }}>← muluk.vip</Link>
-              }
-              <button
-                onClick={next}
-                disabled={loading}
-                style={{ background: "var(--gold)", border: "none", color: "#0a0800", ...mono, fontSize: "11px", fontWeight: 500, letterSpacing: "0.2em", textTransform: "uppercase" as const, padding: "14px 32px", borderRadius: "2px", transition: "opacity 0.2s", opacity: loading ? 0.6 : 1 }}
-                onMouseEnter={e => !loading && (e.currentTarget.style.opacity = "0.85")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = loading ? "0.6" : "1")}
-              >
-                {loading ? "Sending..." : step === 3 ? "Submit application →" : "Continue →"}
-              </button>
+          <Field label="Username / Handle" error={errors.handle}>
+            <input value={form.handle} onChange={(e) => setField("handle", e.target.value)} className="input" placeholder="@yourhandle" />
+          </Field>
+
+          <Field label="Secondary Platforms (Optional)">
+            <div className="chip-row">
+              {PLATFORMS.map((platform) => (
+                <button
+                  type="button"
+                  key={`secondary-${platform.id}`}
+                  disabled={platform.id === form.primaryPlatform}
+                  className={`chip ${form.secondaryPlatforms.includes(platform.id) ? "active" : ""}`}
+                  onClick={() => toggleSecondary(platform.id)}
+                >
+                  {platform.label}
+                </button>
+              ))}
             </div>
-            </div>
-          )}
-        </div>
+            <p className="field-hint">{selectedSecondaryLabel}</p>
+          </Field>
+
+          <Field label="Niche" error={errors.nicheCustom}>
+            <select value={form.niche} onChange={(e) => setField("niche", e.target.value)} className="input">
+              {NICHES.map((niche) => (
+                <option key={niche.id} value={niche.id}>{niche.label}</option>
+              ))}
+            </select>
+          </Field>
+
+          {canShowCustomNiche ? (
+            <Field label="Custom Niche" error={errors.nicheCustom}>
+              <input value={form.nicheCustom} onChange={(e) => setField("nicheCustom", e.target.value)} className="input" placeholder="Your specific niche" />
+            </Field>
+          ) : null}
+
+          <Field label="What do you sell or plan to sell?" error={errors.shortDescription}>
+            <textarea value={form.shortDescription} onChange={(e) => setField("shortDescription", e.target.value)} className="input textarea" placeholder="Describe your offer and audience outcome." />
+          </Field>
+
+          <Field label="Audience Size" error={errors.audienceSize}>
+            <select value={form.audienceSize} onChange={(e) => setField("audienceSize", e.target.value)} className="input">
+              <option value="">Select range</option>
+              {AUDIENCE_OPTIONS.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Monthly Earnings (Optional)">
+            <input value={form.monthlyEarnings} onChange={(e) => setField("monthlyEarnings", e.target.value)} className="input" placeholder="$0, $1K, $10K+" />
+          </Field>
+
+          <Field label="Why do you want to join MULUK?" error={errors.whyJoinMuluk}>
+            <textarea value={form.whyJoinMuluk} onChange={(e) => setField("whyJoinMuluk", e.target.value)} className="input textarea" placeholder="Show intent, urgency, and what you plan to launch first." />
+          </Field>
+
+          {serverError ? <p className="server-error">{serverError}</p> : null}
+
+          <div className="cta-row">
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? "Scoring Application..." : "Submit For Qualification"}
+            </button>
+            <p className="small-note">Decisioning: Approved (80-100), Waitlist (50-79), Reject (0-49)</p>
+          </div>
+        </form>
       </div>
+      <ApplyStyles />
+    </div>
+  );
+}
 
-      <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="field">
+      <span className="field-label">{label}</span>
+      {children}
+      {error ? <span className="field-error">{error}</span> : null}
+    </label>
+  );
+}
+
+function ScoreTile({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+}) {
+  return (
+    <div className={`score-tile ${highlight ? "highlight" : ""}`}>
+      <p className="score-label">{label}</p>
+      <p className="score-value">{value}</p>
+    </div>
+  );
+}
+
+function ApplyStyles() {
+  return (
+    <style jsx>{`
+      .apply-page {
+        min-height: 100vh;
+        position: relative;
+        background:
+          radial-gradient(1100px 580px at 90% -160px, rgba(200, 169, 110, 0.1), transparent 58%),
+          radial-gradient(900px 500px at -8% 100%, rgba(200, 169, 110, 0.06), transparent 62%),
+          #020203;
+        color: rgba(255, 255, 255, 0.92);
+        overflow: hidden;
+      }
+
+      .apply-noise {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.2;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      }
+
+      .apply-shell {
+        position: relative;
+        z-index: 2;
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 58px 24px 100px;
+      }
+
+      .brand {
+        text-decoration: none;
+        color: #c8a96e;
+        font-family: var(--font-mono, 'DM Mono', monospace);
+        font-size: 15px;
+        letter-spacing: 0.24em;
+      }
+
+      .apply-head {
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        margin: 18px 0 0;
+        font-family: var(--font-mono, 'DM Mono', monospace);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        color: rgba(200, 169, 110, 0.7);
+      }
+
+      .title {
+        margin: 12px 0 0;
+        font-family: var(--font-display, 'Cormorant Garamond', serif);
+        font-size: clamp(36px, 6vw, 58px);
+        line-height: 0.96;
+        letter-spacing: -0.02em;
+        font-weight: 300;
+      }
+
+      .subtitle {
+        margin: 14px 0 0;
+        font-family: var(--font-body, 'Outfit', sans-serif);
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.5);
+        max-width: 680px;
+        line-height: 1.7;
+      }
+
+      .apply-form {
+        margin-top: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(13, 13, 24, 0.88);
+        border-radius: 14px;
+        padding: 22px;
+      }
+
+      .field {
+        display: block;
+        margin-bottom: 16px;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--font-mono, 'DM Mono', monospace);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(200, 169, 110, 0.78);
+      }
+
+      .field-error {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #e37f7f;
+        font-family: var(--font-body, 'Outfit', sans-serif);
+      }
+
+      .field-hint {
+        margin: 6px 0 0;
+        color: rgba(255, 255, 255, 0.42);
+        font-size: 12px;
+        font-family: var(--font-body, 'Outfit', sans-serif);
+      }
+
+      .input {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.92);
+        padding: 12px 12px;
+        font-family: var(--font-body, 'Outfit', sans-serif);
+        font-size: 14px;
+        outline: none;
+      }
+
+      .input:focus {
+        border-color: rgba(200, 169, 110, 0.45);
+        box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.1);
+      }
+
+      .textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.02);
+        color: rgba(255, 255, 255, 0.62);
+        font-family: var(--font-mono, 'DM Mono', monospace);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .chip.active {
+        border-color: rgba(200, 169, 110, 0.4);
+        background: rgba(200, 169, 110, 0.12);
+        color: #c8a96e;
+      }
+
+      .chip:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .server-error {
+        margin: 0 0 10px;
+        color: #e37f7f;
+        font-size: 13px;
+      }
+
+      .cta-row {
+        margin-top: 18px;
+      }
+
+      .btn-primary,
+      .btn-ghost {
+        border-radius: 3px;
+        padding: 13px 20px;
+        font-family: var(--font-mono, 'DM Mono', monospace);
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        border: 0;
+        background: #c8a96e;
+        color: #0c0800;
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .btn-ghost {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: transparent;
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      .small-note {
+        margin: 10px 0 0;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.38);
+      }
+
+      .apply-result .title {
+        max-width: 820px;
+      }
+
+      .result-shell {
+        text-align: center;
+        max-width: 760px;
+      }
+
+      .score-grid {
+        margin-top: 28px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .score-tile {
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px;
+      }
+
+      .score-tile.highlight {
+        border-color: rgba(200, 169, 110, 0.4);
+        background: rgba(200, 169, 110, 0.1);
+      }
+
+      .score-label {
+        margin: 0;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.52);
+        font-family: var(--font-mono, 'DM Mono', monospace);
+      }
+
+      .score-value {
+        margin: 6px 0 0;
+        font-size: 26px;
+        line-height: 1;
+        color: #c8a96e;
+        font-family: var(--font-display, 'Cormorant Garamond', serif);
+      }
+
+      .result-cta-row {
+        margin-top: 24px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .result-note {
+        margin-top: 12px;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-family: var(--font-mono, 'DM Mono', monospace);
+      }
+
+      @media (max-width: 780px) {
+        .apply-shell {
+          padding: 42px 16px 90px;
         }
-        @media (hover: hover) and (pointer: fine) {
-          #muluk-cursor, #muluk-ring { display: block; }
+
+        .apply-form {
+          padding: 16px;
         }
-        @media (hover: none), (pointer: coarse) {
-          #muluk-cursor, #muluk-ring { display: none !important; }
+
+        .score-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #020203; }
-        ::-webkit-scrollbar-thumb { background: rgba(200,169,110,0.2); border-radius: 2px; }
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.22); }
-        select option { background: #0d0d18; }
-      `}</style>
-    </>
+      }
+    `}</style>
   );
 }

@@ -35,7 +35,7 @@ const MODELS: Record<TaskTier, ModelConfig> = {
   },
   // PREMIUM: Claude Sonnet via OpenRouter - best quality
   premium: {
-    model: "anthropic/claude-3.5-sonnet",
+    model: "anthropic/claude-3.5-sonnet-20241022",
     maxTokens: 2000,
     costPer1MInput: 3.00,
     costPer1MOutput: 15.00,
@@ -47,6 +47,7 @@ export const TASK_TIERS: Record<string, TaskTier> = {
   bio_generation: "fast",
   content_ideas: "fast",
   content_creation: "balanced",
+  creator_intelligence_reasoning: "balanced",
   price_analysis: "fast",
   chat_assistant: "fast",
   caption_generation: "fast",
@@ -112,6 +113,23 @@ export class AIRouter {
     const encoder = new TextEncoder();
     const inputTokens = Math.ceil((prompt.length + (systemPrompt?.length || 0)) / 4);
     let outputTokens = 0;
+
+    const usage: UsageInfo = {
+      task: taskName,
+      model: config.model,
+      inputTokens,
+      outputTokens: 0,
+      estimatedCost: 0,
+    };
+
+    const updateUsage = () => {
+      usage.outputTokens = outputTokens;
+      const estimated = (inputTokens / 1_000_000) * config.costPer1MInput +
+        (outputTokens / 1_000_000) * config.costPer1MOutput;
+      usage.estimatedCost = Math.max(estimated, 0.00001);
+    };
+
+    updateUsage();
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -181,6 +199,7 @@ export class AIRouter {
                 if (text && typeof text === "string") {
                   tokenCount += Math.ceil(text.length / 4);
                   outputTokens = tokenCount;
+                  updateUsage();
                   controller.enqueue(encoder.encode(text));
                   
                   if (tokenCount >= config.maxTokens) {
@@ -188,7 +207,14 @@ export class AIRouter {
                     return;
                   }
                 }
-              } catch {}
+              } catch (parseError) {
+                console.warn("[OpenRouter] Failed to parse SSE chunk", {
+                  taskName,
+                  model: config.model,
+                  dataPreview: data.slice(0, 200),
+                  error: parseError instanceof Error ? parseError.message : String(parseError),
+                });
+              }
             }
           }
 
@@ -203,8 +229,16 @@ export class AIRouter {
                   if (text && typeof text === "string") {
                     controller.enqueue(encoder.encode(text));
                     outputTokens += Math.ceil(text.length / 4);
+                    updateUsage();
                   }
-                } catch {}
+                } catch (parseError) {
+                  console.warn("[OpenRouter] Failed to parse trailing SSE chunk", {
+                    taskName,
+                    model: config.model,
+                    dataPreview: data.slice(0, 200),
+                    error: parseError instanceof Error ? parseError.message : String(parseError),
+                  });
+                }
               }
             }
           }
@@ -223,21 +257,10 @@ export class AIRouter {
       },
     });
 
-    const estimatedCost = (inputTokens / 1_000_000) * config.costPer1MInput + 
-                         (outputTokens / 1_000_000) * config.costPer1MOutput;
-
-    const usage: UsageInfo = {
-      task: taskName,
-      model: config.model,
-      inputTokens,
-      outputTokens,
-      estimatedCost: Math.max(estimatedCost, 0.00001),
-    };
-
     this.usageLog.push(usage);
-    console.log(`[AI Router] Usage: ${inputTokens} in / ${outputTokens} out tokens, ~$${estimatedCost.toFixed(6)}`);
+    console.log(`[AI Router] Usage: ${usage.inputTokens} in / ${usage.outputTokens} out tokens, ~$${usage.estimatedCost.toFixed(6)}`);
 
-    return { stream, modelUsed: config.model, estimatedCost, usage };
+    return { stream, modelUsed: config.model, estimatedCost: usage.estimatedCost, usage };
   }
 
   getStatus() {

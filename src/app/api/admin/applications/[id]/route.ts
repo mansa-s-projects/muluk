@@ -34,7 +34,7 @@ export async function GET(
     }
 
     const { data: application, error } = await supabase
-      .from("creator_applications")
+      .from("applications")
       .select("*")
       .eq("id", id)
       .single();
@@ -44,7 +44,31 @@ export async function GET(
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ application });
+    const { data: score } = await supabase
+      .from("application_scores")
+      .select("*")
+      .eq("application_id", id)
+      .maybeSingle();
+
+    return NextResponse.json({
+      application: {
+        ...application,
+        recommendation: score?.recommendation ?? application.recommendation,
+        confidence: score?.confidence ?? application.confidence ?? null,
+        strengths: score?.strengths ?? application.strengths ?? [],
+        weaknesses: score?.weaknesses ?? application.weaknesses ?? [],
+        onboarding_path: score?.onboarding_path ?? application.onboarding_path ?? null,
+        ai_summary: score?.ai_summary ?? application.ai_summary ?? null,
+        subscores: {
+          audience: score?.audience_score ?? null,
+          engagement: score?.engagement_score ?? application.engagement_score ?? null,
+          niche: score?.niche_score ?? application.niche_score ?? null,
+          offer_readiness: score?.offer_readiness_score ?? application.monetization_score ?? null,
+          brand_quality: score?.brand_quality_score ?? null,
+          growth_potential: score?.growth_potential_score ?? null,
+        },
+      },
+    });
 
   } catch (error) {
     console.error("Get application error:", error);
@@ -86,19 +110,19 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, adminNotes, tier } = body;
+    const { status, adminNotes } = body;
 
-    if (!status || !["approved", "rejected", "pending"].includes(status)) {
+    if (!status || !["approved", "waitlist", "rejected", "pending"].includes(status)) {
       return NextResponse.json(
-        { error: "Invalid status. Must be: approved, rejected, or pending" },
+        { error: "Invalid status. Must be: approved, waitlist, rejected, or pending" },
         { status: 400 }
       );
     }
 
     // Get application before update (for email notification)
     const { data: application } = await supabase
-      .from("creator_applications")
-      .select("user_id, name, email")
+      .from("applications")
+      .select("user_id, creator_id, name, email")
       .eq("id", id)
       .single();
 
@@ -114,18 +138,37 @@ export async function PATCH(
       admin_notes: adminNotes || null,
     };
 
-    if (tier && ["cipher", "legend", "apex"].includes(tier)) {
-      updateData.tier = tier;
-    }
-
     const { data: updated, error } = await supabase
-      .from("creator_applications")
+      .from("applications")
       .update(updateData)
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
+
+    if (application.creator_id) {
+      await supabase
+        .from("creators")
+        .update({ status, score: updated.overall_score ?? 0 })
+        .eq("id", application.creator_id);
+    }
+
+    // Keep legacy creator_applications in sync for existing flows.
+    if (application.user_id) {
+      await supabase
+        .from("creator_applications")
+        .update({
+          status:
+            status === "waitlist"
+              ? "pending"
+              : status,
+          reviewed_at: updateData.reviewed_at,
+          reviewed_by: updateData.reviewed_by,
+          admin_notes: updateData.admin_notes,
+        })
+        .eq("user_id", application.user_id);
+    }
 
     // If approved, create wallet and notification settings
     if (status === "approved") {

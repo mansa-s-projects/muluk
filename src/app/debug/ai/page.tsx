@@ -280,7 +280,7 @@ export default function DebugAi() {
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <div><span style={{ color: '#60a5fa' }}>fast:</span> gpt-4o-mini</div>
               <div><span style={{ color: '#c084fc' }}>balanced:</span> gemini-2.5-flash-lite</div>
-              <div><span style={{ color: '#c8a96e' }}>premium:</span> claude-3.5-sonnet</div>
+              <div><span style={{ color: '#c8a96e' }}>premium:</span> claude-3.5-sonnet-20241022</div>
             </div>
           </div>
         </div>

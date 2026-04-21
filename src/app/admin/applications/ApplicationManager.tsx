@@ -1,458 +1,513 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { parseCreatorAiSummary } from "@/lib/creator-intelligence";
 
-const mono = { fontFamily: "var(--font-mono)" };
-const disp = { fontFamily: "var(--font-display)" };
+type ApplicationStatus = "pending" | "approved" | "waitlist" | "rejected";
+type Recommendation = "APPROVE_PRIORITY" | "APPROVE" | "WAITLIST" | "REJECT" | "approved" | "waitlist" | "rejected";
 
-export type CreatorApplication = {
+type ApplicationRow = {
   id: string;
-  user_id: string;
   name: string;
   email: string;
+  primary_platform: string;
   handle: string;
-  bio: string;
-  category: string;
-  country: string;
-  payout: string;
-  content: string[];
-  audience: string;
-  status: "pending" | "approved" | "rejected";
-  tier: "cipher" | "legend" | "apex";
-  created_at: string;
-  reviewed_at: string | null;
-  reviewed_by: string | null;
+  niche: string | null;
+  bio: string | null;
+  short_description: string | null;
+  audience_size: string | null;
+  audience_size_self_reported: string | null;
+  monthly_earnings: string | null;
+  reason_for_joining: string | null;
+  why_join_muluk: string | null;
+  overall_score: number;
+  recommendation: Recommendation;
+  confidence: "high" | "medium" | "low" | null;
+  strengths: string[];
+  weaknesses: string[];
+  onboarding_path: string | null;
+  ai_summary: string | null;
+  subscores: {
+    audience: number | null;
+    engagement: number | null;
+    niche: number | null;
+    offer_readiness: number | null;
+    brand_quality: number | null;
+    growth_potential: number | null;
+  };
+  status: ApplicationStatus;
   admin_notes: string | null;
+  created_at: string;
 };
 
+const mono = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" } as const;
+const body = { fontFamily: "var(--font-body, 'Outfit', sans-serif)" } as const;
+
+const STATUS_OPTIONS: Array<ApplicationStatus | "all"> = ["all", "pending", "approved", "waitlist", "rejected"];
+const RECOMMENDATION_OPTIONS = ["all", "APPROVE_PRIORITY", "APPROVE", "WAITLIST", "REJECT"] as const;
+const SORT_OPTIONS = [
+  { value: "score_desc", label: "Highest score" },
+  { value: "score_asc", label: "Lowest score" },
+  { value: "newest", label: "Newest" },
+] as const;
+
 export function ApplicationManager() {
-  const [applications, setApplications] = useState<CreatorApplication[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("pending");
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [nicheFilter, setNicheFilter] = useState("all");
+  const [recommendationFilter, setRecommendationFilter] = useState<(typeof RECOMMENDATION_OPTIONS)[number]>("all");
+  const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]["value"]>("score_desc");
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
-  const [selectedApp, setSelectedApp] = useState<CreatorApplication | null>(null);
+  const [selected, setSelected] = useState<ApplicationRow | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
-  const [selectedTier, setSelectedTier] = useState<"cipher" | "legend" | "apex">("cipher");
-  const [processing, setProcessing] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
+  const latestRequestRef = useRef(0);
 
   useEffect(() => {
-    fetchApplications();
-  }, [filter]);
+    if (!selected) return;
+    setAdminNotes(selected.admin_notes ?? "");
+  }, [selected]);
 
-  const fetchApplications = async () => {
+  const stats = useMemo(() => {
+    const total = applications.length;
+    const approved = applications.filter((item) => item.status === "approved").length;
+    const waitlist = applications.filter((item) => item.status === "waitlist").length;
+    const pending = applications.filter((item) => item.status === "pending").length;
+    return { total, approved, waitlist, pending };
+  }, [applications]);
+
+  const platformOptions = useMemo(() => {
+    const values = Array.from(new Set(applications.map((item) => item.primary_platform).filter(Boolean))).sort();
+    return ["all", ...values];
+  }, [applications]);
+
+  const nicheOptions = useMemo(() => {
+    const values = Array.from(new Set(applications.map((item) => item.niche).filter(Boolean) as string[])).sort();
+    return ["all", ...values];
+  }, [applications]);
+
+  const aiSections = useMemo(
+    () => parseCreatorAiSummary(selected?.ai_summary),
+    [selected?.ai_summary]
+  );
+
+  const loadApplications = useCallback(async (requestId?: number, signal?: AbortSignal) => {
+    const activeRequestId = requestId ?? ++latestRequestRef.current;
     setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/applications?status=${filter}`);
-      const data = await res.json();
-      if (res.ok) {
-        setApplications(data.applications);
-      }
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleAction = async (action: "approved" | "rejected") => {
-    if (!selectedApp) return;
-    
-    setProcessing(true);
     try {
-      const res = await fetch(`/api/admin/applications/${selectedApp.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: action,
-          adminNotes,
-          tier: action === "approved" ? selectedTier : undefined,
-        }),
+      const params = new URLSearchParams({
+        status: statusFilter,
+        platform: platformFilter,
+        niche: nicheFilter,
+        recommendation: recommendationFilter,
+        sort,
       });
 
-      const data = await res.json();
-      
-      if (res.ok) {
-        setMessage(`Application ${action} successfully!`);
-        setSelectedApp(null);
-        setAdminNotes("");
-        fetchApplications();
-      } else {
-        setMessage(data.error || "Failed to update application");
+      const response = await fetch(`/api/admin/applications?${params.toString()}`, { signal });
+      const json = (await response.json()) as {
+        applications?: ApplicationRow[];
+        error?: string;
+      };
+
+      if (activeRequestId !== latestRequestRef.current) return;
+
+      if (!response.ok) {
+        setMessage(json.error ?? "Failed to load applications");
+        return;
       }
-    } catch (err) {
-      setMessage("Error processing application");
+
+      setApplications(json.applications ?? []);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      if (activeRequestId !== latestRequestRef.current) return;
+      setMessage("Network error while loading applications");
     } finally {
-      setProcessing(false);
+      if (activeRequestId !== latestRequestRef.current) return;
+      setLoading(false);
     }
-  };
+  }, [statusFilter, platformFilter, nicheFilter, recommendationFilter, sort]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved": return "#4cc88c";
-      case "rejected": return "#ff6a6a";
-      case "pending": return "#ff8f6a";
-      default: return "#888";
-    }
-  };
+  useEffect(() => {
+    const abortController = new AbortController();
+    const requestId = ++latestRequestRef.current;
+    void loadApplications(requestId, abortController.signal);
 
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "apex": return "#ff8f8f";
-      case "legend": return "#c8a96e";
-      case "cipher": return "#8dcfff";
-      default: return "#888";
+    return () => abortController.abort();
+  }, [loadApplications]);
+
+  async function updateStatus(nextStatus: ApplicationStatus) {
+    if (!selected) return;
+    setUpdating(true);
+
+    try {
+      const response = await fetch(`/api/admin/applications/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus, adminNotes }),
+      });
+
+      const json = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setMessage(json.error ?? "Update failed");
+        return;
+      }
+
+      setMessage(`Application moved to ${nextStatus}.`);
+      setSelected(null);
+      await loadApplications();
+    } catch {
+      setMessage("Network error while updating application");
+    } finally {
+      setUpdating(false);
     }
-  };
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "grid", gap: 18 }}>
       <div>
-        <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", letterSpacing: "0.15em" }}>
-          ADMIN PANEL
-        </div>
-        <div style={{ ...disp, fontSize: "32px", color: "#c8a96e", marginTop: "4px" }}>
-          Creator Applications
-        </div>
+        <p style={{ ...mono, margin: 0, color: "rgba(200,169,110,0.72)", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase" }}>
+          Creator Intelligence Panel
+        </p>
+        <h1 style={{ margin: "8px 0 0", fontSize: 44, lineHeight: 0.95, fontWeight: 300, color: "#c8a96e", fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}>
+          Applications
+        </h1>
       </div>
 
-      {message && (
-        <div style={{
-          padding: "12px 16px",
-          borderRadius: "8px",
-          fontSize: "13px",
-          background: message.includes("success") ? "rgba(76,200,140,0.1)" : "rgba(200,100,100,0.1)",
-          color: message.includes("success") ? "#4cc88c" : "#ff8f8f",
-        }}>
+      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(4, minmax(0,1fr))" }}>
+        <StatCard label="Visible" value={String(stats.total)} />
+        <StatCard label="Pending" value={String(stats.pending)} />
+        <StatCard label="Approved" value={String(stats.approved)} />
+        <StatCard label="Waitlist" value={String(stats.waitlist)} />
+      </div>
+
+      {message ? (
+        <div style={{ border: "1px solid rgba(200,169,110,0.2)", borderRadius: 8, padding: "10px 12px", color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
           {message}
         </div>
-      )}
+      ) : null}
 
-      <div style={{ display: "flex", gap: "12px" }}>
-        {(["all", "pending", "approved", "rejected"] as const).map(f => (
+      <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(4, minmax(0,1fr))" }}>
+        <FilterSelect label="Platform" value={platformFilter} onChange={setPlatformFilter} options={platformOptions} />
+        <FilterSelect label="Niche" value={nicheFilter} onChange={setNicheFilter} options={nicheOptions} />
+        <FilterSelect label="Recommendation" value={recommendationFilter} onChange={(value) => setRecommendationFilter(value as (typeof RECOMMENDATION_OPTIONS)[number])} options={[...RECOMMENDATION_OPTIONS]} />
+        <FilterSelect label="Sort" value={sort} onChange={(value) => setSort(value as (typeof SORT_OPTIONS)[number]["value"])} options={SORT_OPTIONS.map((item) => item.value)} labels={Object.fromEntries(SORT_OPTIONS.map((item) => [item.value, item.label]))} />
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {STATUS_OPTIONS.map((status) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
+            key={status}
+            type="button"
+            onClick={() => setStatusFilter(status)}
             style={{
-              padding: "10px 20px",
-              borderRadius: "8px",
-              border: "none",
-              background: filter === f ? "rgba(200,169,110,0.2)" : "#111120",
-              color: filter === f ? "#c8a96e" : "#888",
               ...mono,
-              fontSize: "12px",
+              fontSize: 10,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              padding: "9px 12px",
+              borderRadius: 999,
+              border: `1px solid ${statusFilter === status ? "rgba(200,169,110,0.4)" : "rgba(255,255,255,0.14)"}`,
+              background: statusFilter === status ? "rgba(200,169,110,0.14)" : "rgba(255,255,255,0.02)",
+              color: statusFilter === status ? "#c8a96e" : "rgba(255,255,255,0.65)",
               cursor: "pointer",
             }}
           >
-            {f}
+            {status}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>Loading...</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>Loading applications...</div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {applications.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>
-              No applications found
-            </div>
-          )}
-          
-          {applications.map(app => (
-            <div
-              key={app.id}
-              onClick={() => setSelectedApp(app)}
+        <div style={{ display: "grid", gap: 10 }}>
+          {applications.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              onClick={() => setSelected(item)}
               style={{
-                background: "#111120",
-                border: "1px solid rgba(255,255,255,0.05)",
-                borderRadius: "12px",
-                padding: "16px 20px",
+                textAlign: "left",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 10,
+                background: "rgba(17,17,32,0.9)",
+                padding: "13px 14px",
                 cursor: "pointer",
                 display: "grid",
-                gridTemplateColumns: "60px 2fr 1fr 1fr 100px",
-                alignItems: "center",
-                gap: "16px",
+                gridTemplateColumns: "1.2fr .8fr .8fr .8fr .7fr",
+                gap: 12,
               }}
             >
-              <div style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "#1a1a2e",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "20px",
-              }}>
-                {app.name.charAt(0).toUpperCase()}
-              </div>
-              
               <div>
-                <div style={{ ...disp, fontSize: "18px", color: "#fff" }}>{app.name}</div>
-                <div style={{ ...mono, fontSize: "12px", color: "#888" }}>@{app.handle}</div>
+                <p style={{ margin: 0, color: "rgba(255,255,255,0.9)", fontSize: 15, ...body }}>{item.name}</p>
+                <p style={{ margin: "2px 0 0", color: "rgba(255,255,255,0.5)", fontSize: 11, ...mono }}>
+                  @{item.handle} · {item.primary_platform}
+                </p>
               </div>
-              
-              <div>
-                <div style={{ fontSize: "13px", color: "#aaa" }}>{app.category}</div>
-                <div style={{ ...mono, fontSize: "11px", color: "#666" }}>{app.country}</div>
-              </div>
-              
-              <div>
-                <span style={{
-                  padding: "4px 12px",
-                  borderRadius: "4px",
-                  background: getStatusColor(app.status) + "20",
-                  color: getStatusColor(app.status),
-                  ...mono,
-                  fontSize: "11px",
-                }}>
-                  {app.status}
-                </span>
-                {app.status === "approved" && (
-                  <span style={{
-                    marginLeft: "8px",
-                    padding: "4px 12px",
-                    borderRadius: "4px",
-                    background: getTierColor(app.tier) + "20",
-                    color: getTierColor(app.tier),
-                    ...mono,
-                    fontSize: "11px",
-                  }}>
-                    {app.tier}
-                  </span>
-                )}
-              </div>
-              
-              <div style={{ ...mono, fontSize: "11px", color: "#666" }}>
-                {new Date(app.created_at).toLocaleDateString()}
-              </div>
-            </div>
+              <Metric label="Score" value={String(item.overall_score ?? 0)} />
+              <Metric label="Rec" value={item.recommendation} color={decisionColor(item.recommendation)} monoValue />
+              <Metric label="Conf" value={item.confidence ?? "-"} color={confidenceColor(item.confidence)} monoValue />
+              <Metric label="Status" value={item.status} color={decisionColor(item.status)} monoValue />
+            </button>
           ))}
         </div>
       )}
 
-      {/* Detail Modal */}
-      {selectedApp && (
+      {selected ? (
         <div
-          onClick={e => { if (e.target === e.currentTarget) setSelectedApp(null); }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSelected(null);
+          }}
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 9200,
-            background: "rgba(0,0,0,0.85)",
-            backdropFilter: "blur(10px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "24px",
+            zIndex: 99,
+            background: "rgba(0,0,0,0.82)",
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
           }}
         >
-          <div style={{
-            width: "100%",
-            maxWidth: "700px",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            background: "#0d0d18",
-            border: "1px solid rgba(200,169,110,0.25)",
-            borderRadius: "16px",
-            padding: "32px",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
-              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                <div style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  background: "#1a1a2e",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "28px",
-                }}>
-                  {selectedApp.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ ...disp, fontSize: "24px", color: "#c8a96e" }}>{selectedApp.name}</div>
-                  <div style={{ ...mono, fontSize: "14px", color: "#888" }}>@{selectedApp.handle}</div>
-                </div>
+          <div style={{ width: "min(920px, 100%)", border: "1px solid rgba(200,169,110,0.25)", borderRadius: 14, background: "#09090f", padding: 18, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
+              <div>
+                <p style={{ margin: 0, color: "rgba(255,255,255,0.9)", fontSize: 24, fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}>
+                  {selected.name}
+                </p>
+                <p style={{ margin: "3px 0 0", color: "rgba(255,255,255,0.52)", fontSize: 12, ...mono }}>
+                  @{selected.handle} · {selected.email}
+                </p>
               </div>
-              <button
-                onClick={() => setSelectedApp(null)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#888",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                }}
-              >
-                ×
+              <button type="button" onClick={() => setSelected(null)} className="close">
+                Close
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>EMAIL</div>
-                <div style={{ fontSize: "14px" }}>{selectedApp.email}</div>
-              </div>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>CATEGORY</div>
-                <div style={{ fontSize: "14px" }}>{selectedApp.category}</div>
-              </div>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>COUNTRY</div>
-                <div style={{ fontSize: "14px" }}>{selectedApp.country}</div>
-              </div>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>PAYOUT METHOD</div>
-                <div style={{ fontSize: "14px" }}>{selectedApp.payout}</div>
-              </div>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>AUDIENCE</div>
-                <div style={{ fontSize: "14px" }}>{selectedApp.audience}</div>
-              </div>
-              <div>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>APPLIED</div>
-                <div style={{ fontSize: "14px" }}>{new Date(selectedApp.created_at).toLocaleDateString()}</div>
-              </div>
+            <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(6,minmax(0,1fr))", marginTop: 14 }}>
+              <StatCard label="Audience" value={String(selected.subscores.audience ?? "-")} compact />
+              <StatCard label="Engagement" value={String(selected.subscores.engagement ?? "-")} compact />
+              <StatCard label="Niche" value={String(selected.subscores.niche ?? "-")} compact />
+              <StatCard label="Offer" value={String(selected.subscores.offer_readiness ?? "-")} compact />
+              <StatCard label="Brand" value={String(selected.subscores.brand_quality ?? "-")} compact />
+              <StatCard label="Growth" value={String(selected.subscores.growth_potential ?? "-")} compact />
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>BIO</div>
-              <div style={{ 
-                padding: "12px", 
-                background: "#111120", 
-                borderRadius: "8px",
-                fontSize: "14px",
-                lineHeight: 1.6,
-              }}>
-                {selectedApp.bio || "No bio provided"}
-              </div>
+            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+              <MetaRow label="Niche" value={selected.niche || "-"} />
+              <MetaRow label="Audience" value={selected.audience_size || selected.audience_size_self_reported || "-"} />
+              <MetaRow label="Monthly Earnings" value={selected.monthly_earnings || "-"} />
+              <MetaRow label="Bio" value={selected.bio || selected.short_description || "-"} />
+              <MetaRow label="Why MULUK" value={selected.reason_for_joining || selected.why_join_muluk || "-"} />
+              <MetaRow label="Onboarding Path" value={selected.onboarding_path || "-"} />
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>CONTENT TYPES</div>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {selectedApp.content?.map((c, i) => (
-                  <span key={i} style={{ padding: "4px 12px", background: "#111120", borderRadius: "4px", fontSize: "13px" }}>
-                    {c}
-                  </span>
-                ))}
-              </div>
+            <div style={{ marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
+              <ListCard title="Top Strengths" items={selected.strengths} />
+              <ListCard title="Top Weaknesses" items={selected.weaknesses} />
             </div>
 
-            {selectedApp.status === "pending" && (
-              <>
-                <div style={{ marginBottom: "24px" }}>
-                  <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "8px" }}>ASSIGN TIER</div>
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {((["cipher", "legend", "apex"] as const)).map(tier => {
-                      const tierLabel: Record<string, string> = { cipher: "Prince", legend: "King", apex: "Emperor" };
-                      return (
-                      <button
-                        key={tier}
-                        onClick={() => setSelectedTier(tier)}
-                        style={{
-                          flex: 1,
-                          padding: "12px",
-                          borderRadius: "8px",
-                          border: `1px solid ${selectedTier === tier ? "#c8a96e" : "rgba(255,255,255,0.1)"}`,
-                          background: selectedTier === tier ? "rgba(200,169,110,0.15)" : "transparent",
-                          color: selectedTier === tier ? "#c8a96e" : "#888",
-                          ...mono,
-                          fontSize: "12px",
-                          textTransform: "uppercase",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {tierLabel[tier]}
-                      </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: "24px" }}>
-                  <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "8px" }}>ADMIN NOTES</div>
-                  <textarea
-                    value={adminNotes}
-                    onChange={e => setAdminNotes(e.target.value)}
-                    placeholder="Internal notes about this application..."
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      background: "#111120",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      color: "#fff",
-                      fontSize: "14px",
-                      resize: "none",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button
-                    onClick={() => handleAction("rejected")}
-                    disabled={processing}
-                    style={{
-                      flex: 1,
-                      padding: "14px",
-                      background: "transparent",
-                      border: "1px solid rgba(255,100,100,0.5)",
-                      borderRadius: "8px",
-                      color: "#ff8f8f",
-                      ...mono,
-                      fontSize: "12px",
-                      cursor: processing ? "not-allowed" : "pointer",
-                      opacity: processing ? 0.6 : 1,
-                    }}
-                  >
-                    {processing ? "PROCESSING..." : "REJECT"}
-                  </button>
-                  <button
-                    onClick={() => handleAction("approved")}
-                    disabled={processing}
-                    style={{
-                      flex: 2,
-                      padding: "14px",
-                      background: "#c8a96e",
-                      border: "none",
-                      borderRadius: "8px",
-                      color: "#120c00",
-                      ...mono,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: processing ? "not-allowed" : "pointer",
-                      opacity: processing ? 0.6 : 1,
-                    }}
-                  >
-                    {processing ? "PROCESSING..." : "APPROVE"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {selectedApp.status !== "pending" && (
-              <div style={{ padding: "16px", background: "#111120", borderRadius: "8px" }}>
-                <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>
-                  REVIEWED {selectedApp.status.toUpperCase()}
-                </div>
-                <div style={{ fontSize: "13px", color: "#888" }}>
-                  {new Date(selectedApp.reviewed_at || "").toLocaleString()}
-                </div>
-                {selectedApp.admin_notes && (
-                  <div style={{ marginTop: "12px" }}>
-                    <div style={{ ...mono, fontSize: "10px", color: "#c8a96e99", marginBottom: "4px" }}>NOTES</div>
-                    <div style={{ fontSize: "13px" }}>{selectedApp.admin_notes}</div>
-                  </div>
-                )}
+            {selected.ai_summary ? (
+              <div style={{ marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
+                <ListCard title="Monetization Readiness" items={aiSections.monetizationReadiness ? [aiSections.monetizationReadiness] : []} />
+                <ListCard title="Red Flags" items={aiSections.redFlags ? [aiSections.redFlags] : []} />
+                <ListCard title="Fit Assessment" items={aiSections.fitAssessment ? [aiSections.fitAssessment] : []} />
+                <ListCard title="Ideal Launch Path" items={aiSections.idealLaunchPath ? [aiSections.idealLaunchPath] : []} />
               </div>
-            )}
+            ) : null}
+
+            <label style={{ display: "block", marginTop: 14 }}>
+              <span style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(200,169,110,0.72)" }}>
+                Admin notes
+              </span>
+              <textarea
+                value={adminNotes}
+                onChange={(event) => setAdminNotes(event.target.value)}
+                style={{
+                  width: "100%",
+                  marginTop: 6,
+                  minHeight: 88,
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.13)",
+                  background: "rgba(255,255,255,0.02)",
+                  color: "rgba(255,255,255,0.86)",
+                  padding: 10,
+                }}
+              />
+            </label>
+
+            <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="action negative" disabled={updating} onClick={() => updateStatus("rejected")}>Reject</button>
+              <button className="action neutral" disabled={updating} onClick={() => updateStatus("waitlist")}>Waitlist</button>
+              <button className="action positive" disabled={updating} onClick={() => updateStatus("approved")}>Approve</button>
+            </div>
           </div>
+
+          <style jsx>{`
+            .close {
+              border: 1px solid rgba(255,255,255,0.15);
+              background: transparent;
+              color: rgba(255,255,255,0.65);
+              border-radius: 5px;
+              padding: 8px 10px;
+              font-size: 10px;
+              letter-spacing: .14em;
+              text-transform: uppercase;
+            }
+
+            .action {
+              border-radius: 5px;
+              padding: 10px 14px;
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 0.14em;
+              font-family: var(--font-mono, 'DM Mono', monospace);
+              border: 1px solid;
+              cursor: pointer;
+            }
+
+            .action:disabled {
+              opacity: .6;
+              cursor: not-allowed;
+            }
+
+            .action.negative {
+              border-color: rgba(227,127,127,.45);
+              color: #e37f7f;
+              background: rgba(227,127,127,.08);
+            }
+
+            .action.neutral {
+              border-color: rgba(200,169,110,.42);
+              color: #c8a96e;
+              background: rgba(200,169,110,.1);
+            }
+
+            .action.positive {
+              border-color: rgba(80,212,138,.42);
+              color: #50d48a;
+              background: rgba(80,212,138,.1);
+            }
+          `}</style>
         </div>
-      )}
+      ) : null}
     </div>
   );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  labels,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  labels?: Record<string, string>;
+}) {
+  return (
+    <label style={{ display: "grid", gap: 4 }}>
+      <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(200,169,110,0.7)", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={{
+          border: "1px solid rgba(255,255,255,0.14)",
+          borderRadius: 8,
+          background: "rgba(255,255,255,0.02)",
+          color: "rgba(255,255,255,0.85)",
+          padding: "10px 11px",
+        }}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {labels?.[option] ?? option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  color,
+  monoValue,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+  monoValue?: boolean;
+}) {
+  return (
+    <div>
+      <p style={{ margin: 0, color: "rgba(255,255,255,0.58)", fontSize: 10, letterSpacing: "0.1em", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>{label.toUpperCase()}</p>
+      <p style={{ margin: "4px 0 0", color: color ?? "#c8a96e", fontSize: 12, fontFamily: monoValue ? "var(--font-mono, 'DM Mono', monospace)" : "var(--font-display, 'Cormorant Garamond', serif)", textTransform: monoValue ? "uppercase" : "none" }}>{value}</p>
+    </div>
+  );
+}
+
+function ListCard({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, background: "rgba(255,255,255,0.02)", padding: "10px 11px" }}>
+      <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(200,169,110,0.7)", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>{title}</p>
+      <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+        {(items.length > 0 ? items : ["-"]).map((item, index) => (
+          <p key={`${title}-${index}`} style={{ margin: 0, color: "rgba(255,255,255,0.76)", fontSize: 13, lineHeight: 1.45, fontFamily: "var(--font-body, 'Outfit', sans-serif)" }}>
+            {item}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, background: "rgba(255,255,255,0.02)", padding: "10px 11px" }}>
+      <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(200,169,110,0.7)", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>{label}</p>
+      <p style={{ margin: "5px 0 0", color: "rgba(255,255,255,0.76)", fontSize: 13, lineHeight: 1.55, fontFamily: "var(--font-body, 'Outfit', sans-serif)" }}>{value}</p>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  compact,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
+  return (
+    <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 9, background: "rgba(255,255,255,0.02)", padding: compact ? 10 : 12 }}>
+      <p style={{ margin: 0, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-mono, 'DM Mono', monospace)" }}>{label}</p>
+      <p style={{ margin: "4px 0 0", fontSize: compact ? 20 : 28, color: "#c8a96e", lineHeight: 1, fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}>{value}</p>
+    </div>
+  );
+}
+
+function decisionColor(value: string): string {
+  if (value === "APPROVE_PRIORITY") return "#50d48a";
+  if (value === "APPROVE") return "#7ce7a8";
+  if (value === "approved") return "#50d48a";
+  if (value === "WAITLIST" || value === "waitlist") return "#c8a96e";
+  if (value === "pending") return "#5b8de8";
+  return "#e37f7f";
+}
+
+function confidenceColor(value: string | null): string {
+  if (value === "high") return "#50d48a";
+  if (value === "medium") return "#c8a96e";
+  if (value === "low") return "#e37f7f";
+  return "rgba(255,255,255,0.65)";
 }
