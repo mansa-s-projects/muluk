@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import VaultClient from "./VaultClient";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 
 export const metadata = { title: "Vault — MULUK" };
 
@@ -29,12 +29,10 @@ export default async function VaultPage() {
   ]);
 
   return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profile?.handle ?? undefined}>
-      <VaultClient
-        creatorId={user.id}
-        handle={profile?.handle ?? ""}
-        initialItems={items ?? []}
-      />
-    </DashboardShell>
+    <VaultClient
+      creatorId={user.id}
+      handle={profile?.handle ?? ""}
+      initialItems={items ?? []}
+    />
   );
 }

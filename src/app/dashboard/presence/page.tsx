@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import PresenceClient, { type PresenceData } from "./PresenceClient";
 
 export const metadata = {
@@ -135,9 +135,5 @@ export default async function PresencePage() {
     fetched_at: new Date().toISOString(),
   };
 
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <PresenceClient userId={user.id} initialData={initialData} />
-    </DashboardShell>
-  );
+  return <PresenceClient userId={user.id} initialData={initialData} />;
 }

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
 import DirectLineClient from "./DirectLineClient";
 
 export const dynamic = "force-dynamic";
@@ -32,9 +31,5 @@ export default async function DirectLinePage() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <DirectLineClient initialMessages={messages ?? []} creatorId={user.id} />
-    </DashboardShell>
-  );
+  return <DirectLineClient initialMessages={messages ?? []} creatorId={user.id} />;
 }

@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import AvailabilityClient from "./AvailabilityClient";
 import BookingsListClient from "./BookingsListClient";
 import type { AvailabilitySlot, Booking } from "@/lib/bookings";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 
 export const dynamic = "force-dynamic";
 
@@ -71,9 +71,8 @@ export default async function BookingsDashboardPage() {
   })) as Booking[];
 
   return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profile?.handle ?? undefined}>
-      <div
-        style={{
+    <div
+      style={{
           minHeight:  "100vh",
           background: "#020203",
           fontFamily: "var(--font-body, 'Outfit', sans-serif)",
@@ -143,6 +142,5 @@ export default async function BookingsDashboardPage() {
         }
       `}</style>
       </div>
-    </DashboardShell>
   );
 }

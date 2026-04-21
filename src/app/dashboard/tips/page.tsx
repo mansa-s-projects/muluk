@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import TipsClient from "./TipsClient";
 import type { Tip } from "@/lib/tips";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 
 export const dynamic = "force-dynamic";
 
@@ -63,40 +63,36 @@ export default async function TipsDashboardPage() {
   // If there's no handle or application, we can show an empty state or allow them to use their profile name.
   // The UI requirement: show username, show "Generate Tip Link" button, placeholder for payment link.
   
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={handle}>
-      {!applicationRes.data?.handle ? (
-        <div className="p-8 max-w-2xl mx-auto text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Welcome, {profile?.username || "Creator"}!</h2>
-          <p className="text-zinc-400">You need an approved handle to fully accept tips on your public profile, but you can configure your payment links now.</p>
-          <div className="pt-4">
-            <Link
-              href="/dashboard/monetization/pay-links"
-              style={{
-                display: "inline-block",
-                padding: "11px 28px",
-                background: "#c8a96e",
-                color: "#0a0800",
-                borderRadius: "4px",
-                fontFamily: "var(--font-mono, 'DM Mono', monospace)",
-                fontSize: "11px",
-                fontWeight: 500,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-              }}
-            >
-              Generate Tip Link →
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <TipsClient
-          initialTips={safeTips}
-          monthlyEarnings={safeEarnings}
-          handle={handle}
-        />
-      )}
-    </DashboardShell>
+  return !applicationRes.data?.handle ? (
+    <div className="p-8 max-w-2xl mx-auto text-center space-y-4">
+      <h2 className="text-2xl font-bold text-white">Welcome, {profile?.username || "Creator"}!</h2>
+      <p className="text-zinc-400">You need an approved handle to fully accept tips on your public profile, but you can configure your payment links now.</p>
+      <div className="pt-4">
+        <Link
+          href="/dashboard/monetization/pay-links"
+          style={{
+            display: "inline-block",
+            padding: "11px 28px",
+            background: "#c8a96e",
+            color: "#0a0800",
+            borderRadius: "4px",
+            fontFamily: "var(--font-mono, 'DM Mono', monospace)",
+            fontSize: "11px",
+            fontWeight: 500,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            textDecoration: "none",
+          }}
+        >
+          Generate Tip Link →
+        </Link>
+      </div>
+    </div>
+  ) : (
+    <TipsClient
+      initialTips={safeTips}
+      monthlyEarnings={safeEarnings}
+      handle={handle}
+    />
   );
 }

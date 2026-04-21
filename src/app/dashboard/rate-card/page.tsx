@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import RateCardClient from "./RateCardClient";
 import type {
   RateCardPrices,
@@ -91,16 +91,10 @@ export default async function RateCardPage() {
     : null;
 
   return (
-    <DashboardShell
-      userEmail={user.email ?? ""}
-      userId={user.id}
-      handle={application?.handle}
-    >
-      <RateCardClient
-        savedCard={savedCard}
-        savedPrices={savedPrices}
-        savedStats={savedStats}
-      />
-    </DashboardShell>
+    <RateCardClient
+      savedCard={savedCard}
+      savedPrices={savedPrices}
+      savedStats={savedStats}
+    />
   );
 }

@@ -1,17 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { mapProvider, mergeProfiles } from "@/lib/profile/importMapper";
-import OnboardingWizard, { type ExistingProfile } from "./OnboardingWizard";
-
-type SocialConnection = {
-  platform: "instagram" | "tiktok" | "twitter" | "youtube" | "telegram";
-  connected: boolean;
-  username?: string;
-  followers?: number;
-  engagement?: number;
-  views?: number;
-  dmSignals?: number;
-};
+import FirstMoneyOnboarding from "./FirstMoneyOnboarding";
 
 export default async function CreatorOnboardingPage() {
   const supabase = await createClient();
@@ -30,78 +19,11 @@ export default async function CreatorOnboardingPage() {
     redirect("/dashboard");
   }
 
-  const [
-    { data: creatorApplication, error: appErr },
-    { data: socialRows },
-  ] = await Promise.all([
-    supabase
-      .from("creator_applications")
-      .select("name, handle, bio, avatar_url, banner_url, website, location, main_specialty, primary_cta_url, category, content_types, audience_size")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("social_connections")
-      .select("platform, platform_username, follower_count, metrics")
-      .eq("creator_id", user.id),
-  ]);
+  const { data: application } = await supabase
+    .from("applications")
+    .select("name")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (appErr) console.error("creator_applications query failed:", appErr);
-
-  // Auto-skip onboarding if user has 2+ social connections connected
-  // (indicates they're already established and ready to launch)
-  if ((socialRows || []).length >= 2) {
-    // Mark onboarding as completed and redirect to dashboard
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ onboarding_completed: true })
-      .eq("id", user.id);
-
-    if (error) {
-      console.error("Failed to mark onboarding completed:", error);
-      // Continue to onboarding instead of redirecting on error
-      // so the check doesn't loop
-    } else {
-      // Successful update (no error returned)
-      redirect("/dashboard");
-    }
-  }
-
-  const socialConnections: SocialConnection[] = (socialRows || []).map((row) => ({
-    platform: row.platform as SocialConnection["platform"],
-    connected: true,
-    username: row.platform_username || undefined,
-    followers: row.follower_count || undefined,
-    engagement: (row.metrics as { engagementRate?: number } | null)?.engagementRate || undefined,
-  }));
-
-  const partials = (socialRows || []).map((row) => {
-    const metrics = (row.metrics as Record<string, unknown>) ?? {};
-    if (row.platform_username) {
-      metrics.username = metrics.username ?? row.platform_username;
-      metrics.uniqueId = metrics.uniqueId ?? row.platform_username;
-    }
-    return mapProvider(row.platform as string, metrics);
-  });
-  const socialMerge = partials.length > 0 ? mergeProfiles(partials) : null;
-
-  const existingProfile: ExistingProfile = {
-    displayName: creatorApplication?.name || socialMerge?.displayName || "",
-    handle: creatorApplication?.handle || socialMerge?.handle || "",
-    bio: creatorApplication?.bio || socialMerge?.bio || "",
-    avatarUrl: creatorApplication?.avatar_url || socialMerge?.avatarUrl || null,
-    bannerUrl: creatorApplication?.banner_url || socialMerge?.bannerUrl || null,
-    websiteUrl: creatorApplication?.website || socialMerge?.websiteUrl || "",
-    location: creatorApplication?.location || socialMerge?.location || "",
-    specialty: creatorApplication?.main_specialty || "",
-    ctaUrl: creatorApplication?.primary_cta_url || "",
-  };
-
-  return (
-    <OnboardingWizard
-      creatorName={creatorApplication?.name || ""}
-      existingSocialConnections={socialConnections}
-      existingAnalysis={null}
-      existingProfile={existingProfile}
-    />
-  );
+  return <FirstMoneyOnboarding defaultTitle={application?.name || "Exclusive Creator Offer"} />;
 }

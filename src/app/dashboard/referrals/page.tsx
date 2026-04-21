@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import ReferralIntelligenceClient from "./ReferralIntelligenceClient";
 
 export const metadata = {
@@ -29,9 +29,5 @@ export default async function ReferralsPage() {
     redirect("/dashboard/onboarding");
   }
 
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <ReferralIntelligenceClient />
-    </DashboardShell>
-  );
+  return <ReferralIntelligenceClient />;
 }

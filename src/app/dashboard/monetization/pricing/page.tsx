@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import PricingClient from "./PricingClient";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +31,5 @@ export default async function PricingPage() {
     .eq("creator_id", user.id)
     .order("purchase_count", { ascending: false });
 
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <PricingClient payLinks={payLinks ?? []} />
-    </DashboardShell>
-  );
+  return <PricingClient payLinks={payLinks ?? []} />;
 }

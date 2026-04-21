@@ -86,6 +86,11 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
     return pathname.startsWith(href);
   };
 
+  // Onboarding is a full-page wizard — render children without the shell chrome
+  if (pathname.startsWith("/dashboard/onboarding")) {
+    return <>{children}</>;
+  }
+
   return (
     <>
       {/* ── Mobile top bar (hidden on desktop via media query) ─────────────── */}

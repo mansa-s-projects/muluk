@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import SeriesClient from "@/app/dashboard/series/SeriesClient";
 import type { Series, SeriesEpisode } from "@/lib/series";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 
 export const dynamic = "force-dynamic";
 
@@ -88,13 +88,11 @@ export default async function SeriesDashboardPage() {
   }
 
   return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={profileRaw.data?.handle ?? undefined}>
-      <SeriesClient
-        initialSeries={seriesList}
-        initialEpisodes={allEpisodes}
-        monthlyEarnings={(monthlyRaw.data ?? []) as { month: number; total_cents: number; purchase_count: number }[]}
-        handle={profileRaw.data?.handle ?? ""}
-      />
-    </DashboardShell>
+    <SeriesClient
+      initialSeries={seriesList}
+      initialEpisodes={allEpisodes}
+      monthlyEarnings={(monthlyRaw.data ?? []) as { month: number; total_cents: number; purchase_count: number }[]}
+      handle={profileRaw.data?.handle ?? ""}
+    />
   );
 }

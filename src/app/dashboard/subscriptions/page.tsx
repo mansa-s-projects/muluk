@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import SubscriptionsClient from "./SubscriptionsClient";
 
 export const dynamic = "force-dynamic";
@@ -35,11 +35,9 @@ export default async function SubscriptionsPage() {
   const totalSubscribers = (payLinks ?? []).reduce((s, p) => s + (p.purchase_count ?? 0), 0);
 
   return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <SubscriptionsClient
-        payLinks={payLinks ?? []}
-        totalSubscribers={totalSubscribers}
-      />
-    </DashboardShell>
+    <SubscriptionsClient
+      payLinks={payLinks ?? []}
+      totalSubscribers={totalSubscribers}
+    />
   );
 }

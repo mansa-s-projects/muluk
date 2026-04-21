@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import MembersClient from "./MembersClient";
 
 export const dynamic = "force-dynamic";
@@ -63,12 +63,10 @@ export default async function MembersPage() {
   );
 
   return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id} handle={application?.handle}>
-      <MembersClient
-        fans={fans}
-        handle={application?.handle ?? profile?.username ?? ""}
-        creatorId={user.id}
-      />
-    </DashboardShell>
+    <MembersClient
+      fans={fans}
+      handle={application?.handle ?? profile?.username ?? ""}
+      creatorId={user.id}
+    />
   );
 }

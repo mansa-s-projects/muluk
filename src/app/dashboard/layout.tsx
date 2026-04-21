@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import DashboardShell from "@/app/dashboard/components/DashboardShell";
 import FloatingGenerateLinkButton from "@/app/dashboard/components/FloatingGenerateLinkButton";
 
 export const metadata: Metadata = {
@@ -21,10 +22,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login");
   }
 
+  const { data: creatorProfile } = await supabase
+    .from("creator_profiles")
+    .select("handle")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   return (
-    <>
+    <DashboardShell
+      userEmail={user.email ?? ""}
+      userId={user.id}
+      handle={creatorProfile?.handle ?? undefined}
+    >
       {children}
       <FloatingGenerateLinkButton />
-    </>
+    </DashboardShell>
   );
 }

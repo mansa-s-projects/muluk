@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import DashboardShell from "@/app/dashboard/components/DashboardShell";
+
 import PayLinksClient from "./PayLinksClient";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +31,5 @@ export default async function PayLinksPage() {
     .eq("creator_id", user.id)
     .order("created_at", { ascending: false });
 
-  return (
-    <DashboardShell userEmail={user.email ?? ""} userId={user.id}>
-      <PayLinksClient initialLinks={links ?? []} />
-    </DashboardShell>
-  );
+  return <PayLinksClient initialLinks={links ?? []} />;
 }
