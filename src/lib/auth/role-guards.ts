@@ -42,12 +42,17 @@ const ALL_KNOWN_PREFIXES = [
   ...PUBLIC_PREFIXES,
 ];
 
+// Sub-pages accessible at /:handle/:section
+const FAN_SECTIONS = new Set(["vault", "book", "series", "tips", "commission", "r", "pay", "offer"]);
+
 export function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;
   if (matchesPrefixes(pathname, PUBLIC_PREFIXES)) return true;
-  // Single-segment paths that don't match any known prefix are /:handle fan profiles
   const parts = pathname.split("/").filter(Boolean);
+  // /:handle fan profiles
   if (parts.length === 1 && !matchesPrefixes(pathname, ALL_KNOWN_PREFIXES)) return true;
+  // /:handle/:section fan sub-pages (e.g. /john/vault)
+  if (parts.length === 2 && FAN_SECTIONS.has(parts[1]) && !matchesPrefixes(pathname, ALL_KNOWN_PREFIXES)) return true;
   return false;
 }
 

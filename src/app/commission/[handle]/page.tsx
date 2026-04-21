@@ -1,15 +1,11 @@
-import { Suspense } from "react";
-import CommissionPageClient from "./CommissionPageClient";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ handle: string }>;
 }
 
-export default async function CommissionPage({ params }: Props) {
+// Canonical URL moved to /:handle/commission
+export default async function CommissionHandleRedirect({ params }: Props) {
   const { handle } = await params;
-  return (
-    <Suspense>
-      <CommissionPageClient handle={handle} />
-    </Suspense>
-  );
+  redirect(`/${handle}/commission`);
 }

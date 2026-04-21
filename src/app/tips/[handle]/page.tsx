@@ -1,15 +1,11 @@
-import { Suspense } from "react";
-import TipsPageClient from "./TipsPageClient";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ handle: string }>;
 }
 
-export default async function TipsPage({ params }: Props) {
+// Canonical URL moved to /:handle/tips
+export default async function TipsHandleRedirect({ params }: Props) {
   const { handle } = await params;
-  return (
-    <Suspense>
-      <TipsPageClient handle={handle} />
-    </Suspense>
-  );
+  redirect(`/${handle}/tips`);
 }

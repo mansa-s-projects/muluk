@@ -1,15 +1,11 @@
-import { Suspense } from "react";
-import SeriesPageClient from "./SeriesPageClient";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ handle: string }>;
 }
 
-export default async function SeriesPage({ params }: Props) {
+// Canonical URL moved to /:handle/series
+export default async function SeriesHandleRedirect({ params }: Props) {
   const { handle } = await params;
-  return (
-    <Suspense>
-      <SeriesPageClient handle={handle} />
-    </Suspense>
-  );
+  redirect(`/${handle}/series`);
 }
