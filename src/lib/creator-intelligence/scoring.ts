@@ -5,7 +5,7 @@ import {
   type SocialSignalsInput,
 } from "./types";
 
-const WEIGHTS = {
+export const SCORE_WEIGHTS = {
   audience: 15,
   engagement: 20,
   niche: 20,
@@ -213,12 +213,12 @@ export function calculateCreatorScore(
   };
 
   const weightedBreakdown = {
-    audienceWeighted: (subscores.audience * WEIGHTS.audience) / 100,
-    engagementWeighted: (subscores.engagement * WEIGHTS.engagement) / 100,
-    nicheWeighted: (subscores.niche * WEIGHTS.niche) / 100,
-    offerReadinessWeighted: (subscores.offer_readiness * WEIGHTS.offerReadiness) / 100,
-    brandQualityWeighted: (subscores.brand_quality * WEIGHTS.brandQuality) / 100,
-    growthPotentialWeighted: (subscores.growth_potential * WEIGHTS.growthPotential) / 100,
+    audienceWeighted: (subscores.audience * SCORE_WEIGHTS.audience) / 100,
+    engagementWeighted: (subscores.engagement * SCORE_WEIGHTS.engagement) / 100,
+    nicheWeighted: (subscores.niche * SCORE_WEIGHTS.niche) / 100,
+    offerReadinessWeighted: (subscores.offer_readiness * SCORE_WEIGHTS.offerReadiness) / 100,
+    brandQualityWeighted: (subscores.brand_quality * SCORE_WEIGHTS.brandQuality) / 100,
+    growthPotentialWeighted: (subscores.growth_potential * SCORE_WEIGHTS.growthPotential) / 100,
   };
 
   const overallScore = clamp(

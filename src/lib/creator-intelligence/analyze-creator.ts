@@ -1,6 +1,13 @@
 import { calculateCreatorScore } from "./scoring";
 import { determineOnboardingPath } from "./onboarding-path";
 import { buildRecommendation } from "./recommend";
+import { buildScoreExplainability } from "./explainability";
+import {
+  buildAdminDecisionMemo,
+  buildFirstRevenuePrescription,
+  deriveOpportunityTags,
+  detectRedFlags,
+} from "./elite-insights";
 import type {
   AnalyzeCreatorOptions,
   CreatorAnalysisOutput,
@@ -13,6 +20,22 @@ export async function analyzeCreatorApplication(
 ): Promise<CreatorAnalysisOutput> {
   const score = calculateCreatorScore(application, options.socialSignals);
   const recommendation = buildRecommendation(score);
+  const scoreExplainability = buildScoreExplainability(application, score, options.socialSignals);
+  const redFlags = detectRedFlags(application, score, options.socialSignals);
+  const opportunityTags = deriveOpportunityTags(application, score, redFlags);
+  const firstRevenuePrescription = buildFirstRevenuePrescription(
+    application,
+    score,
+    recommendation.recommendation,
+    opportunityTags
+  );
+  const adminDecisionMemo = buildAdminDecisionMemo({
+    recommendation: recommendation.recommendation,
+    overallScore: score.overallScore,
+    confidence: recommendation.confidence,
+    redFlags,
+    opportunityTags,
+  });
   const onboardingPath = determineOnboardingPath({
     application,
     recommendation: recommendation.recommendation,
@@ -39,10 +62,15 @@ export async function analyzeCreatorApplication(
     recommendation: recommendation.recommendation,
     confidence: recommendation.confidence,
     subscores: score.subscores,
+    score_explainability: scoreExplainability,
     strengths: recommendation.strengths,
     weaknesses: recommendation.weaknesses,
+    red_flags: redFlags,
+    opportunity_tags: opportunityTags,
+    first_revenue_prescription: firstRevenuePrescription,
+    admin_decision_memo: adminDecisionMemo,
     onboarding_path: onboardingPath,
-    reasoning_summary: recommendation.reasoningSummary,
+    reasoning_summary: `${recommendation.reasoningSummary} ${adminDecisionMemo.memo}`,
     ai_summary: aiSummary,
   };
 }

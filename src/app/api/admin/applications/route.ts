@@ -91,6 +91,12 @@ export async function GET(request: NextRequest) {
         weaknesses: score?.weaknesses ?? application.weaknesses ?? [],
         onboarding_path: score?.onboarding_path ?? application.onboarding_path ?? null,
         ai_summary: score?.ai_summary ?? application.ai_summary ?? null,
+        red_flags: score?.red_flags ?? application.red_flags ?? [],
+        opportunity_tags: score?.opportunity_tags ?? application.opportunity_tags ?? [],
+        first_revenue_prescription:
+          score?.first_revenue_prescription ?? application.first_revenue_prescription ?? null,
+        admin_decision_memo: score?.admin_decision_memo ?? application.admin_decision_memo ?? null,
+        score_explainability: score?.score_explainability ?? application.score_explainability ?? null,
         subscores: {
           audience: score?.audience_score ?? null,
           engagement: score?.engagement_score ?? application.engagement_score ?? null,

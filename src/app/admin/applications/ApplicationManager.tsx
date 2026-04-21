@@ -27,6 +27,16 @@ type ApplicationRow = {
   weaknesses: string[];
   onboarding_path: string | null;
   ai_summary: string | null;
+  red_flags?: Array<{ type: string; detected: boolean; severity: string; reason: string }>;
+  opportunity_tags?: string[];
+  first_revenue_prescription?: {
+    what_to_sell_first?: string;
+    recommended_price_range?: string;
+    best_first_product_type?: string;
+    fastest_path_to_first_3_sales?: string[];
+  } | null;
+  admin_decision_memo?: string | null;
+  score_explainability?: Record<string, { score?: number; weight?: number; weightedContribution?: number; reasons?: string[] }> | null;
   subscores: {
     audience: number | null;
     engagement: number | null;
@@ -308,6 +318,36 @@ export function ApplicationManager() {
               <ListCard title="Top Strengths" items={selected.strengths} />
               <ListCard title="Top Weaknesses" items={selected.weaknesses} />
             </div>
+
+            {selected.admin_decision_memo ? (
+              <div style={{ marginTop: 14 }}>
+                <MetaRow label="Admin Decision Memo" value={selected.admin_decision_memo} />
+              </div>
+            ) : null}
+
+            {selected.opportunity_tags && selected.opportunity_tags.length > 0 ? (
+              <div style={{ marginTop: 14 }}>
+                <ListCard title="Opportunity Tags" items={selected.opportunity_tags} />
+              </div>
+            ) : null}
+
+            {selected.red_flags && selected.red_flags.length > 0 ? (
+              <div style={{ marginTop: 14 }}>
+                <ListCard
+                  title="Red Flag Detection"
+                  items={selected.red_flags.map((flag) => `${flag.type}: ${flag.detected ? `${flag.severity} risk` : "clear"} - ${flag.reason}`)}
+                />
+              </div>
+            ) : null}
+
+            {selected.first_revenue_prescription ? (
+              <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+                <MetaRow label="First Sell" value={selected.first_revenue_prescription.what_to_sell_first || "-"} />
+                <MetaRow label="Price Range" value={selected.first_revenue_prescription.recommended_price_range || "-"} />
+                <MetaRow label="First Product Type" value={selected.first_revenue_prescription.best_first_product_type || "-"} />
+                <ListCard title="Fastest Path To First 3 Sales" items={selected.first_revenue_prescription.fastest_path_to_first_3_sales || []} />
+              </div>
+            ) : null}
 
             {selected.ai_summary ? (
               <div style={{ marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr" }}>
