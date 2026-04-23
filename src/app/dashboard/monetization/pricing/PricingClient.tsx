@@ -76,7 +76,7 @@ export default function PricingClient({ payLinks }: Props) {
             <p style={{ ...mono, fontSize: "11px", color: "rgba(200,169,110,0.6)", letterSpacing: "0.1em", marginBottom: "6px" }}>HOW IT WORKS</p>
             <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
               AI analyzes your conversion rates, view counts, and market positioning to suggest optimal prices for each product.
-              Click "Run AI Analysis" to get personalized recommendations.
+              Click &ldquo;Run AI Analysis&rdquo; to get personalized recommendations.
             </p>
           </div>
         )}

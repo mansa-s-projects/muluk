@@ -107,9 +107,11 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 // ─── useCountUp ───────────────────────────────────────────────────────────────
 
 function useCountUp(target: number, duration = 1300): number {
-  const [v, setV] = useState(0);
+  const [v, setV] = useState(target);
   useEffect(() => {
-    if (target === 0) { setV(0); return; }
+    if (target === 0) {
+      // Animate to zero from current value via the rAF loop below.
+    }
     let t0: number | null = null;
     const step = (ts: number) => {
       if (!t0) t0 = ts;
@@ -229,7 +231,6 @@ export default function TipsClient({ initialTips, monthlyEarnings, handle }: Pro
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#060612 0%,#08080f 50%,#09070e 100%)", fontFamily: BODY, position: "relative" }}>
-      {/* eslint-disable-next-line react/no-danger */}
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       {confetti && <ConfettiLayer />}
 
@@ -646,6 +647,7 @@ function VaultCard(p: VaultCardProps) {
             {p.uploadErr}
           </div>
         )}
+        {/* eslint-disable-next-line react-hooks/refs -- ref forwarded from parent, not dereferenced here */}
         <input ref={p.fileRef} type="file" onChange={p.onFileChange} style={{ display: "none" }} />
       </div>
     </div>
@@ -1061,7 +1063,7 @@ function TipWallCard({ tip }: { tip: Tip }) {
         letterSpacing: "-0.02em" }}>{formatTip(tip.amount_cents)}</div>
       {tip.message && (
         <p style={{ color: SUB, fontSize: 12, lineHeight: 1.6, margin: "0 0 12px", fontStyle: "italic" }}>
-          "{tip.message}"
+          &ldquo;{tip.message}&rdquo;
         </p>
       )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

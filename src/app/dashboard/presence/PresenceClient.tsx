@@ -139,7 +139,7 @@ function StatCard({
   );
 }
 
-function Skeleton({ width, height = 14 }: { width: number | string; height?: number }) {
+function _Skeleton({ width, height = 14 }: { width: number | string; height?: number }) {
   return (
     <div
       style={{

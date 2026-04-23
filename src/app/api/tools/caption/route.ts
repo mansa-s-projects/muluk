@@ -63,13 +63,11 @@ CAPTION_3: [caption]`;
       async start(controller) {
         const reader = stream.getReader();
         const decoder = new TextDecoder();
-        let fullText = "";
-        
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value);
-          fullText += chunk;
+          decoder.decode(value);
           controller.enqueue(value);
         }
         

@@ -36,7 +36,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom:  6,
 };
 
-export default function AvailabilityClient({ creatorId, handle, slots: initialSlots }: Props) {
+export default function AvailabilityClient({ creatorId: _creatorId, handle: _handle, slots: initialSlots }: Props) {
   const [slots,     setSlots]     = useState<AvailabilitySlot[]>(initialSlots);
   const [date,      setDate]      = useState("");
   const [time,      setTime]      = useState("10:00");

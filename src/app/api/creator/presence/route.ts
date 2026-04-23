@@ -49,8 +49,8 @@ export async function GET(req: Request) {
   const filter = url.searchParams.get("filter") ?? "all";
 
   const now = Date.now();
-  const twoMinAgo = new Date(now - TWO_MIN_MS).toISOString();
-  const fifteenMinAgo = new Date(now - FIFTEEN_MIN_MS).toISOString();
+  const _twoMinAgo = new Date(now - TWO_MIN_MS).toISOString();
+  const _fifteenMinAgo = new Date(now - FIFTEEN_MIN_MS).toISOString();
 
   // ── Parallel queries ────────────────────────────────────────────────────────
   const [presenceResult, activityResult, spendResult] = await Promise.all([

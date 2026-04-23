@@ -27,7 +27,7 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
-export default function MembersClient({ fans, handle, creatorId }: Props) {
+export default function MembersClient({ fans, handle: _handle, creatorId: _creatorId }: Props) {
   const [search, setSearch] = useState("");
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);

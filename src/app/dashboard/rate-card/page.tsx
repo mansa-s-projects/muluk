@@ -39,7 +39,7 @@ export default async function RateCardPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const [{ data: application }, { data: rateCard }, { data: stats }] =
+  const [{ data: _application }, { data: rateCard }, { data: stats }] =
     await Promise.all([
       db
         .from("creator_applications")

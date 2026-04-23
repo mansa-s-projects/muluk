@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" };
@@ -14,17 +14,17 @@ interface Props {
 }
 
 export default function JoinClient({ code, inviterName, inviterHandle, applyCode }: Props) {
-  const [tracked, setTracked] = useState(false);
+  const tracked = useRef(false);
 
   useEffect(() => {
-    if (tracked) return;
-    setTracked(true);
+    if (tracked.current) return;
+    tracked.current = true;
     void fetch("/api/referrals/click", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ referral_code: code, source: "invite_page" }),
     }).catch(() => {});
-  }, [code, tracked]);
+  }, [code]);
 
   const displayName = inviterHandle ? `@${inviterHandle}` : inviterName ?? "a creator";
   const applyLink = applyCode

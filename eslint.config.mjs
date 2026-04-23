@@ -5,6 +5,36 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Allow underscore-prefixed identifiers to be intentionally unused.
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
+  // User-uploaded media (avatars, vault items, series pages) is dynamic remote
+  // content; <Image /> optimization is not always desirable here.
+  {
+    files: [
+      "src/app/book/**/*.tsx",
+      "src/app/dashboard/onboarding/**/*.tsx",
+      "src/app/dashboard/series/**/*.tsx",
+      "src/app/dashboard/settings/**/*.tsx",
+      "src/app/pay/**/*.tsx",
+      "src/app/series/**/*.tsx",
+      "src/app/vault/**/*.tsx",
+    ],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
   // Disable set-state-in-effect for hooks - this is a valid pattern for data fetching
   {
     files: ["src/app/dashboard/command-center/hooks/**/*.ts"],

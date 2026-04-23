@@ -361,7 +361,7 @@ type FirstSaleEngineProps = {
   onCancelRedirect: () => void;
 };
 
-  function FirstSaleEngine({ niche, drop, blueprint, strongestPlatform, dmOpportunities, fanPageUrl, paymentLinkUrl, redirectCountdown, onDashboard, onCancelRedirect }: FirstSaleEngineProps) {
+  function FirstSaleEngine({ niche, drop, blueprint: _blueprint, strongestPlatform, dmOpportunities, fanPageUrl, paymentLinkUrl, redirectCountdown, onDashboard, onCancelRedirect }: FirstSaleEngineProps) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [views, setViews] = useState(0);
@@ -964,6 +964,7 @@ export default function OnboardingWizard({ creatorName, existingSocialConnection
       url.searchParams.delete("connected");
       window.history.replaceState({}, "", url.pathname + url.search);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   // Load existing analysis if available

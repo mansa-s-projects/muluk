@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  * GET /api/v2/earnings?creator_id=xxx
  * Returns total earnings for a creator from v2 transactions.
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

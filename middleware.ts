@@ -94,7 +94,7 @@ async function updateSession(request: NextRequest): Promise<NextResponse> {
     if (pathname === "/admin/login") {
       if (user && hasMinimumRole(role, "admin")) {
         const url = request.nextUrl.clone();
-        url.pathname = "/admin/dashboard";
+        url.pathname = "/admin/command-center";
         url.search = "";
         return NextResponse.redirect(url);
       }

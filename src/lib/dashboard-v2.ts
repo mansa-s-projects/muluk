@@ -598,7 +598,6 @@ export async function getCreatorAnalyticsStats(
     .eq("creator_id", userId)
     .eq("status", "paid");
 
-  const totalBuyers = purchaseRows?.length ?? 0;
   const emailCounts = new Map<string, number>();
   for (const row of purchaseRows ?? []) {
     if (row.buyer_email) {

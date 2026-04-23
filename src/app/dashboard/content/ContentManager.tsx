@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
@@ -68,7 +68,7 @@ export function ContentManager({ userId, initialContent, fanCodes }: ContentMana
   });
   
   // Edit modal
-  const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
+  const [_editingItem, setEditingItem] = useState<ContentItem | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();

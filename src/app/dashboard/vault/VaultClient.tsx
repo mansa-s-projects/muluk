@@ -49,7 +49,7 @@ function AssetsTab({ initialItems }: { initialItems: VaultItem[] }) {
   );
 }
 
-function ActiveDropsTab({ userId }: { userId: string }) {
+function ActiveDropsTab({ userId: _userId }: { userId: string }) {
   return (
     <div style={{ padding: "60px 32px", textAlign: "center" }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.1em" }}>NO ACTIVE DROPS</div>

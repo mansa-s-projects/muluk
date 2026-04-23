@@ -87,7 +87,7 @@ export default function DebugAuth() {
     testAuth();
   }, []);
 
-  const handleTestSignIn = async () => {
+  const _handleTestSignIn = async () => {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({

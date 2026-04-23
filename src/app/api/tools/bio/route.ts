@@ -51,8 +51,7 @@ BIO_3: [bio]`;
     const trackedStream = new ReadableStream({
       async start(controller) {
         const reader = stream.getReader();
-        const decoder = new TextDecoder();
-        
+
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;

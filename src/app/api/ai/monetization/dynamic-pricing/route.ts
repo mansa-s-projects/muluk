@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { contentType = "unlock", contentQuality = "standard", exclusivity = "standard" } = body;
 
-    const { data: contentHistory } = await supabase
+    const { data: _contentHistory } = await supabase
       .from("content_items")
       .select("price, status, type, created_at")
       .eq("creator_id", user.id)

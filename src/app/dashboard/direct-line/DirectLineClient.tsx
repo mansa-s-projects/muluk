@@ -140,6 +140,7 @@ export default function DirectLineClient({ initialMessages, creatorId }: Props) 
   // Auto-select first thread
   useEffect(() => {
     if (!activeFan && threads.length > 0) setActiveFan(threads[0].fan_code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only re-run on thread count change
   }, [threads.length]);
 
   useEffect(() => {

@@ -38,7 +38,7 @@ export default function DebugContent() {
 
     for (const table of contentTables) {
       try {
-        const { data, error, count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        const { data: _data, error, count } = await supabase.from(table).select('*', { count: 'exact', head: true });
         tests.push({
           name: table,
           status: error ? (error.message.includes('policy') ? 'no-access' : 'error') : 'ok',

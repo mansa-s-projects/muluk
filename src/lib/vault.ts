@@ -59,7 +59,7 @@ export const VAULT_PREVIEWS_BUCKET  = "vault-previews";
  */
 export async function generateBlurredPreview(
   buffer: Buffer,
-  mimeType: string
+  _mimeType: string
 ): Promise<Buffer> {
   // Dynamic import keeps sharp server-only
   const sharp = (await import("sharp")).default;

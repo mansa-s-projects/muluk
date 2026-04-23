@@ -45,7 +45,7 @@ export default function DebugDatabase() {
 
     for (const table of TABLES) {
       try {
-        const { data, error, count } = await supabase
+        const { data: _data, error, count } = await supabase
           .from(table)
           .select('*', { count: 'exact', head: true });
 

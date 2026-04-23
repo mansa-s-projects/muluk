@@ -435,6 +435,7 @@ export function CipherRadioCompact() {
         audioRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   // Handle track changes
@@ -445,6 +446,7 @@ export function CipherRadioCompact() {
         audioRef.current.play().catch(console.error);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to currentTrack changes
   }, [currentTrack]);
 
   // Handle play/pause

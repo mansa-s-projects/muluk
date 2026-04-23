@@ -68,7 +68,7 @@ export default function DebugHealth() {
     const jsStart = performance.now();
     try {
       const testArray = Array.from({ length: 10000 }, (_, i) => i * Math.random());
-      const sorted = testArray.sort((a, b) => a - b);
+      testArray.sort((a, b) => a - b);
       results.push({
         name: 'JS Execution',
         status: 'ok',

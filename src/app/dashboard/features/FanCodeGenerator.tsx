@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 const disp: React.CSSProperties = { fontFamily: "var(--font-display)" };
@@ -13,7 +12,7 @@ export type FanCodeGeneratorProps = {
   onGenerated?: (codes: Array<{ id: string; code: string; created_at: string }>) => void;
 };
 
-export function FanCodeGenerator({ userId, currentCount, tier = "cipher", onGenerated }: FanCodeGeneratorProps) {
+export function FanCodeGenerator({ userId: _userId, currentCount, tier = "cipher", onGenerated }: FanCodeGeneratorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [customName, setCustomName] = useState("");
