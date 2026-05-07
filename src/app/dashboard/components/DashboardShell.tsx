@@ -6,7 +6,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CreatorProvider } from "@/app/dashboard/context/CreatorContext";
 
-
 // ─── Design tokens ──────────────────────────────────────────────────────────
 const mono = { fontFamily: "var(--font-mono, 'DM Mono', monospace)" } as const;
 
@@ -85,11 +84,6 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   };
-
-  // Onboarding is a full-page wizard — render children without the shell chrome
-  if (pathname.startsWith("/dashboard/onboarding")) {
-    return <>{children}</>;
-  }
 
   return (
     <>
@@ -470,6 +464,7 @@ export default function DashboardShell({ children, userEmail, userId, handle }: 
           {children}
         </CreatorProvider>
       </div>
+
     </>
   );
 }

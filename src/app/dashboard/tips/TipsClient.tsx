@@ -25,6 +25,7 @@ interface Props {
   initialTips: Tip[];
   monthlyEarnings: { month: number; total_cents: number; tip_count: number }[];
   handle: string;
+  isApproved: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ function useCountUp(target: number, duration = 1300): number {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function TipsClient({ initialTips, monthlyEarnings, handle }: Props) {
+export default function TipsClient({ initialTips, monthlyEarnings, handle, isApproved }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging]     = useState(false);
   const [asset, setAsset]           = useState<UploadedAsset | null>(null);
@@ -242,6 +243,26 @@ export default function TipsClient({ initialTips, monthlyEarnings, handle }: Pro
       </div>
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1340, margin: "0 auto", padding: "0 24px 100px" }}>
+        {!isApproved && (
+          <div style={{
+            marginTop: 24, padding: "14px 24px", borderRadius: 12,
+            background: "linear-gradient(90deg, rgba(200,169,110,0.1), rgba(200,169,110,0.03))",
+            border: "1px solid rgba(200,169,110,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between",
+            animation: "slideUp .4s ease both"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <div>
+                <div style={{ color: G, fontWeight: 600, fontSize: 14 }}>Handle Approval Required</div>
+                <div style={{ color: SUB, fontSize: 12 }}>Your public tip link will be active once your handle @{handle} is approved.</div>
+              </div>
+            </div>
+            <a href="/dashboard/settings" style={{
+              padding: "8px 16px", borderRadius: 6, background: GB2, border: `1px solid ${GLine}`,
+              color: G, fontSize: 11, fontFamily: MONO, textDecoration: "none", letterSpacing: "0.06em"
+            }}>Complete Profile →</a>
+          </div>
+        )}
         <HeroSection handle={handle} tipLink={tipLink} totalEarned={totalEarned} tipsCount={paidTips.length}
           recentTips={paidTips.slice(0,3)} onGenerate={scrollToMint} onUpload={() => fileRef.current?.click()} />
 
