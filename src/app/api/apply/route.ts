@@ -357,8 +357,6 @@ export async function POST(req: NextRequest) {
         console.error("Referral record failed:", refErr);
       }
     }
-      }
-    }
 
     try {
       await resend.emails.send({
