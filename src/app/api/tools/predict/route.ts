@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { aiRouter } from "@/lib/ai-router";
+import { assertFeatureAccess, TierGateError, tierGatePayload } from "@/lib/tiers";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // ── Tier gate: ai_tools requires legend+ ──────────────────────────────────
+  try {
+    await assertFeatureAccess(user.id, "ai_tools", supabase);
+  } catch (e) {
+    if (e instanceof TierGateError) return NextResponse.json(tierGatePayload(e), { status: 403 });
+    throw e;
+  }
 
   // Fetch creator's real transaction data for analysis
   const { data: txData, error: txError } = await supabase
@@ -48,8 +58,11 @@ export async function POST(req: NextRequest) {
   const conversionRate = transactions.length > 0 ? (completedTx / transactions.length) * 100 : 0;
   const balance = Number(walletData?.balance ?? 0);
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+  // Check AI provider is configured
+  const status = aiRouter.getStatus();
+  if (!status.openrouter) {
+    return NextResponse.json({ error: "AI not configured" }, { status: 500 });
+  }
 
   const systemPrompt = `You are a pricing strategist for premium content creators. Analyze real transaction data and give precise, actionable pricing advice. Be direct, data-driven, and bold.`;
 
@@ -72,36 +85,24 @@ PREDICTION_1: [specific outcome prediction]
 PREDICTION_2: [specific outcome prediction]
 PREDICTION_3: [specific outcome prediction]`;
 
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
   try {
-    const abortController = new AbortController();
-    timeoutId = setTimeout(() => abortController.abort(), 10000);
+    // Use "balanced" tier for price analysis (good quality, cheaper than Claude)
+    const { stream } = await aiRouter.streamCompletion(
+      "price_analysis",
+      userPrompt,
+      systemPrompt
+    );
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: abortController.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-latest",
-        max_tokens: 400,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }],
-      }),
-    });
-    clearTimeout(timeoutId);
-    timeoutId = null;
+    // Read the full stream response
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "AI request failed" }, { status: 502 });
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
     }
-
-    const json = await res.json();
-    const text: string = json.content?.[0]?.text ?? "";
 
     const extract = (key: string) => {
       const match = text.match(new RegExp(`${key}:\\s*(.+)`));
@@ -125,11 +126,13 @@ PREDICTION_3: [specific outcome prediction]`;
       },
     });
   } catch (error: unknown) {
+    console.error("[Predict API] Error:", error);
     if (error instanceof Error && error.name === "AbortError") {
       return NextResponse.json({ error: "AI request timed out" }, { status: 504 });
     }
-    return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Analysis failed" },
+      { status: 500 }
+    );
   }
 }

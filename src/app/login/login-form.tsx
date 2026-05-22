@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { identifyUser, track } from "@/lib/analytics/track";
 
 const panelStyle: React.CSSProperties = {
   width: "100%",
@@ -31,12 +32,27 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(
+    searchParams.get("mode") === "signup" ? "signup" : "login"
+  );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const nextPath = searchParams.get("next") || "/dashboard";
+
+  // Track referral click when landing via ?ref= link
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      void fetch("/api/referrals/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referral_code: ref, source: "login_page" }),
+      }).catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,7 +66,7 @@ export default function LoginForm() {
         ? supabase.auth.signInWithPassword({ email, password })
         : supabase.auth.signUp({ email, password });
 
-    const { error: authError } = await action;
+    const { data: authDataFromAction, error: authError } = await action;
 
     setLoading(false);
 
@@ -60,11 +76,80 @@ export default function LoginForm() {
     }
 
     if (mode === "signup") {
+      // If signup immediately yields a user session, attach referral attribution now.
+      if (authDataFromAction.user) {
+        void fetch("/api/referrals/attach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "signup" }),
+        }).catch(() => {});
+      }
+
       setMessage("Account created. If email confirmation is enabled, check your inbox before signing in.");
+      track.signedUp({ email });
       return;
     }
 
-    router.replace(nextPath);
+    // Identify the user in PostHog after successful login
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      identifyUser(authData.user.id, { email: authData.user.email ?? email });
+      track.signedIn({ email });
+
+      void fetch("/api/referrals/attach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "login" }),
+      }).catch(() => {});
+    }
+
+    // Gate: only approved creators reach the dashboard.
+    // Primary check: app_metadata.is_approved (set by approval route).
+    // Fallback: creator_applications.status for applications approved before
+    // the app_metadata fix was deployed.
+    const isApprovedByMeta = authData.user?.app_metadata?.is_approved === true;
+
+    let destination = "/pending";
+    if (isApprovedByMeta) {
+      // Check if onboarding is completed
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", authData.user?.id ?? "")
+        .maybeSingle();
+      
+      // If approved but onboarding not done, send to onboarding
+      if (profile?.onboarding_completed === true) {
+        destination = nextPath;
+      } else {
+        destination = "/dashboard/onboarding";
+      }
+    } else {
+      const { data: creatorApp } = await supabase
+        .from("creator_applications")
+        .select("status")
+        .eq("user_id", authData.user?.id ?? "")
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (creatorApp?.status === "approved") {
+        // Check if onboarding is completed
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", authData.user?.id ?? "")
+          .maybeSingle();
+        
+        // If approved but onboarding not done, send to onboarding
+        if (profile?.onboarding_completed === true) {
+          destination = nextPath;
+        } else {
+          destination = "/dashboard/onboarding";
+        }
+      }
+    }
+
+    router.replace(destination);
     router.refresh();
   };
 
@@ -91,7 +176,7 @@ export default function LoginForm() {
             marginBottom: "18px",
           }}
         >
-          CIPHER Access
+          MULUK Access
         </div>
         <h1
           style={{

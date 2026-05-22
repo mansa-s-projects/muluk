@@ -1,5 +1,5 @@
 {
-  "name": "cipher",
+  "name": "muluk",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,27 +7,32 @@
     "dev:raw": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx tsx scripts/seed_from_folders.ts",
+    "seed:dry": "npx tsx scripts/seed_from_folders.ts --dry-run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-tabs": "^1.1.13",
     "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.100.1",
+    "@supabase/supabase-js": "^2.103.0",
+    "@vercel/analytics": "^2.0.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.7.0",
-    "next": "16.2.1",
+    "next": "^16.2.3",
     "posthog-js": "^1.364.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
-    "resend": "^6.9.4"
+    "resend": "^6.9.4",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sharp": "^0.31.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",

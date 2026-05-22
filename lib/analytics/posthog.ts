@@ -1,84 +1,97 @@
-﻿// CIPHER PostHog Analytics Integration
-import posthog from 'posthog-js';
+/**
+ * Server-side PostHog analytics — for use in API routes and server actions.
+ * Uses PostHog's /capture HTTP endpoint directly (no posthog-node dependency).
+ * For client-side tracking, use src/lib/analytics/track.ts instead.
+ */
 
-export const initPostHog = () => {
-  if (typeof window !== 'undefined') {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') posthog.debug();
-      },
-      capture_pageview: true,
-      capture_pageleave: true,
-      autocapture: true,
-      session_recording: {
-        maskAllInputs: false,
-        maskInputOptions: { password: true },
-      },
+const POSTHOG_API_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? '';
+const POSTHOG_HOST =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://app.posthog.com';
+
+type Properties = Record<string, unknown>;
+
+async function capture(
+  distinctId: string,
+  event: string,
+  properties: Properties = {}
+): Promise<void> {
+  if (!POSTHOG_API_KEY) return;
+
+  try {
+    await fetch(`${POSTHOG_HOST}/capture/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: POSTHOG_API_KEY,
+        distinct_id: distinctId,
+        event,
+        properties: {
+          $lib: 'cipher-server',
+          ...properties,
+        },
+        timestamp: new Date().toISOString(),
+      }),
     });
+  } catch {
+    // Non-fatal — analytics must never break the request
   }
-};
+}
 
-export const identifyUser = (userId: string, properties: any) => {
-  if (typeof window !== 'undefined') {
-    posthog.identify(userId, { ...properties, first_seen: new Date().toISOString() });
-  }
-};
+// ── Auth ──────────────────────────────────────────────────────────────────────
 
-export const trackVisitor = (data: any) => {
-  posthog.capture('page_view', { ...data, timestamp: new Date().toISOString() });
-};
+export async function trackSignUp(userId: string, props?: Properties) {
+  return capture(userId, 'user_signed_up', props);
+}
 
-export const trackSignUp = (data: any) => {
-  posthog.capture('user_signed_up', { ...data, timestamp: new Date().toISOString() });
-};
+export async function trackSignIn(userId: string, props?: Properties) {
+  return capture(userId, 'user_signed_in', props);
+}
 
-export const trackLogin = (data: any) => {
-  posthog.capture('user_logged_in', { ...data, timestamp: new Date().toISOString() });
-};
+// ── Content ───────────────────────────────────────────────────────────────────
 
-export const trackContentUpload = (data: any) => {
-  posthog.capture('content_uploaded', data);
-};
+export async function trackContentUploaded(
+  userId: string,
+  props: { contentId: string; title: string; price: number; mediaType: string }
+) {
+  return capture(userId, 'content_uploaded', props);
+}
 
-export const trackContentPurchase = (data: any) => {
-  posthog.capture('content_purchased', data);
-};
+export async function trackContentPurchased(
+  fanId: string,
+  props: { contentId: string; creatorId: string; amount: number }
+) {
+  return capture(fanId, 'content_purchased', props);
+}
 
-export const trackPaymentSuccess = (data: any) => {
-  posthog.capture('payment_succeeded', { ...data, timestamp: new Date().toISOString() });
-};
+// ── Payments ──────────────────────────────────────────────────────────────────
 
-export const trackPaymentFailure = (data: any) => {
-  posthog.capture('payment_failed', data);
-};
+export async function trackPaymentSucceeded(
+  userId: string,
+  props: { amount: number; contentId?: string; tier?: string }
+) {
+  return capture(userId, 'payment_succeeded', props);
+}
 
-export const trackCreatorEarnings = (data: any) => {
-  posthog.capture('creator_earnings', data);
-};
+export async function trackPaymentFailed(
+  userId: string,
+  props: { amount: number; reason?: string }
+) {
+  return capture(userId, 'payment_failed', props);
+}
 
-export const trackWithdrawalRequest = (data: any) => {
-  posthog.capture('withdrawal_requested', data);
-};
+export async function trackWithdrawalRequested(
+  userId: string,
+  props: { amount: number; method?: string }
+) {
+  return capture(userId, 'withdrawal_requested', props);
+}
 
-export const trackReferralClick = (data: any) => {
-  posthog.capture('referral_link_clicked', data);
-};
+// ── Generic escape hatch ──────────────────────────────────────────────────────
 
-export const trackSocialShare = (data: any) => {
-  posthog.capture('social_shared', data);
-};
-
-export const trackButtonClick = (buttonName: string, context?: any) => {
-  posthog.capture('button_clicked', { button_name: buttonName, ...context });
-};
-
-export const trackError = (error: any) => {
-  posthog.capture('error_occurred', { ...error, timestamp: new Date().toISOString() });
-};
-
-export const trackAdminAction = (data: any) => {
-  posthog.capture('admin_action', { ...data, timestamp: new Date().toISOString() });
-};
-
-export default posthog;
+export async function trackEvent(
+  distinctId: string,
+  event: string,
+  props?: Properties
+) {
+  return capture(distinctId, event, props);
+}

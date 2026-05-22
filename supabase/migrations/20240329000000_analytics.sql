@@ -1,4 +1,4 @@
-﻿-- CIPHER Analytics Tables
+-- CIPHER Analytics Tables
 CREATE TABLE IF NOT EXISTS activity_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id),

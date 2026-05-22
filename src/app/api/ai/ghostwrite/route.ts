@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { assertFeatureAccess, TierGateError, tierGatePayload } from "@/lib/tiers";
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_TIMEOUT_MS = Number(process.env.ANTHROPIC_TIMEOUT_MS) || 30_000;
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const TIMEOUT_MS = Number(process.env.OPENROUTER_TIMEOUT_MS) || 30_000;
 const MAX_PROMPT_LENGTH = 2_000;
 
-// Simple in-memory per-user rate limiter (resets on server restart)
+// Rate limiter
 const rateLimitMap = new Map<string, { count: number; reset: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
@@ -24,16 +25,20 @@ function isRateLimited(key: string): boolean {
 
 export async function POST(req: Request) {
   try {
-    // Authentication
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Rate limiting
+    // ── Tier gate: ai_tools requires legend+ ────────────────────────────────
+    try {
+      await assertFeatureAccess(user.id, "ai_tools", supabase);
+    } catch (e) {
+      if (e instanceof TierGateError) return NextResponse.json(tierGatePayload(e), { status: 403 });
+      throw e;
+    }
+
     if (isRateLimited(user.id)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
@@ -52,31 +57,36 @@ export async function POST(req: Request) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error("Ghostwrite: ANTHROPIC_API_KEY is not configured");
-      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+      console.error("Ghostwrite: OPENROUTER_API_KEY is not configured");
+      return NextResponse.json({ error: "AI not configured" }, { status: 500 });
     }
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ANTHROPIC_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     let upstream: Response;
     try {
-      upstream = await fetch(ANTHROPIC_URL, {
+      upstream = await fetch(OPENROUTER_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip",
+          "X-Title": "MULUK Platform",
         },
         body: JSON.stringify({
-          model: "claude-3-5-sonnet-latest",
-          max_tokens: 900,
+          model: "google/gemini-2.5-flash-lite",
+          max_tokens: 800,
           stream: true,
-          system:
-            "You are a ghostwriter for this creator. Match their dark luxury brand voice. Write engaging content for their fans. Be bold, mysterious, direct.",
-          messages: [{ role: "user", content: prompt }],
+          messages: [
+            {
+              role: "system",
+              content: "You are a ghostwriter for this creator. Match their dark luxury brand voice. Write engaging content for their fans. Be bold, mysterious, direct."
+            },
+            { role: "user", content: prompt }
+          ],
         }),
         signal: controller.signal,
       });
@@ -91,7 +101,7 @@ export async function POST(req: Request) {
 
     if (!upstream.ok || !upstream.body) {
       const msg = await upstream.text();
-      console.error("Anthropic upstream error:", upstream.status, msg);
+      console.error("OpenRouter upstream error:", upstream.status, msg);
       return NextResponse.json({ error: "Upstream service error" }, { status: 502 });
     }
 
@@ -109,28 +119,23 @@ export async function POST(req: Request) {
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
 
-            const chunks = buffer.split("\n\n");
-            buffer = chunks.pop() ?? "";
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
 
-            for (const chunk of chunks) {
-              const lines = chunk.split("\n");
-              const dataLine = lines.find(line => line.startsWith("data:"));
-              if (!dataLine) continue;
-
-              const json = dataLine.slice(5).trim();
-              if (!json || json === "[DONE]") continue;
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith("data: ")) continue;
+              const data = trimmed.slice(6);
+              if (data === "[DONE]") continue;
 
               try {
-                const event = JSON.parse(json) as {
-                  type?: string;
-                  delta?: { text?: string };
-                };
-
-                if (event.type === "content_block_delta" && event.delta?.text) {
-                  controller.enqueue(encoder.encode(event.delta.text));
+                const json = JSON.parse(data);
+                const text = json.choices?.[0]?.delta?.content;
+                if (text && typeof text === "string") {
+                  controller.enqueue(encoder.encode(text));
                 }
               } catch {
-                // Ignore malformed SSE chunks.
+                // Ignore malformed chunks
               }
             }
           }

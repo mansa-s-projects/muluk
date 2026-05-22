@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appBaseUrl, dashboardUrl } from "@/app/api/auth/_utils";
+import { appBaseUrl, dashboardUrl, sanitizeOAuthRedirect } from "@/app/api/auth/_utils";
 
 export async function GET(req: NextRequest) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const allowlist = (process.env.OAUTH_REDIRECT_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const redirect = sanitizeOAuthRedirect(req, req.nextUrl.searchParams.get("redirect"), {
+    allowOnboardingToken: true,
+    allowedOrigins: allowlist,
+  });
+  const isSecure = process.env.NODE_ENV !== "development";
 
   if (!botToken) {
     return NextResponse.redirect(dashboardUrl(req, {
@@ -21,5 +30,9 @@ export async function GET(req: NextRequest) {
   authUrl.searchParams.set("request_access", "write");
   authUrl.searchParams.set("return_to", callback);
 
-  return NextResponse.redirect(authUrl);
+  const res = NextResponse.redirect(authUrl);
+  if (redirect && redirect !== "/") {
+    res.cookies.set("telegram_oauth_redirect", redirect, { httpOnly: true, sameSite: "lax", secure: isSecure, path: "/", maxAge: 600 });
+  }
+  return res;
 }
