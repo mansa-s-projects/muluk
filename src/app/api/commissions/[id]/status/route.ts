@@ -1,6 +1,6 @@
 /**
  * GET /api/commissions/[id]/status?token=<access_token>
- * Fan checks their commission status (no auth — token-gated)
+ * Supporter checks their commission status (no auth — token-gated)
  * Returns checkout URL if accepted + unpaid, or delivery status
  */
 import { createClient as createServiceClient } from "@supabase/supabase-js";
@@ -27,7 +27,7 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = getService();
   const { data, error } = await supabase
     .from("commissions")
-    .select("id,title,description,budget_cents,agreed_cents,status,deadline,whop_checkout_id,fan_email,paid_at,delivered_at,created_at")
+    .select("id,title,description,budget_cents,agreed_cents,status,deadline,whop_checkout_id,supporter_email,paid_at,delivered_at,created_at")
     .eq("id", id)
     .eq("access_token", token)
     .maybeSingle();
@@ -41,13 +41,13 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const safeFanEmail =
-    typeof data.fan_email === "string" && data.fan_email.trim().length > 0
-      ? data.fan_email
+  const safesupporterEmail =
+    typeof data.supporter_email === "string" && data.supporter_email.trim().length > 0
+      ? data.supporter_email
       : null;
   const checkout_url = data.whop_checkout_id && data.status === "accepted"
-    ? safeFanEmail
-      ? `https://whop.com/checkout/${data.whop_checkout_id}/?email=${encodeURIComponent(safeFanEmail)}`
+    ? safesupporterEmail
+      ? `https://whop.com/checkout/${data.whop_checkout_id}/?email=${encodeURIComponent(safesupporterEmail)}`
       : `https://whop.com/checkout/${data.whop_checkout_id}/`
     : null;
 

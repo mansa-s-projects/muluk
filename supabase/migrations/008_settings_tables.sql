@@ -38,7 +38,6 @@ CREATE POLICY "creator manages own payout settings"
 CREATE TABLE IF NOT EXISTS creator_notification_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  email_new_fan BOOLEAN DEFAULT true,
   email_new_earning BOOLEAN DEFAULT true,
   email_weekly_report BOOLEAN DEFAULT true,
   email_marketing BOOLEAN DEFAULT false,

@@ -15,20 +15,6 @@ CREATE POLICY "creator updates own wallet"
   USING (creator_id = auth.uid())
   WITH CHECK (creator_id = auth.uid());
 
--- ── fan_codes ──────────────────────────────────────────────────────────────────
-ALTER TABLE fan_codes ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "creator sees own fan codes" ON fan_codes;
-CREATE POLICY "creator sees own fan codes"
-  ON fan_codes FOR SELECT
-  USING (creator_id = auth.uid());
-
-DROP POLICY IF EXISTS "creator manages own fan codes" ON fan_codes;
-CREATE POLICY "creator manages own fan codes"
-  ON fan_codes FOR ALL
-  USING (creator_id = auth.uid())
-  WITH CHECK (creator_id = auth.uid());
-
 -- ── transactions ───────────────────────────────────────────────────────────────
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 

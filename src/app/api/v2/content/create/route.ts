@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { generateFanCode, calculateSplit } from "@/lib/monetization";
-import { checkFanCodeLimit } from "@/lib/tiers";
+import { generateSupporterCode, calculateSplit } from "@/lib/monetization";
+import { checkSupporterCodeLimit } from "@/lib/tiers";
 
 /**
  * POST /api/v2/content/create
  * Creator uploads paid content → generates unlock link.
  *
  * Body: { title, description?, price, currency?, file_url, preview_url? }
- * Returns: { content, fanCode, unlockUrl }
+ * Returns: { content, SupporterCode, unlockUrl }
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -18,15 +18,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // ── Fan code quantity gate (cipher tier: max 500) ───────────────────────────
-  const fanCodeCheck = await checkFanCodeLimit(user.id, supabase);
-  if (!fanCodeCheck.allowed) {
+  // ── Supporter code quantity gate (cipher tier: max 500) ───────────────────────────
+  const SupporterCodeCheck = await checkSupporterCodeLimit(user.id, supabase);
+  if (!SupporterCodeCheck.allowed) {
     return NextResponse.json({
       upgrade_required: true,
-      current_tier:  fanCodeCheck.tier.slug,
+      current_tier:  SupporterCodeCheck.tier.slug,
       required_tier: "legend",
-      feature:       "fan_codes",
-      message:       `Fan code limit reached (${fanCodeCheck.current}/${fanCodeCheck.limit}). Upgrade to Legend for unlimited fan codes.`,
+      feature:       "supporter_codes",
+      message:       `Supporter code limit reached (${SupporterCodeCheck.current}/${SupporterCodeCheck.limit}). Upgrade to Legend for unlimited supporter codes.`,
     }, { status: 403 });
   }
 
@@ -85,16 +85,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // ── Generate fan code ─────────────────────────────────────────────────────
+  // ── Generate supporter code ─────────────────────────────────────────────────────
   let code: string;
   let insertAttempts = 0;
   const maxAttempts = 5;
 
   // Retry loop in case of rare code collision
   while (true) {
-    code = generateFanCode();
+    code = generateSupporterCode();
     const { error: codeErr } = await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .insert({
         code,
         content_id: content.id,
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
     insertAttempts++;
     if (insertAttempts >= maxAttempts) {
-      console.error("Fan code generation failed after retries:", codeErr);
+      console.error("Supporter code generation failed after retries:", codeErr);
       return NextResponse.json(
         { error: "Failed to generate unlock code" },
         { status: 500 }
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         price: content.price,
         currency: content.currency,
       },
-      fanCode: code,
+      SupporterCode: code,
       unlockUrl,
       earnings: {
         platformFee,

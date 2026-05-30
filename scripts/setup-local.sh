@@ -1,9 +1,9 @@
 #!/bin/bash
-# MULUK Local Development Setup
+# Mansas Mogules Local Development Setup
 
 set -e
 
-echo "MULUK Local Setup"
+echo "Mansas Mogules Local Setup"
 echo "================="
 echo ""
 
@@ -35,4 +35,4 @@ echo ""
 echo "Next steps:"
 echo "1. Edit .env.local with your API keys"
 echo "2. Run 'npm run dev' to start development"
-echo "3. Open http://localhost:3000"
+echo "3. Open http://localhost:3002"

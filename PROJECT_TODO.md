@@ -51,12 +51,13 @@ flowchart TD
 	- lock MVP scope
 	- move non-MVP items into post-launch roadmap
 
-## Release Readiness Snapshot (2026-04-03)
+## Release Readiness Snapshot (2026-05-30)
 
 - Build: pass (`npm run build`)
 - Type check: pass (via Next.js build pipeline)
 - Lint: pass (`npm run lint -- --quiet`)
-- Deployment: not executed yet (manual step remaining)
+- Deployment: executed (`npx vercel --prod --yes`) on linked Vercel project
+- Smoke test: failed on live URL (`/`, `/login`, `/dashboard`, `/api/auth/twitter/connect` returned 500)
 
 ## Final Deployment Gates
 
@@ -64,7 +65,7 @@ flowchart TD
 - [x] Gate 2: API routes compile in production build
 - [ ] Gate 3: Production secrets configured in Vercel
 - [ ] Gate 4: OAuth callbacks verified on production domain
-- [ ] Gate 5: Production deployment executed (`vercel --prod` or push to main)
+- [x] Gate 5: Production deployment executed (`vercel --prod` or push to main)
 - [ ] Gate 6: Post-deploy smoke test run on live URL
 
 ## Required Production Env Matrix
@@ -78,7 +79,6 @@ Core:
 
 AI:
 - [ ] `OPENROUTER_API_KEY`
-- [ ] `OPENAI_API_KEY` (required for marketing agent route)
 
 Email + Analytics:
 - [ ] `RESEND_API_KEY`
@@ -98,6 +98,7 @@ Social OAuth:
 - [ ] `INSTAGRAM_CALLBACK_URL`
 - [ ] `YOUTUBE_CLIENT_ID`
 - [ ] `YOUTUBE_CLIENT_SECRET`
+- [ ] `YOUTUBE_CALLBACK_URL`
 - [ ] `TIKTOK_CLIENT_KEY`
 - [ ] `TIKTOK_CLIENT_SECRET`
 - [ ] `TELEGRAM_BOT_TOKEN`
@@ -116,20 +117,41 @@ Social OAuth:
 
 | Workstream | Status | Owner | ETA | Blocker | Exit Criteria |
 |---|---|---|---|---|---|
-| Quality gates (lint/build/typecheck) | DONE | Mehdi + Copilot | 2026-04-03 | None | `npm run lint -- --quiet` and `npm run build` both pass |
+| Quality gates (lint/build/typecheck) | DONE | Mehdi + Copilot | 2026-05-30 | None | `npm run lint -- --quiet` and `npm run build` both pass |
 | Docs and runbooks | DONE | Mehdi + Copilot | 2026-04-03 | None | Quick start + operator runbook committed |
 | Social integrations end-to-end | BLOCKED | Mehdi | 2026-04-04 | Requires live provider credentials and callback validation | All enabled providers connect and callback successfully on production domain |
-| Production secrets setup | BLOCKED | Mehdi | 2026-04-03 | Manual Vercel config pending | Required keys present in Vercel project settings |
-| Production deploy | BLOCKED | Mehdi | 2026-04-03 | Secrets + OAuth readiness not fully confirmed | Successful `vercel --prod` (or main deploy) and healthy build |
-| Post-deploy smoke test | BLOCKED | Mehdi | 2026-04-03 | Deploy not yet completed | Core routes and API smoke tests pass on live URL |
+| Production secrets setup | BLOCKED | Mehdi | 2026-05-30 | Linked Vercel project is missing required runtime secrets | Required keys present in Vercel project settings |
+| Production deploy | DONE | Mehdi + Copilot | 2026-05-30 | None | Successful `vercel --prod` completed and URL issued |
+| Post-deploy smoke test | BLOCKED | Mehdi | 2026-05-30 | Live routes returning 500 due missing/incorrect production env configuration | Core routes and API smoke tests pass on live URL |
 | Beta feedback loop | BLOCKED | Mehdi + first creators | 2026-04-07 | Needs deployed build + initial users | Top 5 issues captured and first fixes applied |
 | Finalize core product features | BLOCKED | Mehdi | 2026-04-08 | Depends on beta feedback and scope lock | MVP scope frozen and non-MVP moved to post-launch roadmap |
 
-## Local Env Gap Check (2026-04-03)
+## Local Env Gap Check (2026-05-30)
 
 Checked from `.env.local` key presence (values not exposed):
 
+- Missing: `NEXT_PUBLIC_SUPABASE_URL`
+- Missing: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - Missing: `SUPABASE_SERVICE_ROLE_KEY`
-- Missing: `WHOP_API_KEY` or creator-managed Whop link configuration
+- Missing: `NEXT_PUBLIC_SITE_URL`
+- Missing: `TOKEN_ENCRYPTION_KEY`
+- Missing: `OPENROUTER_API_KEY`
+- Missing: `RESEND_API_KEY`
+- Missing: `NEXT_PUBLIC_POSTHOG_KEY`
+- Missing: `NEXT_PUBLIC_POSTHOG_HOST`
+- Missing: `WHOP_API_KEY`
+- Missing: `WHOP_WEBHOOK_SECRET`
+- Missing: `TWITTER_CLIENT_ID`
+- Missing: `TWITTER_CLIENT_SECRET`
+- Missing: `TWITTER_CALLBACK_URL`
+- Missing: `INSTAGRAM_CLIENT_ID`
+- Missing: `INSTAGRAM_CLIENT_SECRET`
+- Missing: `INSTAGRAM_CALLBACK_URL`
+- Missing: `YOUTUBE_CLIENT_ID`
+- Missing: `YOUTUBE_CLIENT_SECRET`
+- Missing: `YOUTUBE_CALLBACK_URL`
+- Missing: `TIKTOK_CLIENT_KEY`
+- Missing: `TIKTOK_CLIENT_SECRET`
+- Missing: `TELEGRAM_BOT_TOKEN`
 
-Note: This reflects local file status only. Vercel project settings may differ and should be verified directly.
+Note: `.env.local` was rewritten by `npx vercel --prod --yes` after it re-linked to a different Vercel project. Rehydrate local envs from secure source before local runtime testing.

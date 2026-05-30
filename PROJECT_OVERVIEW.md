@@ -8,7 +8,7 @@
 **CIPHER** is an AI-native operating system for content creators. Think "Notion + AI Co-pilot + Monetization Infrastructure" for the creator economy.
 
 **Core Value Proposition:**
-- AI handles strategy, pricing, content ideas, fan engagement
+- AI handles strategy, pricing, content ideas, supporter engagement
 - Creators focus on creating
 - Dark luxury aesthetic (UAE private members club meets engineer-built)
 - 84% cheaper AI costs than competitors
@@ -31,7 +31,7 @@
 - **Database:** Supabase (PostgreSQL + Realtime)
 - **Auth:** Supabase Auth (Email + OAuth: Twitter, TikTok, Instagram, YouTube, Telegram)
 - **Storage:** Supabase Storage (creator assets)
-- **Payments:** Whop checkout links for hosted fan payments, plus creator payout rails
+- **Payments:** Whop checkout links for hosted supporter payments, plus creator payout rails
 - **Email:** Resend
 - **AI:** OpenRouter (unified API for multiple providers)
 
@@ -58,13 +58,13 @@ cipher/
 │   │   │   │   ├── settings/   # Profile & payout settings
 │   │   │   │   └── tools/      # AI tools (bio, pricing, calendar)
 │   │   │   ├── admin/          # Admin command center
-│   │   │   ├── unlock/[code]/  # Fan unlock pages
+│   │   │   ├── unlock/[code]/  # Supporter unlock pages
 │   │   │   └── marketing/      # Marketing materials
 │   │   ├── api/                # API Routes
 │   │   │   ├── ai/             # AI endpoints
 │   │   │   │   ├── onboarding/analyze    # Smart profiling
 │   │   │   │   ├── content/ideas         # Content calendar
-│   │   │   │   ├── fans/personas         # Fan segmentation
+│   │   │   │   ├── supporters/personas         # Supporter segmentation
 │   │   │   │   ├── monetization/dynamic-pricing
 │   │   │   │   └── copilot/daily-brief
 │   │   │   ├── auth/[provider]/          # OAuth callbacks
@@ -123,14 +123,14 @@ cipher/
   - Content calendar scheduling
   - Auto-generated unlock links
 
-- [x] **Fan Management**
-  - Anonymous fan codes
-  - Fan CRM (notes, tags, VIP status)
+- [x] **Supporter Management**
+  - Anonymous supporter codes
+  - Supporter CRM (notes, tags, VIP status)
   - Transaction tracking
-  - Fan activity heatmap
+  - Supporter activity heatmap
 
 - [x] **Monetization**
-  - Whop checkout-link integration for hosted fan payments
+  - Whop checkout-link integration for hosted supporter payments
   - Multiple payout methods (Whop, Wise, USDC, PayPal)
   - Referral system with custom handles
   - Withdrawal requests
@@ -141,7 +141,7 @@ cipher/
 - [x] **Caption Generator** - Platform-optimized captions
 - [x] **Content Ideas** - 7-day calendar generator
 - [x] **Price Optimizer** - AI pricing based on transaction history
-- [x] **Fan Personas** - Auto-segmentation (Whale, Loyal, At-Risk, New, Lurker)
+- [x] **Supporter Personas** - Auto-segmentation (Whale, Loyal, At-Risk, New, Lurker)
 - [x] **Ghostwriter** - Content drafting
 - [x] **Onboarding Analyzer** - Smart creator profiling
 
@@ -149,7 +149,7 @@ cipher/
 - [x] **Phantom Mode** - Privacy toggle
 - [x] **Dark Vault** - PIN-protected content
 - [x] **Cipher Radio** - In-app music player
-- [x] **Fan Code Generator** - Bulk code creation
+- [x] **Supporter Code Generator** - Bulk code creation
 - [x] **Tax Summary** - CSV export for accountants
 - [x] **Collaboration Finder** - Mock creator matching
 
@@ -162,7 +162,7 @@ cipher/
 
 ## 5. IN PROGRESS / TODO (❌)
 
-> Items previously listed as TODO that are now **fully shipped**: email notifications (Resend), content file uploads (Supabase Storage), fan messaging / Direct Line, subscription tiers, AI onboarding wizard, PostHog analytics, Vault/Drops, Bookings, Series, Commissions, Brand Deals, Referrals, Signals, Members, Presence, Instant Pay Links, Tip Jar, dashboard error boundary, loading skeletons for all dashboard pages, improved empty states (commissions/deals/series), AI auto-reply suggestions in Direct Line, mobile responsive nav.
+> Items previously listed as TODO that are now **fully shipped**: email notifications (Resend), content file uploads (Supabase Storage), supporter messaging / Direct Line, subscription tiers, AI onboarding wizard, PostHog analytics, Vault/Drops, Bookings, Series, Commissions, Brand Deals, Referrals, Signals, Members, Presence, Instant Pay Links, Tip Jar, dashboard error boundary, loading skeletons for all dashboard pages, improved empty states (commissions/deals/series), AI auto-reply suggestions in Direct Line, mobile responsive nav.
 
 ### Critical
 - [ ] **Production Deployment**
@@ -193,7 +193,7 @@ cipher/
 - [x] **Loading skeletons** — `DashboardPageLoading` skeleton added to all 12 dashboard subdirectory routes
 - [x] **Empty states** — commissions, deals, and series now show icon + description + CTA instead of bare text
 - [x] **Mobile nav** — hamburger + slide-out sidebar + overlay added to `DashboardShell`; auto-closes on route change
-- [ ] **Fan page OG image** — `generateMetadata` exists on `[handle]` page but OG images are static placeholders; dynamic creator card not yet built
+- [ ] **Supporter page OG image** — `generateMetadata` exists on `[handle]` page but OG images are static placeholders; dynamic creator card not yet built
 
 ---
 
@@ -205,7 +205,7 @@ cipher/
 ```sql
 - creator_applications    # Creator profiles
 - creator_wallets         # Earnings & balance
-- fan_codes              # Anonymous fan identities
+- supporter_codes              # Anonymous supporter identities
 - transactions           # Payments & tips
 - content_items          # Creator content
 - withdrawal_requests    # Payout requests
@@ -247,7 +247,7 @@ Request → AI Router → OpenRouter → Model
 |----------|--------|-------------|
 | /api/ai/onboarding/analyze | POST | Smart creator profiling |
 | /api/ai/content/ideas | POST | Generate 7-day content calendar |
-| /api/ai/fans/personas | GET | Fan segmentation analysis |
+| /api/ai/supporters/personas | GET | Supporter segmentation analysis |
 | /api/ai/monetization/dynamic-pricing | POST | Optimal price recommendation |
 | /api/ai/copilot/daily-brief | GET | Morning AI briefing |
 
@@ -355,7 +355,7 @@ Request → AI Router → OpenRouter → Model
 2. **Cost Efficiency:** 84% cheaper AI than competitors
 3. **Dark Luxury Aesthetic:** Unique positioning
 4. **Unified Platform:** Creation + monetization + AI in one
-5. **Privacy-First:** Anonymous fan codes
+5. **Privacy-First:** Anonymous supporter codes
 6. **Engineer-Built:** Reliable, scalable architecture
 
 ---
@@ -366,7 +366,7 @@ Request → AI Router → OpenRouter → Model
 - Content created
 - Transactions processed
 - AI feature usage
-- Fan conversion rate
+- Supporter conversion rate
 - Average transaction value
 - Creator retention
 - Platform fees collected
@@ -392,13 +392,13 @@ Request → AI Router → OpenRouter → Model
 "This is the creator dashboard. Real-time earnings, AI daily brief, content calendar."
 
 **1:00-1:30 - AI Features**
-"Click 'Generate' - AI suggests 7 days of content. Click 'Optimize' - AI sets the perfect price based on your fans."
+"Click 'Generate' - AI suggests 7 days of content. Click 'Optimize' - AI sets the perfect price based on your supporters."
 
-**1:30-2:00 - Fan Intelligence**
-"AI segments your fans: Whales, Loyal, At-Risk. Each gets a personalized engagement strategy."
+**1:30-2:00 - Supporter Intelligence**
+"AI segments your supporters: Whales, Loyal, At-Risk. Each gets a personalized engagement strategy."
 
 **2:00-2:30 - Monetization**
-"Create content, set unlock price, share link. Fans pay, you earn. 12% fee, rest is yours."
+"Create content, set unlock price, share link. supporters pay, you earn. 12% fee, rest is yours."
 
 **2:30-3:00 - Close**
 "We're not a tool. We're a co-pilot. The platform they were afraid to build."

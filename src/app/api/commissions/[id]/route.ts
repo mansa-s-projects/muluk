@@ -54,7 +54,7 @@ export async function PATCH(req: Request, { params }: Params) {
   // Ensure this commission belongs to the creator
   const { data: existing } = await supabase
     .from("commissions")
-    .select("id, status, fan_email, title, access_token")
+    .select("id, status, supporter_email, title, access_token")
     .eq("id", id)
     .eq("creator_id", user.id)
     .maybeSingle();
@@ -73,13 +73,13 @@ export async function PATCH(req: Request, { params }: Params) {
     updates.status       = "accepted";
     updates.agreed_cents = Math.round(agreed_cents);
 
-    // Generate Whop checkout link for fan
+    // Generate Whop checkout link for supporter
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
     const redirectUrl = `${siteUrl}/commission/status?token=${existing.access_token}`;
 
     const checkout = await provisionCommissionCheckout({
       commissionId: id,
-      fanEmail:     existing.fan_email,
+      supporterEmail:     existing.supporter_email,
       title:        existing.title,
       agreedCents:  Math.round(agreed_cents),
       redirectUrl,

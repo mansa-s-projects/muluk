@@ -9,7 +9,6 @@ ALTER TABLE content_items
   ADD COLUMN IF NOT EXISTS file_url TEXT,
   ADD COLUMN IF NOT EXISTS access_count INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS fan_codes TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
 
 -- Create index for faster content queries
@@ -35,4 +34,3 @@ COMMENT ON COLUMN content_items.thumbnail_url IS 'URL to thumbnail/preview image
 COMMENT ON COLUMN content_items.file_url IS 'URL to actual content file';
 COMMENT ON COLUMN content_items.access_count IS 'Number of times content was accessed';
 COMMENT ON COLUMN content_items.earnings IS 'Total earnings from this content';
-COMMENT ON COLUMN content_items.fan_codes IS 'Array of fan codes with exclusive access';

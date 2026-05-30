@@ -1,7 +1,7 @@
 -- ============================================================
 -- 042_series_drops.sql
 -- Series Drop — creators publish multi-episode content;
--- fans purchase one-time access via Whop and read everything.
+-- buyers purchase one-time access via Whop and read everything.
 -- ============================================================
 
 BEGIN;
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS series (
   price_cents      INT         NOT NULL DEFAULT 0 CHECK(price_cents >= 0),
   status           TEXT        NOT NULL DEFAULT 'draft'
                      CHECK(status IN ('draft','published','archived')),
-  -- Whop — one plan per series, reused across all fan purchases
+  -- Whop — one plan per series, reused across all purchases
   whop_product_id  TEXT,
   whop_plan_id     TEXT,
   episode_count    INT         NOT NULL DEFAULT 0,
@@ -109,14 +109,14 @@ CREATE TRIGGER trg_sync_episode_count
   AFTER INSERT OR DELETE ON series_episodes
   FOR EACH ROW EXECUTE FUNCTION sync_series_episode_count();
 
--- ── Fan purchases ─────────────────────────────────────────────────────────────
+-- ── Purchases ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS series_purchases (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   series_id        UUID        NOT NULL REFERENCES series(id) ON DELETE CASCADE,
   creator_id       UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  fan_email        TEXT,
-  fan_name         TEXT,
+  buyer_email      TEXT,
+  buyer_name       TEXT,
   status           TEXT        NOT NULL DEFAULT 'pending'
                      CHECK(status IN ('pending','paid','refunded')),
   whop_payment_id  TEXT        UNIQUE,
@@ -196,7 +196,7 @@ CREATE POLICY "creator_manage_episodes"
   ON series_episodes FOR ALL
   USING (creator_id = auth.uid());
 
--- series_purchases: fan inserts; creator reads all; no public read of purchases
+-- series_purchases: service inserts; creator reads all; no public read of purchases
 DROP POLICY IF EXISTS "public_insert_purchases" ON series_purchases;
 CREATE POLICY "public_insert_purchases"
   ON series_purchases FOR INSERT

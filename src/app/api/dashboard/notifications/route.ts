@@ -23,7 +23,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("transactions")
-      .select("id, fan_code, amount, created_at, status")
+      .select("id, supporter_code, amount, created_at, status")
       .eq("creator_id", user.id)
       .order("created_at", { ascending: false })
       .limit(8);
@@ -39,7 +39,7 @@ export async function GET() {
         style: "currency",
         currency: "USD",
         maximumFractionDigits: 0,
-      }).format(safeNum(row.amount))} from ${String(row.fan_code ?? "FAN-UNKNOWN")}`,
+      }).format(safeNum(row.amount))} from ${String(row.supporter_code ?? "SUPPORTER-UNKNOWN")}`,
       created_at: String(row.created_at ?? ""),
       // TODO: derive from persisted read state (e.g. !row.read_at) once a
       // `read_at` column or `notification_reads` join table exists in the schema.

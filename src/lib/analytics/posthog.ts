@@ -6,6 +6,10 @@
 import posthog from 'posthog-js';
 
 type AnalyticsProperties = Record<string, unknown>;
+type VisitorPayload = AnalyticsProperties & {
+  page?: string;
+  referrer?: string;
+};
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://app.posthog.com";
@@ -39,7 +43,7 @@ export const identifyUser = (userId: string, properties?: AnalyticsProperties) =
 };
 
 // Supports both trackVisitor({ page, referrer }) and trackVisitor(data: AnalyticsProperties)
-export const trackVisitor = (data: any) => {
+export const trackVisitor = (data: VisitorPayload) => {
   if (data && typeof data === 'object' && ('page' in data || 'referrer' in data)) {
     ph()?.capture('$pageview', {
       $current_url: typeof window !== 'undefined' ? window.location.href : '',

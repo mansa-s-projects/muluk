@@ -81,15 +81,15 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(50);
 
-    const fanCodesPromise = supabase
-      .from("fan_codes_v2")
+    const SupporterCodesPromise = supabase
+      .from("supporter_codes_v2")
       .select("*, content_items_v2!inner(creator_id)")
       .eq("content_items_v2.creator_id", id)
       .order("created_at", { ascending: false })
       .limit(50);
 
     const messagesPromise = supabase
-      .from("fan_messages")
+      .from("supporter_messages")
       .select("*")
       .eq("creator_id", id)
       .order("created_at", { ascending: false })
@@ -116,7 +116,7 @@ export async function GET(
       notesResult,
       contentResult,
       transactionsResult,
-      fanCodesResult,
+      SupporterCodesResult,
       messagesResult,
       activityResult,
       aiUsageResult,
@@ -127,7 +127,7 @@ export async function GET(
       notesPromise,
       contentPromise,
       transactionsPromise,
-      fanCodesPromise,
+      SupporterCodesPromise,
       messagesPromise,
       activityPromise,
       aiUsagePromise,
@@ -151,8 +151,8 @@ export async function GET(
     if (transactionsResult.error) {
       console.warn("[admin-creator-details] transactions query failed", { creatorId: id, error: transactionsResult.error.message });
     }
-    if (fanCodesResult.error) {
-      console.warn("[admin-creator-details] fanCodes query failed", { creatorId: id, error: fanCodesResult.error.message });
+    if (SupporterCodesResult.error) {
+      console.warn("[admin-creator-details] SupporterCodes query failed", { creatorId: id, error: SupporterCodesResult.error.message });
     }
     if (messagesResult.error) {
       console.warn("[admin-creator-details] messages query failed", { creatorId: id, error: messagesResult.error.message });
@@ -170,7 +170,7 @@ export async function GET(
     const notes = notesResult.data;
     const content = contentResult.data;
     const transactions = transactionsResult.data;
-    const fanCodes = fanCodesResult.data;
+    const SupporterCodes = SupporterCodesResult.data;
     const messages = messagesResult.data;
     const activity = activityResult.data;
     const aiUsage = aiUsageResult.data;
@@ -184,7 +184,7 @@ export async function GET(
       notes: notes || [],
       content: content || [],
       transactions: transactions || [],
-      fanCodes: (fanCodes || []).map((f) => ({
+      SupporterCodes: (SupporterCodes || []).map((f) => ({
         ...(f as Record<string, unknown>),
         content_items_v2: undefined,
       })),
@@ -194,7 +194,7 @@ export async function GET(
       stats: {
         totalContent: content?.length || 0,
         totalTransactions: transactions?.length || 0,
-        totalFans: fanCodes?.length || 0,
+        totalsupporters: SupporterCodes?.length || 0,
         totalMessages: messages?.length || 0,
         isCurrentlyBanned: bans?.some(b => b.is_active && (b.ban_type === 'permanent' || new Date(b.expires_at) > new Date())) || false,
       }

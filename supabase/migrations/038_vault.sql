@@ -37,13 +37,13 @@ CREATE INDEX IF NOT EXISTS idx_vault_items_creator ON vault_items(creator_id);
 CREATE INDEX IF NOT EXISTS idx_vault_items_active  ON vault_items(creator_id, status, sort_order)
   WHERE status = 'active';
 
--- ── Vault purchases (fan unlocks) ─────────────────────────────────────────────
+-- ── Vault purchases ───────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS vault_purchases (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   vault_item_id    UUID        NOT NULL REFERENCES vault_items(id) ON DELETE CASCADE,
   creator_id       UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  -- Unique per-purchase access token returned to fan
+  -- Unique per-purchase access token
   access_token     TEXT        UNIQUE NOT NULL
                      DEFAULT encode(extensions.gen_random_bytes(24), 'hex'),
   buyer_email      TEXT,
@@ -94,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_vault_purchases_whop   ON vault_purchases(whop_pa
 ALTER TABLE vault_items     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vault_purchases ENABLE ROW LEVEL SECURITY;
 
--- vault_items: anyone can read active items (for public fan grid)
+-- vault_items: anyone can read active items (public grid)
 DROP POLICY IF EXISTS "public_read_vault_items" ON vault_items;
 CREATE POLICY "public_read_vault_items"
   ON vault_items FOR SELECT

@@ -5,7 +5,7 @@ function escapeLike(input: string): string {
   return input.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-// View all messages or filter by creator/fan
+// View all messages or filter by creator/supporter
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const creatorId = searchParams.get("creatorId");
-    const fanCode = searchParams.get("fanCode");
+    const SupporterCode = searchParams.get("SupporterCode");
     const search = searchParams.get("search");
     const rawPage = Number(searchParams.get("page"));
     const rawLimit = Number(searchParams.get("limit"));
@@ -44,11 +44,11 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from("fan_messages")
+      .from("supporter_messages")
       .select(`
         *,
         creator:creator_id(name, handle, user_id),
-        fan_code_ref:fan_code(code)
+        supporter_code_ref:supporter_code(code)
       `, { count: "exact" });
 
     // Apply filters
@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
       query = query.eq("creator_id", creatorId);
     }
 
-    if (fanCode) {
-      query = query.eq("fan_code", fanCode);
+    if (SupporterCode) {
+      query = query.eq("supporter_code", SupporterCode);
     }
 
     if (search) {
@@ -71,18 +71,18 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Get thread/conversation view if creatorId and fanCode provided
+    // Get thread/conversation view if creatorId and SupporterCode provided
     let thread = null;
-    if (creatorId && fanCode) {
+    if (creatorId && SupporterCode) {
       const { data: threadMessages } = await supabase
-        .from("fan_messages")
+        .from("supporter_messages")
         .select(`
           *,
           creator:creator_id(name, handle),
-          fan_code_ref:fan_code(code, custom_name)
+          supporter_code_ref:supporter_code(code, custom_name)
         `)
         .eq("creator_id", creatorId)
-        .eq("fan_code", fanCode)
+        .eq("supporter_code", SupporterCode)
         .order("created_at", { ascending: true });
 
       thread = threadMessages || [];
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       action: "view_messages",
       target_type: "messages",
       target_id: creatorId || "all",
-      details: { creatorId, fanCode, search, page, limit },
+      details: { creatorId, SupporterCode, search, page, limit },
     });
     if (auditError) {
       console.warn("[admin-messages] audit log insert failed:", auditError.message);

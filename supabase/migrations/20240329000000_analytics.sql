@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  fan_id UUID REFERENCES profiles(id),
   creator_id UUID REFERENCES profiles(id),
   total_amount DECIMAL(10, 2) NOT NULL,
   platform_fee DECIMAL(10, 2) NOT NULL,

@@ -40,8 +40,8 @@ export interface SeriesPurchase {
   id:              string;
   series_id:       string;
   creator_id:      string;
-  fan_email:       string | null;
-  fan_name:        string | null;
+  supporter_email:       string | null;
+  supporter_name:        string | null;
   status:          "pending" | "paid" | "refunded";
   whop_payment_id: string | null;
   access_token:    string;
@@ -49,7 +49,7 @@ export interface SeriesPurchase {
   created_at:      string;
 }
 
-/** Series detail as returned on the public fan page */
+/** Series detail as returned on the public supporter page */
 export interface PublicSeries {
   id:            string;
   title:         string;
@@ -112,7 +112,7 @@ export function formatSeriesPrice(cents: number): string {
 /**
  * Provisions a one-time Whop checkout for a single series purchase.
  * A new product+plan is created per purchase so metadata uniquely identifies it.
- * The access_token is embedded in the redirect URL so the fan lands on content immediately.
+ * The access_token is embedded in the redirect URL so the supporter lands on content immediately.
  */
 export async function provisionSeriesPurchaseCheckout(opts: {
   purchaseId:    string;
@@ -121,7 +121,7 @@ export async function provisionSeriesPurchaseCheckout(opts: {
   creatorHandle: string;
   priceCents:    number;
   redirectUrl:   string;
-  fanEmail?:     string;
+  supporterEmail?:     string;
 }): Promise<{
   whop_product_id:  string;
   whop_plan_id:     string;
@@ -185,8 +185,8 @@ export async function provisionSeriesPurchaseCheckout(opts: {
     }
     const plan = await planRes.json() as { id: string };
 
-    const checkoutUrl = opts.fanEmail
-      ? `https://whop.com/checkout/${plan.id}/?email=${encodeURIComponent(opts.fanEmail)}`
+    const checkoutUrl = opts.supporterEmail
+      ? `https://whop.com/checkout/${plan.id}/?email=${encodeURIComponent(opts.supporterEmail)}`
       : `https://whop.com/checkout/${plan.id}/`;
 
     return {

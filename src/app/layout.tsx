@@ -1,67 +1,45 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Outfit, DM_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { Suspense } from "react";
-import { PostHogProvider } from "./providers/PostHogProvider";
-import ReferralCaptureClient from "./components/ReferralCaptureClient";
+import { Playfair_Display, Manrope } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-display",
+  weight: ["500", "600", "700"],
+  variable: "--font-heading",
   display: "swap",
 });
 
-const outfit = Outfit({
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
 });
 
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["300", "400", "500"],
-  variable: "--font-mono",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "MULUK — The Creator Platform They Were Afraid To Build",
+  title: "GC Sovereign AI",
   description:
-    "Anonymous fans. Auto-split payments. Lifetime referral income. 8–12% platform fee.",
-  metadataBase: new URL("https://muluk.vip"),
+    "AI Transformation Advisory for Dubai and GCC companies.",
+  metadataBase: new URL("https://gcsovereign.ai"),
   openGraph: {
-    title: "MULUK — The Creator Platform They Were Afraid To Build",
-    description: "Anonymous fans. Auto-split payments. Lifetime referral income.",
-    url: "https://muluk.vip",
-    siteName: "MULUK",
+    title: "GC Sovereign AI",
+    description: "AI Operating System installations for measurable executive outcomes.",
+    url: "https://gcsovereign.ai",
+    siteName: "GC Sovereign AI",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MULUK — The Creator Platform They Were Afraid To Build",
-    description: "Anonymous fans. Auto-split payments. Lifetime referral income.",
+    title: "GC Sovereign AI",
+    description: "AI Transformation Advisory for Dubai and GCC companies.",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable}`}
-      style={{ background: "#020203" }}
-    >
-      <body style={{ background: "#020203", color: "rgba(255,255,255,0.92)" }}>
-        <PostHogProvider>
-          <Suspense fallback={null}>
-            <ReferralCaptureClient />
-          </Suspense>
-          {children}
-        </PostHogProvider>
-        <Analytics />
+    <html lang="en" className={`${playfair.variable} ${manrope.variable}`}>
+      <body suppressHydrationWarning>
+        {children}
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 -- ============================================================
 -- 041_tips.sql
--- Tip Jar + Wall of Love — fans send tips with optional messages
+-- Tip Jar + Wall of Love — tips with optional messages
 -- ============================================================
 
 BEGIN;
@@ -10,10 +10,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS tips (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id       UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  -- Fan identity
+  -- Tipper identity
   display_name     TEXT,                         -- null or "Anonymous" when hidden
   is_anonymous     BOOLEAN     NOT NULL DEFAULT false,
-  fan_email        TEXT,
+  tipper_email     TEXT,
   -- Content
   amount_cents     INT         NOT NULL CHECK(amount_cents >= 100),
   message          TEXT,                         -- optional public message
@@ -93,13 +93,13 @@ END $$;
 
 ALTER TABLE tips ENABLE ROW LEVEL SECURITY;
 
--- Fans can see paid tips on the public wall (only non-sensitive fields exposed in API)
+-- Anyone can see paid tips on the public wall (only non-sensitive fields exposed in API)
 DROP POLICY IF EXISTS "public_read_paid_tips" ON tips;
 CREATE POLICY "public_read_paid_tips"
   ON tips FOR SELECT
   USING (status::text = 'paid');
 
--- Fans can insert tips
+-- Anyone can insert tips
 DROP POLICY IF EXISTS "public_insert_tips" ON tips;
 CREATE POLICY "public_insert_tips"
   ON tips FOR INSERT

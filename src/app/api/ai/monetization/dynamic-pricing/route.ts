@@ -52,7 +52,7 @@ CREATOR CONTEXT:
 - Exclusivity Level: ${exclusivity} (standard, limited, one-time)
 - Average Transaction: $${avgTransaction.toFixed(2)}
 - Most Successful Price Point: $${mostSuccessfulPrice}
-- Median Fan Spend: $${medianPrice}
+- Median Supporter Spend: $${medianPrice}
 
 Provide pricing recommendation in this format:
 

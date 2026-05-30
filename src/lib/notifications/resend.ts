@@ -1,7 +1,25 @@
 // MULUK Resend Email Notification System
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  if (!resendClient) resendClient = new Resend(apiKey);
+  return resendClient;
+}
+
+type SendArgs = Parameters<Resend["emails"]["send"]>[0];
+
+async function sendWithResend(args: SendArgs) {
+  const client = getResendClient();
+  if (!client) {
+    return { error: { message: 'RESEND_API_KEY is not configured' } };
+  }
+  return client.emails.send(args);
+}
+
 const FROM_EMAIL = 'MULUK <notifications@muluk.vip>';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://muluk.vip';
 
@@ -24,8 +42,8 @@ export type CreatorRejectionData = {
 };
 
 export type PurchaseSequenceData = {
-  fanEmail: string;
-  fanName?: string;
+  supporterEmail: string;
+  supporterName?: string;
   offerTitle: string;
   amount: string;
   accessUrl: string;
@@ -74,18 +92,18 @@ const emailTemplate = (content: string) => `
 export const sendWelcomeEmail = async (data: WelcomeEmailData) => {
   const content = `<h2>Welcome to MULUK, ${data.name}</h2>
     <p>You've joined the most exclusive creator platform. 88% of every dollar goes to you.</p>`;
-  return resend.emails.send({ from: FROM_EMAIL, to: data.to, subject: 'Welcome to MULUK', html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Welcome to MULUK', html: emailTemplate(content) });
 };
 
 export const sendEarningsNotification = async (data: EarningsEmailData) => {
   const content = `<h2>You just earned $${data.amount}</h2>
     <p>New balance: <strong style="color:#e8cc90">$${data.newBalance}</strong></p>`;
-  return resend.emails.send({ from: FROM_EMAIL, to: data.to, subject: `You earned $${data.amount} on MULUK`, html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: `You earned $${data.amount} on MULUK`, html: emailTemplate(content) });
 };
 
 export const sendPurchaseReceipt = async (data: PurchaseReceiptData) => {
   const content = `<h2>Purchase Successful</h2><p>You purchased ${data.itemType} from ${data.creatorName}.</p>`;
-  return resend.emails.send({ from: FROM_EMAIL, to: data.to, subject: 'Your MULUK Purchase', html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Your MULUK Purchase', html: emailTemplate(content) });
 };
 
 // ─── Creator approval ─────────────────────────────────────────────────────────
@@ -103,7 +121,7 @@ export const sendCreatorApprovalEmail = async (data: CreatorApprovalData) => {
     <a href="${dashboardUrl}" class="btn">Open Dashboard →</a>
     <p class="dim" style="font-size:12px;margin-top:8px;">Direct link: ${dashboardUrl}</p>
   `;
-  return resend.emails.send({
+  return sendWithResend({
     from: FROM_EMAIL,
     to: data.to,
     subject: "You're approved — start earning now",
@@ -121,7 +139,7 @@ export const sendCreatorRejectionEmail = async (data: CreatorRejectionData) => {
     <p>${reason}</p>
     <p>You're welcome to reapply after 30 days.</p>
   `;
-  return resend.emails.send({
+  return sendWithResend({
     from: FROM_EMAIL,
     to: data.to,
     subject: 'Your MULUK application',
@@ -134,13 +152,13 @@ export const sendCreatorRejectionEmail = async (data: CreatorRejectionData) => {
 // Emails 2 & 3 are scheduled at 24h and 7d.
 
 export const sendPurchaseEmailSequence = async (data: PurchaseSequenceData) => {
-  const fan   = data.fanName?.trim() || 'there';
+  const supporter   = data.supporterName?.trim() || 'there';
   const in24h = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const in7d  = new Date(Date.now() + 7  * 24 * 60 * 60 * 1000).toISOString();
 
   const receipt = `
     <h2>Purchase confirmed.</h2>
-    <p>Hey ${fan}, your payment went through.</p>
+    <p>Hey ${supporter}, your payment went through.</p>
     <div class="box">
       <div class="lbl">You unlocked</div>
       <div class="val">${data.offerTitle}</div>
@@ -149,29 +167,29 @@ export const sendPurchaseEmailSequence = async (data: PurchaseSequenceData) => {
     <a href="${data.accessUrl}" class="btn">Access Your Purchase →</a>
     ${data.nextOfferTitle && data.nextOfferUrl ? `
     <div style="margin-top:32px;padding-top:24px;border-top:1px solid #1c1c1c;">
-      <p class="dim" style="font-size:12px;">Fans who bought this also loved:</p>
+      <p class="dim" style="font-size:12px;">supporters who bought this also loved:</p>
       <a href="${data.nextOfferUrl}" style="color:#c8a96e;text-decoration:none;font-size:14px;">${data.nextOfferTitle} →</a>
     </div>` : ''}
   `;
 
   const followup = `
     <h2 style="color:rgba(255,255,255,0.8)">Enjoying it?</h2>
-    <p>Hey ${fan}, you unlocked <strong style="color:#e8cc90">${data.offerTitle}</strong> from @${data.creatorHandle} yesterday.</p>
+    <p>Hey ${supporter}, you unlocked <strong style="color:#e8cc90">${data.offerTitle}</strong> from @${data.creatorHandle} yesterday.</p>
     <p>There's more where that came from.</p>
     <a href="${SITE_URL}/@${data.creatorHandle}" class="btn">See What's New →</a>
   `;
 
   const reengagement = `
     <h2 style="color:rgba(255,255,255,0.8)">Still here.</h2>
-    <p>Hey ${fan}, @${data.creatorHandle} has been active. New drops, new content.</p>
+    <p>Hey ${supporter}, @${data.creatorHandle} has been active. New drops, new content.</p>
     <a href="${SITE_URL}/@${data.creatorHandle}" class="btn">Check It Out →</a>
   `;
 
   await Promise.allSettled([
-    resend.emails.send({ from: FROM_EMAIL, to: data.fanEmail, subject: `You unlocked: ${data.offerTitle}`, html: emailTemplate(receipt) }),
-    resend.emails.send({ from: FROM_EMAIL, to: data.fanEmail, subject: `More from @${data.creatorHandle}`, html: emailTemplate(followup), scheduledAt: in24h }),
-    resend.emails.send({ from: FROM_EMAIL, to: data.fanEmail, subject: `@${data.creatorHandle} just dropped something`, html: emailTemplate(reengagement), scheduledAt: in7d }),
+    sendWithResend({ from: FROM_EMAIL, to: data.supporterEmail, subject: `You unlocked: ${data.offerTitle}`, html: emailTemplate(receipt) }),
+    sendWithResend({ from: FROM_EMAIL, to: data.supporterEmail, subject: `More from @${data.creatorHandle}`, html: emailTemplate(followup), scheduledAt: in24h }),
+    sendWithResend({ from: FROM_EMAIL, to: data.supporterEmail, subject: `@${data.creatorHandle} just dropped something`, html: emailTemplate(reengagement), scheduledAt: in7d }),
   ]);
 };
 
-export default resend;
+export default getResendClient;

@@ -23,7 +23,7 @@ export async function GET() {
 
     const { data: yesterdayTx } = await supabase
       .from("transactions")
-      .select("amount, type, fan_code, created_at")
+      .select("amount, type, supporter_code, created_at")
       .eq("creator_id", user.id)
       .eq("status", "completed")
       .gte("created_at", yesterday.toISOString())
@@ -44,8 +44,8 @@ export async function GET() {
       .lte("scheduled_for", new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString())
       .order("scheduled_for", { ascending: true });
 
-    const { data: fanActivity } = await supabase
-      .from("fan_codes")
+    const { data: supporterActivity } = await supabase
+      .from("supporter_codes")
       .select("code, created_at, is_vip")
       .eq("creator_id", user.id)
       .gte("created_at", lastWeek.toISOString());
@@ -63,16 +63,16 @@ export async function GET() {
     const weekAvgDaily = weekTx ? weekTx.reduce((s, t) => s + t.amount, 0) / 7 : 0;
     const vsWeekAvg = weekAvgDaily > 0 ? ((yesterdayRevenue - weekAvgDaily) / weekAvgDaily * 100).toFixed(0) : 0;
     
-    const newFansYesterday = fanActivity?.filter(f => new Date(f.created_at) >= yesterday).length || 0;
-    const vipFans = fanActivity?.filter(f => f.is_vip).length || 0;
+    const newsupportersYesterday = supporterActivity?.filter(f => new Date(f.created_at) >= yesterday).length || 0;
+    const vipsupporters = supporterActivity?.filter(f => f.is_vip).length || 0;
 
     const prompt = `Generate a creator's daily briefing as their AI co-pilot.
 
 YESTERDAY'S PERFORMANCE:
 - Revenue: $${yesterdayRevenue.toFixed(2)} (${Number(vsWeekAvg) > 0 ? '+' : ''}${vsWeekAvg}% vs 7-day avg)
 - Transactions: ${yesterdayTxCount}
-- New Fans: ${newFansYesterday}
-- VIP Fans: ${vipFans}
+- New supporters: ${newsupportersYesterday}
+- VIP supporters: ${vipsupporters}
 
 UPCOMING SCHEDULE (next 48h):
 ${scheduledContent?.map(c => `- ${c.title} (${c.status}) at ${new Date(c.scheduled_for).toLocaleDateString()}`).join("\n") || "Nothing scheduled"}
@@ -102,9 +102,9 @@ QUICK WINS (under 10 min):
 CONTENT OPPORTUNITY:
 Based on ${scheduledContent?.length ? "your schedule" : "no scheduled content"}, suggest: [specific content idea for today]
 
-FAN ENGAGEMENT:
-- Message this fan: [type] because [reason]
-- Re-engage: [strategy for dormant fans]
+SUPPORTER ENGAGEMENT:
+- Message this supporter: [type] because [reason]
+- Re-engage: [strategy for dormant supporters]
 
 MONEY OPPORTUNITY:
 [Specific pricing or bundling suggestion for today]`;
@@ -145,9 +145,9 @@ MONEY OPPORTUNITY:
         .map(l => l.replace(/^-\\s*/, "").trim())
         .filter(Boolean),
       contentOpportunity: extractSection("CONTENT OPPORTUNITY"),
-      fanEngagement: {
-        messageFan: extractSection("FAN ENGAGEMENT").match(/Message this fan:(.+)/i)?.[1]?.trim() || "",
-        reengage: extractSection("FAN ENGAGEMENT").match(/Re-engage:(.+)/i)?.[1]?.trim() || "",
+      supporterEngagement: {
+        messageSupporter: extractSection("SUPPORTER ENGAGEMENT").match(/Message this supporter:(.+)/i)?.[1]?.trim() || "",
+        reengage: extractSection("SUPPORTER ENGAGEMENT").match(/Re-engage:(.+)/i)?.[1]?.trim() || "",
       },
       moneyOpportunity: extractSection("MONEY OPPORTUNITY"),
       raw: fullText,
@@ -155,7 +155,7 @@ MONEY OPPORTUNITY:
         yesterdayRevenue,
         yesterdayTxCount,
         vsWeekAvg: Number(vsWeekAvg),
-        newFansYesterday,
+        newsupportersYesterday,
         upcomingContent: scheduledContent?.length || 0,
       }
     };

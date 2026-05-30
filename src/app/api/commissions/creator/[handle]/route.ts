@@ -1,6 +1,6 @@
 /**
  * POST /api/commissions/creator/[handle]
- * Fan submits a commission request (no auth required)
+ * Supporter submits a commission request (no auth required)
  */
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
@@ -21,22 +21,22 @@ export async function POST(
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
-  const { fan_email, fan_name, title, description, budget_cents, deadline } = body;
+  const { supporter_email, supporter_name, title, description, budget_cents, deadline } = body;
 
-  if (!fan_email || !title || !description || !budget_cents) {
+  if (!supporter_email || !title || !description || !budget_cents) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
   if (typeof title !== "string" || typeof description !== "string") {
     return NextResponse.json({ error: "title and description must be strings" }, { status: 400 });
   }
-  if (fan_name !== undefined && fan_name !== null && typeof fan_name !== "string") {
-    return NextResponse.json({ error: "fan_name must be a string" }, { status: 400 });
+  if (supporter_name !== undefined && supporter_name !== null && typeof supporter_name !== "string") {
+    return NextResponse.json({ error: "supporter_name must be a string" }, { status: 400 });
   }
   if (typeof budget_cents !== "number" || budget_cents < 100) {
     return NextResponse.json({ error: "Minimum budget $1" }, { status: 400 });
   }
   // Basic email validation
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fan_email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supporter_email)) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
@@ -64,8 +64,8 @@ export async function POST(
     .from("commissions")
     .insert({
       creator_id:   creator.user_id,
-      fan_email:    fan_email.toLowerCase().trim(),
-      fan_name:     fan_name?.trim() || null,
+      supporter_email:    supporter_email.toLowerCase().trim(),
+      supporter_name:     supporter_name?.trim() || null,
       title:        title.trim().slice(0, 200),
       description:  description.trim().slice(0, 2000),
       budget_cents: Math.round(budget_cents),

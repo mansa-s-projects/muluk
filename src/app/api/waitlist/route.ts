@@ -1,29 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseClient } from "@/lib/supabase";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 function createResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    throw new Error("RESEND_API_KEY is required.");
+    return null;
   }
 
   return new Resend(apiKey);
 }
 
+function createDbClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (url && serviceKey) {
+    return createServiceClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+
+  if (!url || !anonKey) return null;
+
+  try {
+    return createSupabaseClient();
+  } catch {
+    return null;
+  }
+}
+
+function normalizeWaitlistType(rawType: unknown): "creator" | "supporter" | null {
+  if (typeof rawType !== "string") return null;
+  const value = rawType.trim().toLowerCase();
+  if (value === "creator" || value === "operator") return "creator";
+  if (value === "supporter" || value === "citizen") return "supporter";
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createSupabaseClient();
+    const supabase = createDbClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "Waitlist service unavailable" }, { status: 503 });
+    }
+
     const resend = createResendClient();
     const body = await req.json();
-    const { email, type, source } = body;
+    const { email, source } = body;
+    const normalizedType = normalizeWaitlistType(body.type);
 
     /* ── VALIDATE ── */
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
-    if (!["creator", "fan"].includes(type)) {
+    if (!normalizedType) {
       return NextResponse.json({ error: "Invalid type" }, { status: 400 });
     }
 
@@ -32,7 +66,7 @@ export async function POST(req: NextRequest) {
       .from("waitlist")
       .insert({
         email: email.toLowerCase().trim(),
-        type,
+        type: normalizedType,
         source: source || "landing",
         ip: req.headers.get("x-forwarded-for") ?? null,
       });
@@ -46,8 +80,8 @@ export async function POST(req: NextRequest) {
     const alreadyExists = dbError?.code === "23505";
 
     /* ── SEND CONFIRMATION EMAIL via Resend ── */
-    if (!alreadyExists) {
-      const isCreator = type === "creator";
+    if (!alreadyExists && resend) {
+      const isCreator = normalizedType === "creator";
 
       await resend.emails.send({
         from:    "MULUK <hello@muluk.vip>",   // ← change to your verified domain
@@ -55,7 +89,7 @@ export async function POST(req: NextRequest) {
         subject: isCreator
           ? "You're on the MULUK waitlist — founding creator spot reserved"
           : "You're on the MULUK waitlist",
-        html: emailTemplate({ email, type: type as "creator" | "fan" }),
+        html: emailTemplate({ email, type: normalizedType }),
       });
     }
 
@@ -70,7 +104,7 @@ export async function POST(req: NextRequest) {
 /* ─────────────────────────────────────────
    EMAIL TEMPLATE
 ───────────────────────────────────────── */
-function emailTemplate({ email, type }: { email: string; type: "creator" | "fan" }) {
+function emailTemplate({ email, type }: { email: string; type: "creator" | "supporter" }) {
   const isCreator = type === "creator";
 
   return `<!DOCTYPE html>
@@ -135,7 +169,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "fan"
                 <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.5);font-weight:300;">→ &nbsp;Lifetime referral income from day one</p>
                 ` : `
                 <p style="margin:0 0 10px 0;font-size:14px;color:rgba(255,255,255,0.5);font-weight:300;">→ &nbsp;Early access before public launch</p>
-                <p style="margin:0 0 10px 0;font-size:14px;color:rgba(255,255,255,0.5);font-weight:300;">→ &nbsp;Zero account required — just your fan code</p>
+                <p style="margin:0 0 10px 0;font-size:14px;color:rgba(255,255,255,0.5);font-weight:300;">→ &nbsp;Zero account required — just your supporter code</p>
                 <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.5);font-weight:300;">→ &nbsp;Anonymous access to all creators</p>
                 `}
               </div>

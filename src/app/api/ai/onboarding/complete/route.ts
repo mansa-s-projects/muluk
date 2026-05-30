@@ -150,7 +150,7 @@ export async function POST(req: Request) {
         console.error("Failed to save profile identity to profiles:", profileIdentityErr);
       }
 
-      // Mirror to creator_applications for fan-page rendering (fire-and-forget)
+      // Mirror to creator_applications for supporter-page rendering (fire-and-forget)
       supabase.from("creator_applications").upsert({
         user_id:   user.id,
         name:      pi.displayName,
@@ -292,7 +292,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       dropId: contentItem?.id,
-      fanPageUrl: handle ? `/${handle}` : "",
+      SupporterPageUrl: handle ? `/${handle}` : "",
       paymentLinkId,
       paymentLinkUrl,
       provisioningSkipped,

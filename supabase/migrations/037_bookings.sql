@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS bookings (
   id                        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   availability_id           UUID        NOT NULL REFERENCES availability(id) ON DELETE CASCADE,
   creator_id                UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  fan_name                  TEXT        NOT NULL,
-  fan_email                 TEXT        NOT NULL,
+  client_name               TEXT        NOT NULL,
+  client_email              TEXT        NOT NULL,
   stripe_session_id         TEXT        UNIQUE,
   stripe_payment_intent_id  TEXT,
   status                    TEXT        NOT NULL DEFAULT 'pending'

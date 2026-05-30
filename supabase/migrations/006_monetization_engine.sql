@@ -40,47 +40,11 @@ CREATE POLICY "v2_content_public_select" ON content_items_v2
 CREATE INDEX IF NOT EXISTS idx_content_items_v2_creator ON content_items_v2(creator_id);
 CREATE INDEX IF NOT EXISTS idx_content_items_v2_active  ON content_items_v2(is_active) WHERE is_active = true;
 
--- ── fan_codes_v2 ────────────────────────────────────────────────────────────
--- One code per fan-per-content purchase. Code is the unlock key.
-CREATE TABLE IF NOT EXISTS fan_codes_v2 (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  code            TEXT UNIQUE NOT NULL,
-  content_id      UUID NOT NULL REFERENCES content_items_v2(id) ON DELETE CASCADE,
-  is_paid         BOOLEAN DEFAULT false,
-  payment_method  TEXT,                              -- 'stripe' | 'crypto' | null
-  paid_at         TIMESTAMPTZ,
-  created_at      TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE fan_codes_v2 ENABLE ROW LEVEL SECURITY;
-
--- Anyone can read fan codes by code (needed for unlock page)
-DROP POLICY IF EXISTS "v2_fan_codes_public_select" ON fan_codes_v2;
-CREATE POLICY "v2_fan_codes_public_select" ON fan_codes_v2
-  FOR SELECT
-  USING (true);
-
--- Only service role / API can insert/update (handled via supabase service key or anon with RPC)
--- For now allow inserts from authenticated users (creators generating codes)
-DROP POLICY IF EXISTS "v2_fan_codes_auth_insert" ON fan_codes_v2;
-CREATE POLICY "v2_fan_codes_auth_insert" ON fan_codes_v2
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM content_items_v2 c
-      WHERE c.id = content_id AND c.creator_id = auth.uid()
-    )
-  );
-
-CREATE INDEX IF NOT EXISTS idx_fan_codes_v2_code       ON fan_codes_v2(code);
-CREATE INDEX IF NOT EXISTS idx_fan_codes_v2_content_id ON fan_codes_v2(content_id);
-
 -- ── transactions_v2 ────────────────────────────────────────────────────────
 -- Every payment event (Stripe, crypto, future methods)
 CREATE TABLE IF NOT EXISTS transactions_v2 (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   content_id        UUID NOT NULL REFERENCES content_items_v2(id) ON DELETE CASCADE,
-  fan_code_id       UUID NOT NULL REFERENCES fan_codes_v2(id) ON DELETE CASCADE,
   creator_id        UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   amount            INTEGER NOT NULL,                 -- smallest currency unit
   currency          TEXT NOT NULL DEFAULT 'usd',

@@ -1,12 +1,13 @@
 // POST /api/signals/refresh
 // Generate fresh signals for a given niche using AI + mock trend data.
-// In production this would fan-out to TikTok/Twitter/Google Trends APIs.
+// In production this would supporter-out to TikTok/Twitter/Google Trends APIs.
 // Protected: only callable with the service-role key or from a cron job.
 // Creators can also trigger a manual refresh (rate-limited to once per hour).
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { aiRouter } from "@/lib/ai-router";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 // ---------------------------------------------------------------------------
 // Mock trend sources — replace with real API calls in production
@@ -196,6 +197,15 @@ const VALID_NICHES = [
   "beauty", "sports", "crypto", "business",
 ];
 
+function getServiceDb() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createServiceClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 // Rate-limit map: user_id -> last refresh timestamp
 const refreshCooldown = new Map<string, number>();
 const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
@@ -205,6 +215,11 @@ export async function POST(req: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const db = getServiceDb();
+    if (!db) {
+      return NextResponse.json({ error: "Signals service unavailable" }, { status: 503 });
+    }
 
     const body = (await req.json()) as { niche?: string; force?: boolean };
     const niche = body.niche && VALID_NICHES.includes(body.niche) ? body.niche : null;
@@ -225,7 +240,7 @@ export async function POST(req: Request) {
     refreshCooldown.set(user.id, Date.now());
 
     // Expire old signals for this niche
-    await supabase
+    await db
       .from("signals")
       .update({ is_active: false })
       .eq("niche", niche)
@@ -267,7 +282,7 @@ export async function POST(req: Request) {
       })
     );
 
-    const { error: insertErr } = await supabase.from("signals").insert(signalRows);
+    const { error: insertErr } = await db.from("signals").insert(signalRows);
     if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
 
     return NextResponse.json({

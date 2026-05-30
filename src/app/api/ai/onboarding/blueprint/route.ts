@@ -51,7 +51,7 @@ function buildFallbackBlueprint(input: BlueprintRequest): LaunchBlueprint {
   
   return {
     offerIdea: `${subNicheLabel} Inner Circle`,
-    offerDescription: `Exclusive access to behind-the-scenes ${input.niche} content, personal insights, direct messaging, and limited drops. For serious ${input.niche} fans who want closer access.`,
+    offerDescription: `Exclusive access to behind-the-scenes ${input.niche} content, personal insights, direct messaging, and limited drops. For serious ${input.niche} supporters who want closer access.`,
     price: basePrice,
     priceConfidence,
     priceRationale: `Based on ${input.experience} creator benchmarks in ${nicheLabel}`,

@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS admin_audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   action TEXT NOT NULL, -- 'view_creator', 'ban_creator', 'delete_content', 'view_messages', etc.
-  target_type TEXT NOT NULL, -- 'creator', 'fan', 'content', 'transaction', 'message'
+  target_type TEXT NOT NULL, -- 'creator', 'content', 'transaction', 'message'
   target_id TEXT, -- UUID of the target entity
   details JSONB NOT NULL DEFAULT '{}'::jsonb, -- Additional context
   ip_address INET,
@@ -83,11 +83,11 @@ CREATE INDEX IF NOT EXISTS idx_creator_bans_active ON creator_bans(is_active) WH
 CREATE INDEX IF NOT EXISTS idx_creator_bans_expires ON creator_bans(expires_at);
 
 -- ── admin_notes ─────────────────────────────────────────────────────────────
--- Private admin notes on creators, fans, content
+-- Private admin notes on creators, content
 CREATE TABLE IF NOT EXISTS admin_notes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  target_type TEXT NOT NULL, -- 'creator', 'fan', 'content', 'transaction'
+  target_type TEXT NOT NULL, -- 'creator', 'content', 'transaction'
   target_id TEXT NOT NULL,
   note TEXT NOT NULL,
   priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'critical')),
@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS admin_realtime_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type TEXT NOT NULL, -- 'signup', 'payment', 'content_created', 'message_sent', 'login', 'ban'
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  user_type TEXT NOT NULL, -- 'creator', 'fan', 'admin'
+  user_type TEXT NOT NULL, -- 'creator', 'admin'
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   severity TEXT DEFAULT 'info' CHECK (severity IN ('info', 'warning', 'critical')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

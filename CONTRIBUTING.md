@@ -1,240 +1,544 @@
-# Contributing to CIPHER
+# Contributing to MANSA’S MOGULES
 
-## Quick Start
+## Overview
 
-### Prerequisites
+Mansa’s Mogules is an operating system for digital empires.
 
-- Node.js 18+
-- npm or pnpm
-- Supabase account
-- Resend account (for emails)
+Built for:
+operators,
+founders,
+educators,
+internet brands,
+and modern digital mogules.
 
-### 1. Clone & Install
+The platform focuses on:
+audience ownership,
+treasury systems,
+AI intelligence,
+distribution infrastructure,
+and empire expansion.
 
-```bash
-git clone https://github.com/MansaMusaMogule86/cipher.git
-cd cipher
+This is NOT:
+a creator platform,
+an influencer tool,
+or generic SaaS software.
+
+Every contribution should reinforce:
+ownership over dependency.
+
+---
+
+# Quick Start
+
+## Requirements
+
+Node.js 18+
+
+npm or pnpm
+
+Supabase account
+
+Resend account
+
+OpenRouter API access
+
+---
+
+# 1. Clone & Install
+
+```bash id="5jj0ik"
+git clone https://github.com/MansaMusaMogule86/mansas-mogules.git
+
+cd mansas-mogules
+
 npm install
 ```
 
-### 2. Environment Setup
+---
 
-Copy `.env.example` to `.env.local`:
+# 2. Environment Setup
 
-```bash
+Copy:
+
+```bash id="l6f8d8"
 cp .env.example .env.local
 ```
 
 Required variables:
 
-```env
-# Supabase (required)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```env id="q2cny2"
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
-# Email (required for waitlist)
-RESEND_API_KEY=re_xxxxx
-
-# Site URL
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# AI Features (optional)
-OPENROUTER_API_KEY=
-OPENAI_API_KEY=
+TOKEN_ENCRYPTION_KEY=
 
-# Social OAuth (optional - add as needed)
+RESEND_API_KEY=
+
+OPENROUTER_API_KEY=
+ANTHROPIC_API_KEY=
+
+POSTHOG_KEY=
+
+STRIPE_SECRET_KEY=
+WHOP_API_KEY=
+
 TWITTER_CLIENT_ID=
 TWITTER_CLIENT_SECRET=
-TWITTER_CALLBACK_URL=http://localhost:3000/api/auth/twitter/callback
 
 INSTAGRAM_CLIENT_ID=
 INSTAGRAM_CLIENT_SECRET=
-INSTAGRAM_CALLBACK_URL=http://localhost:3000/api/auth/instagram/callback
 
 TELEGRAM_BOT_TOKEN=
-TELEGRAM_BOT_USERNAME=CIPHERbot
 
 YOUTUBE_CLIENT_ID=
 YOUTUBE_CLIENT_SECRET=
 
 TIKTOK_CLIENT_KEY=
 TIKTOK_CLIENT_SECRET=
-
-# Token encryption for OAuth tokens (32-byte hex)
-TOKEN_ENCRYPTION_KEY=
 ```
 
-### 3. Database Setup
+---
 
-Run migrations in Supabase SQL Editor:
+# 3. Database Setup
 
-```bash
-# In order:
-supabase/migrations/004_tools_and_features.sql
-supabase/migrations/005_rls_core_tables.sql
-supabase/migrations/20240329000000_analytics.sql
+Run migrations sequentially inside Supabase SQL Editor.
+
+```bash id="yb3e3k"
+supabase/migrations/
 ```
 
-### 4. Start Development Server
+Important:
+All migrations must remain sequentially numbered.
 
-```bash
+Never modify historical migrations after deployment.
+
+Always create new migration files.
+
+---
+
+# 4. Start Development Server
+
+```bash id="r94p6g"
 npm run dev
 ```
 
-> **Note:** This uses a custom wrapper (`scripts/dev.mjs`) that kills any existing Next.js process before starting. Use `npm run dev:raw` for vanilla Next.js behavior.
+Alternative raw mode:
 
-Open [http://localhost:3000](http://localhost:3000)
+```bash id="1q2fbe"
+npm run dev:raw
+```
+
+Open:
+http://localhost:3000
 
 ---
 
-## Development Workflow
+# Development Philosophy
 
-### Branch Naming
+Mansa’s Mogules is NOT:
+a generic dashboard app.
 
-```
+The product should feel:
+strategic,
+architectural,
+controlled,
+minimal,
+and operational.
+
+Every system should reinforce:
+ownership,
+infrastructure,
+and expansion.
+
+---
+
+# Core Naming Rules
+
+## NEVER USE
+
+creator
+
+influencer
+
+supporter
+
+tips
+
+subscriptions
+
+referrals
+
+marketing dashboard
+
+creator economy
+
+luxury creator platform
+
+---
+
+# APPROVED LANGUAGE
+
+creator → operator
+
+supporters → citizens
+
+tips → tributes
+
+dashboard → throne
+
+analytics → dominion
+
+vault → archives
+
+messages → signals
+
+referrals → alliances
+
+tools → arsenal
+
+settings → sovereignty
+
+content → forge assets
+
+subscriptions → royal access
+
+---
+
+# Branch Naming
+
+```txt id="m8lq5v"
 feature/short-description
-fix/issue-number-description
-refactor/component-name
-```
 
-### Commit Messages
+fix/issue-description
 
-```
-feat: add ghostwrite AI feature
-fix: resolve dashboard loading state
-refactor: extract social connection logic
-docs: update API reference
+refactor/system-name
 ```
 
 ---
 
-## Code Standards
+# Commit Standards
 
-### TypeScript
+```txt id="wjlwmn"
+feat: add dominion territory map
 
-- Strict mode enabled
-- Explicit return types for functions
-- Use type imports: `import type { User } from "@supabase/supabase-js"`
+fix: resolve treasury loading issue
 
-### React
+refactor: improve signal distribution logic
 
-- Functional components only
-- Use `"use client"` directive for client components
-- Prefer composition over prop drilling
+docs: update empire intelligence guide
+```
 
-### Styling
+---
 
-- Tailwind CSS for utility classes
-- Inline styles for dynamic/animated elements
-- Follow CIPHER design system:
-  - Gold accent: `#c8a96e`
-  - Dark backgrounds: `#020203`, `#0a0a0f`
-  - Font families: `var(--font-display)`, `var(--font-mono)`
+# TypeScript Standards
 
-### API Routes
+Strict mode enabled.
 
-```typescript
-// Pattern for authenticated routes
+Explicit return types required.
+
+Use type imports where possible.
+
+Avoid:
+any
+unsafe casting
+undefined rendering
+
+---
+
+# React Standards
+
+Functional components only.
+
+Use:
+"use client"
+
+only when necessary.
+
+Prefer:
+composition over prop drilling.
+
+Avoid:
+deep nested component trees.
+
+---
+
+# UI Standards
+
+## Design Direction
+
+Dark.
+Minimal.
+Strategic.
+Cinematic.
+Architectural.
+
+NOT:
+generic startup UI,
+crypto hype,
+fake luxury branding,
+fantasy RPG interfaces.
+
+---
+
+# Color System
+
+```css id="g40t9p"
+--void: #020203
+--surface: #0d0d18
+--gold: #c8a96e
+--white: rgba(255,255,255,0.92)
+--muted: rgba(255,255,255,0.48)
+```
+
+---
+
+# Typography
+
+Display:
+Cormorant Garamond
+
+Body:
+Outfit
+
+Data:
+DM Mono
+
+---
+
+# Motion Principles
+
+Motion should feel:
+inevitable,
+heavy,
+controlled.
+
+Avoid:
+playful animations,
+cheap transitions,
+bouncy interactions.
+
+---
+
+# Dashboard Philosophy
+
+The dashboard is:
+The Throne.
+
+NOT:
+a SaaS analytics page.
+
+The interface should feel like:
+a living empire map.
+
+Core territories:
+
+Treasury
+
+Citizens
+
+Dominion
+
+Signals
+
+Alliances
+
+Forge
+
+Archives
+
+Gateways
+
+Arsenal
+
+---
+
+# API Standards
+
+Authenticated routes pattern:
+
+```typescript id="eajp6q"
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
-  
-  // ... handle request
+
+  // Handle request
 }
 ```
 
 ---
 
-## Project Structure
+# Error Handling Rules
 
-### Adding a New Feature
+Never expose:
+raw backend errors,
+undefined values,
+NaN states,
+or database failures.
 
-1. **Dashboard feature** → `src/app/dashboard/features/`
-2. **Dashboard tool** → `src/app/dashboard/tools/`
-3. **API route** → `src/app/api/{feature}/route.ts`
-4. **Database changes** → new migration in `supabase/migrations/`
+Bad:
+“Failed to fetch referral stats”
 
-### Adding Social Platform Integration
-
-1. Create routes in `src/app/api/auth/{platform}/`:
-   - `connect/route.ts` — OAuth initiation
-   - `callback/route.ts` — Token exchange
-
-2. Add platform to `SOCIAL_PLATFORMS` in `DashboardClient.tsx`
-
-3. Add env vars to `.env.example`
+Good:
+“Alliance intelligence is temporarily unavailable.”
 
 ---
 
-## Testing
+# Security Rules
 
-### Manual Testing
+All tables:
+RLS enabled.
 
-1. **Waitlist:** Submit email on landing page
-2. **Login:** Create account via Supabase Auth
-3. **Dashboard:** Verify all sections load without errors
+OAuth tokens:
+AES-256-GCM encrypted.
 
-### Smoke Test Checklist
+Never expose:
+admin routes,
+service role keys,
+or sensitive operator data.
 
-- [ ] Landing page loads
-- [ ] Waitlist form submits
-- [ ] Login page works
-- [ ] Dashboard loads for authenticated user
-- [ ] Social connections display correctly
-- [ ] Ghostwrite AI generates content
+Device fingerprints:
+one-way hashes only.
+
+Retention:
+maximum 90 days.
 
 ---
 
-## Troubleshooting
+# Testing Standards
 
-### "Another next dev server is already running"
+## Manual Testing
 
-The dev script handles this automatically. If issues persist:
+Verify:
 
-```powershell
-# Windows
-Get-Process node | Where-Object Path -Match "next" | Stop-Process
+Landing page
+
+Waitlist flow
+
+Authentication
+
+Throne dashboard
+
+Treasury systems
+
+Signals
+
+Social integrations
+
+Empire intelligence
+
+---
+
+# Smoke Test Checklist
+
+[ ] Landing loads correctly
+
+[ ] Authentication works
+
+[ ] Throne loads without errors
+
+[ ] Treasury data renders correctly
+
+[ ] No NaN or undefined UI states
+
+[ ] Signal systems operate correctly
+
+[ ] Dominion analytics render safely
+
+[ ] AI systems respond correctly
+
+---
+
+# Troubleshooting
+
+## Dev Server Conflict
+
+```powershell id="w56sne"
+Get-Process node |
+Where-Object Path -Match "next" |
+Stop-Process
 ```
 
-### Supabase RLS Errors
+---
 
-Ensure all migrations have been run and the user has proper policies:
+# Supabase Issues
 
-```sql
--- Check if RLS is enabled
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
-WHERE schemaname = 'public';
-```
-
-### OAuth Callback Errors
-
-1. Verify callback URLs match exactly (including trailing slashes)
-2. Check platform developer console for API credentials
-3. Ensure `TOKEN_ENCRYPTION_KEY` is set (32 hex characters)
+Verify:
+RLS policies,
+migration order,
+and authenticated session handling.
 
 ---
 
-## Pull Request Process
+# OAuth Issues
 
-1. Create feature branch from `main`
-2. Make changes with clear commits
+Check:
+callback URLs,
+platform credentials,
+and TOKEN_ENCRYPTION_KEY configuration.
+
+---
+
+# Pull Request Process
+
+1. Create feature branch
+
+2. Build feature
+
 3. Test locally
-4. Push and create PR
-5. Fill out PR template
+
+4. Push changes
+
+5. Open PR
+
 6. Request review
 
-### PR Checklist
+---
 
-- [ ] Code follows project conventions
-- [ ] TypeScript compiles without errors
-- [ ] No console errors in browser
-- [ ] Database migrations included (if applicable)
-- [ ] Environment variables documented (if new)
+# PR Checklist
+
+[ ] TypeScript passes
+
+[ ] No console errors
+
+[ ] No broken loading states
+
+[ ] No undefined or NaN rendering
+
+[ ] New env variables documented
+
+[ ] Migrations included if required
+
+[ ] UI follows empire system language
+
+[ ] No generic creator-platform terminology
+
+---
+
+# Final Contribution Rule
+
+Every feature,
+API,
+page,
+component,
+and interaction
+must reinforce one idea:
+
+Mansa’s Mogules is infrastructure for digital ownership.
+
+NOT:
+another creator platform.

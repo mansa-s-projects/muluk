@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   // Fetch creator's real transaction data for analysis
   const { data: txData, error: txError } = await supabase
     .from("transactions")
-    .select("amount, type, status, created_at, fan_code")
+    .select("amount, type, status, created_at, supporter_code")
     .eq("creator_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const transactions = txData ?? [];
   const totalRevenue = transactions.reduce((s, t) => s + Number(t.amount ?? 0), 0);
   const avgTx = transactions.length > 0 ? totalRevenue / transactions.length : 0;
-  const uniqueFans = new Set(transactions.map(t => t.fan_code)).size;
+  const uniqueSupporters = new Set(transactions.map(t => t.supporter_code)).size;
   const completedTx = transactions.filter(t => t.status === "completed").length;
   const conversionRate = transactions.length > 0 ? (completedTx / transactions.length) * 100 : 0;
   const balance = Number(walletData?.balance ?? 0);
@@ -72,7 +72,7 @@ CREATOR DATA:
 - Current price: $${currentPrice}
 - Total revenue (last 50 transactions): $${totalRevenue.toFixed(2)}
 - Average transaction: $${avgTx.toFixed(2)}
-- Unique fans: ${uniqueFans}
+- Unique supporters: ${uniqueSupporters}
 - Completed transactions: ${completedTx}/${transactions.length}
 - Conversion rate: ${conversionRate.toFixed(1)}%
 - Available balance: $${balance.toFixed(2)}
@@ -121,7 +121,7 @@ PREDICTION_3: [specific outcome prediction]`;
       stats: {
         totalRevenue: totalRevenue.toFixed(2),
         avgTransaction: avgTx.toFixed(2),
-        uniqueFans,
+        uniqueSupporters,
         conversionRate: conversionRate.toFixed(1),
       },
     });

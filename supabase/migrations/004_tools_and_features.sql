@@ -14,12 +14,6 @@ ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS phantom_mode BOOLEAN D
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS vault_pin_hash TEXT;
 ALTER TABLE creator_applications ADD COLUMN IF NOT EXISTS bio TEXT;
 
--- Private fan CRM labels (creator-visible only)
-ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS custom_name TEXT;
-ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS creator_notes TEXT;
-ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
-ALTER TABLE fan_codes ADD COLUMN IF NOT EXISTS is_vip BOOLEAN DEFAULT false;
-
 -- Dedicated vault PIN storage to avoid coupling PIN writes to creator profile rows
 CREATE TABLE IF NOT EXISTS creator_vault_pins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,22 +26,6 @@ CREATE TABLE IF NOT EXISTS creator_vault_pins (
 ALTER TABLE creator_vault_pins ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "vault_pins_all" ON creator_vault_pins;
 CREATE POLICY "vault_pins_all" ON creator_vault_pins
-  FOR ALL
-  USING (auth.uid() = creator_id)
-  WITH CHECK (auth.uid() = creator_id);
-
--- Fan Messages table (Fan Message Blast tool)
-CREATE TABLE IF NOT EXISTS fan_messages (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  creator_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  message       TEXT NOT NULL,
-  segment       TEXT NOT NULL DEFAULT 'all',
-  recipient_count INT DEFAULT 0,
-  sent_at       TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE fan_messages ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "fan_messages_creator_all" ON fan_messages;
-CREATE POLICY "fan_messages_creator_all" ON fan_messages
   FOR ALL
   USING (auth.uid() = creator_id)
   WITH CHECK (auth.uid() = creator_id);
@@ -86,7 +64,6 @@ CREATE POLICY "collab_proposals_creator_all" ON collab_proposals
   );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_fan_messages_creator ON fan_messages(creator_id);
 CREATE INDEX IF NOT EXISTS idx_collab_proposals_from ON collab_proposals(from_creator_id);
 CREATE INDEX IF NOT EXISTS idx_content_items_scheduled ON content_items(scheduled_for) WHERE scheduled_for IS NOT NULL;
 

@@ -17,9 +17,9 @@ export type V2ContentItem = {
   paidRevenue: number;
 };
 
-export type V2FanSummary = {
-  fan_display_id: string;
-  fan_code_id: string;
+export type V2SupporterSummary = {
+  supporter_display_id: string;
+  supporter_code_id: string;
   total_spent: number;
   unlock_count: number;
   last_payment_at: string | null;
@@ -29,7 +29,7 @@ export type V2FanSummary = {
 
 export type V2Transaction = {
   id: string;
-  fan_code: string;
+  supporter_code: string;
   content_title: string;
   amount: number;
   currency: string;
@@ -65,12 +65,12 @@ export type V2ContentStats = {
   totalRevenue: number;
 };
 
-export type V2FanStats = {
+export type V2SupporterStats = {
   totalPaidCodes: number;
   totalUnpaidCodes: number;
-  fans: V2FanSummary[];
-  topSpenders: V2FanSummary[];
-  recentPaidUnlocks: V2FanSummary[];
+  supporters: V2SupporterSummary[];
+  topSpenders: V2SupporterSummary[];
+  recentPaidUnlocks: V2SupporterSummary[];
 };
 
 export type V2PriceOptimizerResult = {
@@ -120,23 +120,23 @@ export async function getCreatorDashboardOverview(
   const contentCount = contentRows?.length ?? 0;
   const activeContentCount = contentRows?.filter((r) => r.is_active).length ?? 0;
 
-  // Fan codes
-  const { data: fanCodes } = await supabase
-    .from("fan_codes_v2")
+  // Supporter codes
+  const { data: SupporterCodes } = await supabase
+    .from("supporter_codes_v2")
     .select("id, is_paid, content_id")
     .in(
       "content_id",
       (contentRows ?? []).map((c) => c.id)
     );
 
-  const paidUnlocks = fanCodes?.filter((f) => f.is_paid).length ?? 0;
-  const unpaidCodes = fanCodes?.filter((f) => !f.is_paid).length ?? 0;
+  const paidUnlocks = SupporterCodes?.filter((f) => f.is_paid).length ?? 0;
+  const unpaidCodes = SupporterCodes?.filter((f) => !f.is_paid).length ?? 0;
 
   // Transactions
   const { data: txRows } = await supabase
     .from("transactions_v2")
     .select(
-      "id, content_id, fan_code_id, amount, currency, payment_method, status, creator_earnings, platform_fee, created_at"
+      "id, content_id, supporter_code_id, amount, currency, payment_method, status, creator_earnings, platform_fee, created_at"
     )
     .eq("creator_id", userId)
     .eq("status", "success")
@@ -164,24 +164,24 @@ export async function getCreatorDashboardOverview(
     }
   }
 
-  // Resolve fan codes for transactions
-  const fanCodeIds = [
-    ...new Set((txRows ?? []).map((t) => t.fan_code_id).filter(Boolean)),
+  // Resolve supporter codes for transactions
+  const SupporterCodeIds = [
+    ...new Set((txRows ?? []).map((t) => t.supporter_code_id).filter(Boolean)),
   ];
-  const fanCodeMap = new Map<string, string>();
-  if (fanCodeIds.length > 0) {
+  const SupporterCodeMap = new Map<string, string>();
+  if (SupporterCodeIds.length > 0) {
     const { data: codeRows } = await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .select("id, code")
-      .in("id", fanCodeIds);
+      .in("id", SupporterCodeIds);
     for (const c of codeRows ?? []) {
-      fanCodeMap.set(c.id, c.code);
+      SupporterCodeMap.set(c.id, c.code);
     }
   }
 
   const recentTransactions: V2Transaction[] = (txRows ?? []).map((tx) => ({
     id: tx.id,
-    fan_code: fanCodeMap.get(tx.fan_code_id) ?? "FAN-UNKNOWN",
+    supporter_code: SupporterCodeMap.get(tx.supporter_code_id) ?? "SUPPORTER-UNKNOWN",
     content_title: contentMap.get(tx.content_id) ?? "Unknown",
     amount: safe(tx.amount),
     currency: tx.currency || "usd",
@@ -222,9 +222,9 @@ export async function getCreatorContentStats(
 
   const contentIds = items.map((i) => i.id);
 
-  // Fan codes per content
-  const { data: fanCodes } = await supabase
-    .from("fan_codes_v2")
+  // Supporter codes per content
+  const { data: SupporterCodes } = await supabase
+    .from("supporter_codes_v2")
     .select("content_id, is_paid")
     .in("content_id", contentIds);
 
@@ -239,7 +239,7 @@ export async function getCreatorContentStats(
   const unlockMap = new Map<string, { total: number; paid: number }>();
   const revenueMap = new Map<string, number>();
 
-  for (const fc of fanCodes ?? []) {
+  for (const fc of SupporterCodes ?? []) {
     const key = fc.content_id;
     const prev = unlockMap.get(key) || { total: 0, paid: 0 };
     prev.total++;
@@ -271,11 +271,11 @@ export async function getCreatorContentStats(
   return { items: mapped, totalItems: mapped.length, totalRevenue };
 }
 
-// ─── Fan Stats ──────────────────────────────────────────────────────────────
+// ─── Supporter Stats ──────────────────────────────────────────────────────────────
 
-export async function getCreatorFanStats(
+export async function getCreatorSupporterStats(
   userId: string
-): Promise<V2FanStats> {
+): Promise<V2SupporterStats> {
   const supabase = await createClient();
 
   // Get all creator content IDs
@@ -291,43 +291,43 @@ export async function getCreatorFanStats(
   }
 
   if (contentIds.length === 0) {
-    return { totalPaidCodes: 0, totalUnpaidCodes: 0, fans: [], topSpenders: [], recentPaidUnlocks: [] };
+    return { totalPaidCodes: 0, totalUnpaidCodes: 0, supporters: [], topSpenders: [], recentPaidUnlocks: [] };
   }
 
-  // All fan codes for this creator's content
-  const { data: fanCodes } = await supabase
-    .from("fan_codes_v2")
+  // All supporter codes for this creator's content
+  const { data: SupporterCodes } = await supabase
+    .from("supporter_codes_v2")
     .select("id, code, content_id, is_paid, payment_method, paid_at")
     .in("content_id", contentIds)
     .order("paid_at", { ascending: false });
 
-  const totalPaidCodes = fanCodes?.filter((f) => f.is_paid).length ?? 0;
-  const totalUnpaidCodes = fanCodes?.filter((f) => !f.is_paid).length ?? 0;
+  const totalPaidCodes = SupporterCodes?.filter((f) => f.is_paid).length ?? 0;
+  const totalUnpaidCodes = SupporterCodes?.filter((f) => !f.is_paid).length ?? 0;
 
   // All transactions for this creator
   const { data: txRows } = await supabase
     .from("transactions_v2")
-    .select("fan_code_id, amount, created_at")
+    .select("supporter_code_id, amount, created_at")
     .eq("creator_id", userId)
     .eq("status", "success");
 
-  // Build per-fan-code aggregation
+  // Build per-supporter-code aggregation
   const spendMap = new Map<string, { total: number; count: number; last: string }>();
   for (const tx of txRows ?? []) {
-    const prev = spendMap.get(tx.fan_code_id) || { total: 0, count: 0, last: "" };
+    const prev = spendMap.get(tx.supporter_code_id) || { total: 0, count: 0, last: "" };
     prev.total += safe(tx.amount);
     prev.count++;
     if (tx.created_at > prev.last) prev.last = tx.created_at;
-    spendMap.set(tx.fan_code_id, prev);
+    spendMap.set(tx.supporter_code_id, prev);
   }
 
-  const fans: V2FanSummary[] = (fanCodes ?? [])
+  const supporters: V2SupporterSummary[] = (SupporterCodes ?? [])
     .filter((f) => f.is_paid)
     .map((f) => {
       const spend = spendMap.get(f.id);
       return {
-        fan_display_id: f.code,
-        fan_code_id: f.id,
+        supporter_display_id: f.code,
+        supporter_code_id: f.id,
         total_spent: spend?.total ?? 0,
         unlock_count: spend?.count ?? 1,
         last_payment_at: f.paid_at || spend?.last || null,
@@ -336,13 +336,13 @@ export async function getCreatorFanStats(
       };
     });
 
-  const topSpenders = [...fans].sort((a, b) => b.total_spent - a.total_spent).slice(0, 10);
-  const recentPaidUnlocks = [...fans]
+  const topSpenders = [...supporters].sort((a, b) => b.total_spent - a.total_spent).slice(0, 10);
+  const recentPaidUnlocks = [...supporters]
     .filter((f) => f.last_payment_at)
     .sort((a, b) => (b.last_payment_at || "").localeCompare(a.last_payment_at || ""))
     .slice(0, 10);
 
-  return { totalPaidCodes, totalUnpaidCodes, fans, topSpenders, recentPaidUnlocks };
+  return { totalPaidCodes, totalUnpaidCodes, supporters, topSpenders, recentPaidUnlocks };
 }
 
 // ─── Earnings Stats ─────────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ export async function getCreatorRecentTransactions(
   const { data: txRows } = await supabase
     .from("transactions_v2")
     .select(
-      "id, content_id, fan_code_id, amount, currency, payment_method, status, creator_earnings, platform_fee, created_at"
+      "id, content_id, supporter_code_id, amount, currency, payment_method, status, creator_earnings, platform_fee, created_at"
     )
     .eq("creator_id", userId)
     .order("created_at", { ascending: false })
@@ -412,12 +412,12 @@ export async function getCreatorRecentTransactions(
     contentMap.set(c.id, c.title || "Untitled");
   }
 
-  // Resolve fan codes
-  const fanCodeIds = [...new Set(txRows.map((t) => t.fan_code_id))];
+  // Resolve supporter codes
+  const SupporterCodeIds = [...new Set(txRows.map((t) => t.supporter_code_id))];
   const { data: codeRows } = await supabase
-    .from("fan_codes_v2")
+    .from("supporter_codes_v2")
     .select("id, code")
-    .in("id", fanCodeIds);
+    .in("id", SupporterCodeIds);
 
   const codeMap = new Map<string, string>();
   for (const c of codeRows ?? []) {
@@ -426,7 +426,7 @@ export async function getCreatorRecentTransactions(
 
   return txRows.map((tx) => ({
     id: tx.id,
-    fan_code: codeMap.get(tx.fan_code_id) ?? "FAN-UNKNOWN",
+    supporter_code: codeMap.get(tx.supporter_code_id) ?? "SUPPORTER-UNKNOWN",
     content_title: contentMap.get(tx.content_id) ?? "Unknown",
     amount: safe(tx.amount),
     currency: tx.currency || "usd",
@@ -496,7 +496,7 @@ export type ToolGating = {
   bioGenerator: { enabled: true };
   priceOptimizer: { enabled: boolean; reason: string };
   contentCalendar: { enabled: true; mode: "planning" | "live" };
-  fanMessageBlast: { enabled: boolean; reason: string };
+  SupporterMessageBlast: { enabled: boolean; reason: string };
   collabFinder: { enabled: true; mode: "placeholder" };
   taxSummary: { enabled: boolean; reason: string };
 };
@@ -512,13 +512,13 @@ export async function getToolGating(userId: string): Promise<ToolGating> {
 
   const successCount = successCountRaw ?? 0;
 
-  const { error: fanMsgErr } = await supabase
+  const { error: supporterMsgErr } = await supabase
     .from("creator_broadcasts_v2")
     .select("id", { count: "exact", head: true })
     .eq("creator_id", userId)
     .limit(0);
 
-  const fanMsgExists = !fanMsgErr || !fanMsgErr.message?.includes("does not exist");
+  const supporterMsgExists = !supporterMsgErr || !supporterMsgErr.message?.includes("does not exist");
 
   return {
     bioGenerator: { enabled: true },
@@ -530,9 +530,9 @@ export async function getToolGating(userId: string): Promise<ToolGating> {
           : `Needs more transaction data (${successCount}/5 successful payments)`,
     },
     contentCalendar: { enabled: true, mode: "planning" },
-    fanMessageBlast: {
-      enabled: fanMsgExists,
-      reason: fanMsgExists ? "Ready" : "Fan messaging infrastructure not yet available",
+    SupporterMessageBlast: {
+      enabled: supporterMsgExists,
+      reason: supporterMsgExists ? "Ready" : "Supporter messaging infrastructure not yet available",
     },
     collabFinder: { enabled: true, mode: "placeholder" },
     taxSummary: {

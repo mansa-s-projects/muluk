@@ -18,8 +18,8 @@ export interface Booking {
   id:                       string;
   availability_id:          string;
   creator_id:               string;
-  fan_name:                 string;
-  fan_email:                string;
+  supporter_name:                 string;
+  supporter_email:                string;
   whop_checkout_id:         string | null;
   whop_payment_id:          string | null;
   status:                   "pending" | "paid" | "confirmed" | "cancelled" | "completed";

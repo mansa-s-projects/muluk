@@ -34,7 +34,7 @@
 
 1. Run Daily Brief.
 2. Generate content ideas.
-3. Try dynamic pricing and fan personas.
+3. Try dynamic pricing and supporter personas.
 
 ## 7. Verify Notifications
 
@@ -45,4 +45,4 @@
 
 1. Review analytics and retention.
 2. Ship content calendar for next 7 days.
-3. Run fan re-engagement campaign.
+3. Run supporter re-engagement campaign.

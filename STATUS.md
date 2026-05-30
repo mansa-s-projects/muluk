@@ -131,13 +131,13 @@ Routes inside `getAuthUser()` that have `setAll: () => {}` — refreshed session
 | Feature | Notes |
 |---|---|
 | Auto-posting to Instagram & TikTok | `auto-share` route only calls Twitter + Telegram. IG/TikTok require separate OAuth token flow and platform API (Graph API, TikTok Content Posting API). |
-| Auto-reply suggestions for fan DMs | AI feature — planned, not built |
+| Auto-reply suggestions for supporter DMs | AI feature — planned, not built |
 | Weekly email digest | Planned, not built |
 | Smart auto-scheduling (optimal post times) | Planned, not built |
 | Trend prediction | Planned, not built |
 | Voice clone UI + route | Migration exists (`20250403130000_voice_clone_tables.sql`), DB schema ready — **no API route or dashboard UI** |
-| Fan-side commission token validation in SQL | RLS policy uses `USING (true)` — token validated at app layer only (in `creator/[handle]/route.ts`). Consider adding a DB-level check. |
-| Mobile responsiveness pass | Incomplete across dashboard and fan pages |
+| Supporter-side commission token validation in SQL | RLS policy uses `USING (true)` — token validated at app layer only (in `creator/[handle]/route.ts`). Consider adding a DB-level check. |
+| Mobile responsiveness pass | Incomplete across dashboard and supporter pages |
 
 ---
 

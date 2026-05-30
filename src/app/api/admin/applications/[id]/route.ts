@@ -189,7 +189,7 @@ export async function PATCH(
       // Create default notification settings
       await supabase.from("creator_notification_settings").upsert({
         creator_id: application.user_id,
-        email_new_fan: true,
+        email_new_supporter: true,
         email_new_earning: true,
         email_weekly_report: true,
         email_marketing: false,

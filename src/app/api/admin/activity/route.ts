@@ -57,24 +57,24 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Also get some key platform stats for context
-    const [creatorsCountResult, fansCountResult, activeBansResult] = await Promise.all([
+    const [creatorsCountResult, supportersCountResult, activeBansResult] = await Promise.all([
       supabase.from("creator_applications").select("id", { count: "exact", head: true }),
-      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }),
+      supabase.from("supporter_codes_v2").select("id", { count: "exact", head: true }),
       supabase.from("creator_bans").select("id", { count: "exact", head: true }).eq("is_active", true)
     ]);
 
     if (creatorsCountResult.error) {
       console.error("[admin-activity] creator count query failed:", creatorsCountResult.error.message);
     }
-    if (fansCountResult.error) {
-      console.error("[admin-activity] fan count query failed:", fansCountResult.error.message);
+    if (supportersCountResult.error) {
+      console.error("[admin-activity] supporter count query failed:", supportersCountResult.error.message);
     }
     if (activeBansResult.error) {
       console.error("[admin-activity] active ban count query failed:", activeBansResult.error.message);
     }
 
     const totalCreators = creatorsCountResult.count ?? 0;
-    const totalFans = fansCountResult.count ?? 0;
+    const totalsupporters = supportersCountResult.count ?? 0;
     const activeBans = activeBansResult.count ?? 0;
 
     return NextResponse.json({
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       total: count || 0,
       context: {
         totalCreators,
-        totalFans,
+        totalsupporters,
         activeBans,
         lastPollAt: new Date().toISOString()
       }

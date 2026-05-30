@@ -1,239 +1,466 @@
-# CIPHER Architecture
+# MANSA’S MOGULES — Empire Operating System
 
-> Technical architecture of the CIPHER creator economy platform.
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **Framework** | Next.js 16 (App Router, React 19) |
-| **Styling** | Tailwind CSS 4, Radix UI primitives |
-| **Database** | Supabase (PostgreSQL + Auth + RLS) |
-| **Email** | Resend |
-| **AI** | OpenRouter (core AI routes) + OpenAI (marketing agent) |
-| **Analytics** | PostHog |
-| **Charts** | Recharts |
+## Project Overview & Strategic Presentation
 
 ---
 
-## Project Structure
+# 1. CORE POSITIONING
 
-```
-cipher/
-├── src/app/                    # Next.js App Router
-│   ├── layout.tsx              # Root layout
-│   ├── page.tsx                # Landing page (waitlist)
-│   ├── globals.css             # Global styles (CIPHER design system)
-│   ├── login/                  # Auth pages
-│   ├── dashboard/              # Creator dashboard
-│   │   ├── DashboardClient.tsx # Main dashboard component
-│   │   ├── features/           # Premium features (CipherScore, PhantomMode, etc.)
-│   │   └── tools/              # Creator tools modals
-│   ├── apply/                  # Creator application form
-│   ├── marketing/              # Marketing agent page
-│   └── api/                    # API routes
-│       ├── ai/ghostwrite/      # AI content generation
-│       ├── auth/               # OAuth callbacks (Twitter, IG, TikTok, YT, Telegram)
-│       ├── dashboard/          # Dashboard endpoints
-│       ├── fans/               # Fan code endpoints
-│       ├── social/             # Social sharing
-│       ├── tools/              # Creator tools (bio, predict)
-│       └── waitlist/           # Waitlist signup
-├── lib/                        # Shared utilities
-│   ├── notifications/          # Email via Resend
-│   └── supabase.ts             # Supabase client
-├── src/lib/
-│   ├── analytics/posthog.ts    # Analytics
-│   └── supabase/               # Supabase clients (server/client/middleware)
-├── supabase/migrations/        # Database migrations
-├── middleware.ts               # Route protection
-└── hooks/useTracking.ts        # Event tracking hook
-```
+Mansa’s Mogules is an operating system for digital empires.
+
+Built for:
+operators,
+founders,
+strategists,
+educators,
+internet brands,
+and modern digital mogules.
+
+The platform combines:
+audience ownership,
+AI systems,
+monetization infrastructure,
+empire intelligence,
+and expansion tools
+into one command center.
+
+This is not a creator platform.
+
+This is infrastructure for people building influence at scale.
 
 ---
 
-## Database Schema
+# 2. ELEVATOR PITCH
 
-### Core Tables
+Most platforms help people post content.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        creator_applications                      │
-├─────────────────────────────────────────────────────────────────┤
-│ id, user_id, email, display_name, handle, bio, status,         │
-│ phantom_mode, vault_pin_hash, created_at                        │
-└─────────────────────────────────────────────────────────────────┘
-              │
-              │ 1:1
-              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         creator_wallets                          │
-├─────────────────────────────────────────────────────────────────┤
-│ id, creator_id, balance, total_earnings, referral_income        │
-└─────────────────────────────────────────────────────────────────┘
-              │
-              │ 1:N
-              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                           fan_codes                              │
-├─────────────────────────────────────────────────────────────────┤
-│ id, creator_id, code, status, custom_name, creator_notes,       │
-│ tags[], is_vip, created_at                                      │
-└─────────────────────────────────────────────────────────────────┘
-              │
-              │ 1:N
-              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                          transactions                            │
-├─────────────────────────────────────────────────────────────────┤
-│ id, creator_id, fan_code, amount, type, status, created_at      │
-└─────────────────────────────────────────────────────────────────┘
-```
+Mansa’s Mogules helps people build systems.
 
-### Content & Social
+The platform gives digital operators:
+AI-powered strategic intelligence,
+audience control,
+monetization infrastructure,
+content systems,
+and empire analytics
+from a single operating layer.
 
-```
-content_items           # Creator content (posts, media)
-├── scheduled_for       # Content calendar scheduling
-├── burn_mode           # Self-destructing content
-└── auto_shared         # Social auto-share flag
-
-social_connections      # OAuth-connected platforms
-├── platform            # twitter, tiktok, instagram, youtube, telegram
-├── platform_username
-├── platform_user_id
-└── follower_count
-
-collab_proposals        # Creator collaboration requests
-fan_messages            # Fan message blast history
-withdrawal_requests     # Payout requests
-```
-
-### Analytics
-
-```
-analytics_events        # Event tracking
-├── event_name
-├── properties (JSONB)
-├── user_id
-└── session_id
-```
+Think:
+Empire OS meets AI strategy division.
 
 ---
 
-## Authentication Flow
+# 3. CORE ADVANTAGES
 
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐
-│  Landing │ ──▶ │    Login     │ ──▶ │  Dashboard   │
-│   Page   │     │ (Supabase)   │     │  (Protected) │
-└──────────┘     └──────────────┘     └──────────────┘
-                        │
-                        ▼
-                ┌──────────────┐
-                │  middleware  │  ← Redirects unauthenticated users
-                │   .ts        │  ← Updates session cookies
-                └──────────────┘
-```
+## Audience Ownership
 
-### Social OAuth
+Direct citizen access without platform dependency.
 
-Each platform has connect/callback routes:
-- `/api/auth/{platform}/connect` — Initiates OAuth
-- `/api/auth/{platform}/callback` — Handles callback, stores tokens
+## Treasury Infrastructure
 
-Supported: `twitter`, `instagram`, `tiktok`, `youtube`, `telegram`
+Operators keep 88% of empire revenue.
 
----
+## Empire Intelligence
 
-## Row Level Security (RLS)
+AI systems analyze growth, monetization, positioning, and audience behavior.
 
-All tables use Supabase RLS for data isolation:
+## Strategic Operations
 
-```sql
--- Example: creators only see their own data
-CREATE POLICY "creator sees own wallet"
-  ON creator_wallets FOR SELECT
-  USING (auth.uid() = creator_id);
-```
+Built for scaling systems, not chasing engagement.
 
-Tables with RLS enabled:
-- `creator_wallets` — SELECT, UPDATE
-- `fan_codes` — ALL operations
-- `transactions` — SELECT only
-- `content_items` — ALL operations
-- `withdrawal_requests` — ALL operations
-- `creator_applications` — SELECT, UPDATE, INSERT
-- `social_connections` — ALL operations
-- `creator_vault_pins` — ALL operations
+## Private Network Energy
+
+The platform feels exclusive, controlled, and intentional.
 
 ---
 
-## API Design
+# 4. UPDATED BRAND LANGUAGE
 
-All API routes follow these patterns:
+REMOVE:
+creator economy
+creator tools
+supporter monetization
+luxury infrastructure
+influencer platform
+content creators
 
-```typescript
-// Authentication check
-const supabase = await createClient();
-const { data: { user } } = await supabase.auth.getUser();
-if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+REPLACE WITH:
+digital operators
+empire systems
+audience ownership
+distribution infrastructure
+citizen networks
+treasury systems
+signal operations
+digital sovereignty
 
-// Rate limiting (where applicable)
-if (isRateLimited(user.id)) {
-  return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-}
-```
+---
 
-### Response Format
+# 5. PLATFORM STRUCTURE
 
-```typescript
-// Success
-{ success: true, data: { ... } }
-
-// Error
-{ error: "Error message" }
+```txt
+mansas-mogules/
+├── src/
+│   ├── app/
+│   │   ├── throne/                # Empire dashboard
+│   │   ├── forge/                 # Content systems
+│   │   ├── citizens/              # Audience intelligence
+│   │   ├── treasury/              # Revenue systems
+│   │   ├── dominion/              # Analytics + expansion
+│   │   ├── archives/              # Protected assets
+│   │   ├── alliances/             # Strategic partnerships
+│   │   ├── signals/               # Messaging + communication
+│   │   ├── gateways/              # Monetization links
+│   │   ├── arsenal/               # AI + operator tools
+│   │   ├── sovereignty/           # Settings + infrastructure
+│   │   ├── intelligence/          # Empire AI systems
+│   │   └── command/               # Admin systems
+│   │
+│   ├── api/
+│   │   ├── intelligence/
+│   │   ├── treasury/
+│   │   ├── dominion/
+│   │   ├── citizens/
+│   │   ├── alliances/
+│   │   ├── forge/
+│   │   └── signals/
+│   │
+│   ├── lib/
+│   ├── hooks/
+│   └── systems/
 ```
 
 ---
 
-## Security
+# 6. EMPIRE INTELLIGENCE SYSTEM
 
-### Token Encryption
-Social OAuth tokens are encrypted at rest using AES-256-GCM:
-- `TOKEN_ENCRYPTION_KEY` env var (32-byte hex)
-- Tokens stored as encrypted ciphertext
+## THE ANALYST
 
-### Vault PIN
-Creator vault PINs are hashed before storage:
-- Stored in `creator_vault_pins` table
-- Used for accessing sensitive features (Dark Vault)
+Tracks:
+market shifts,
+audience behavior,
+industry movement,
+platform weakness,
+growth opportunities.
 
-### Phantom Mode
-Anonymous browsing mode for creators:
-- Privacy protection from platform analytics
-- Toggle stored in `creator_applications.phantom_mode`
+Outputs:
+trend intelligence,
+market reports,
+expansion opportunities,
+audience insights.
 
 ---
 
-## Design System
+## THE ARCHITECT
 
-CIPHER uses a "dark luxury" aesthetic:
+Builds:
+campaign systems,
+landing pages,
+signal broadcasts,
+acquisition systems,
+positioning structures.
+
+Outputs:
+copy systems,
+launch campaigns,
+operator messaging,
+conversion infrastructure.
+
+---
+
+## THE STRATEGIST
+
+Stress-tests:
+ideas,
+positioning,
+growth plans,
+market assumptions,
+expansion systems.
+
+Outputs:
+risk analysis,
+strategic feedback,
+weakness detection,
+operational recommendations.
+
+---
+
+# 7. EMPIRE SYSTEMS
+
+## THRONE
+
+Main command center.
+
+Tracks:
+treasury,
+growth,
+citizen expansion,
+signal activity,
+empire intelligence.
+
+---
+
+## FORGE
+
+Content operating layer.
+
+Create:
+Chronicles,
+Signals,
+Broadcasts,
+Campaign systems.
+
+---
+
+## CITIZENS
+
+Audience intelligence.
+
+Track:
+loyalty,
+retention,
+high-value operators,
+engagement behavior,
+network expansion.
+
+---
+
+## TREASURY
+
+Revenue systems.
+
+Manage:
+income,
+withdrawals,
+trade routes,
+treasury forecasting,
+distribution systems.
+
+---
+
+## DOMINION
+
+Empire analytics.
+
+Tracks:
+growth,
+territories,
+citizen reach,
+signal performance,
+influence expansion.
+
+---
+
+## ARCHIVES
+
+Protected infrastructure.
+
+Store:
+assets,
+private systems,
+documents,
+vaulted content,
+operator files.
+
+---
+
+## ALLIANCES
+
+Strategic expansion network.
+
+Manage:
+partnerships,
+collaborations,
+trade routes,
+network growth.
+
+---
+
+## SIGNALS
+
+Communication infrastructure.
+
+Broadcast:
+messages,
+campaigns,
+announcements,
+audience updates.
+
+---
+
+# 8. AI SYSTEMS
+
+## Empire Intelligence Features
+
+AI Daily Brief
+
+Expansion Forecasting
+
+Signal Optimization
+
+Citizen Segmentation
+
+Treasury Intelligence
+
+Strategic Positioning Analysis
+
+Narrative Testing
+
+Market Intelligence
+
+Operator Profiling
+
+Campaign Systems
+
+---
+
+# 9. DESIGN SYSTEM
+
+## Visual Identity
+
+Dark.
+Controlled.
+Minimal.
+Strategic.
+Cinematic.
+
+NOT:
+fake luxury.
+generic SaaS.
+crypto startup.
+
+---
+
+# 10. COLORS
 
 ```css
-:root {
-  --gold: #c8a96e;
-  --gold-dim: rgba(200, 169, 110, 0.55);
-  --muted: rgba(255, 255, 255, 0.4);
-  --dim: rgba(255, 255, 255, 0.25);
-}
-
---font-display: Cormorant, Georgia, serif;
---font-mono: 'DM Mono', 'Courier New', monospace;
+--void: #020203
+--surface: #0b0b12
+--gold: #c8a96e
+--white: rgba(255,255,255,0.92)
+--muted: rgba(255,255,255,0.48)
 ```
 
-Key components:
-- Custom cursor with trailing ring
-- Gold accent colors
-- Noise texture backgrounds
-- Layered depth with subtle borders
+---
+
+# 11. TYPOGRAPHY
+
+Display:
+Cormorant Garamond
+
+Body:
+Outfit
+
+Data:
+DM Mono
+
+---
+
+# 12. DESIGN PRINCIPLES
+
+No bright colors.
+
+No startup gradients.
+
+No corporate UI.
+
+No generic dashboards.
+
+Everything should feel:
+heavy,
+calculated,
+premium,
+intentional.
+
+---
+
+# 13. MONETIZATION SYSTEMS
+
+## Treasury Retention
+
+Operators keep 88%.
+
+## Trade Routes
+
+Strategic monetization channels.
+
+## Gateways
+
+Audience payment systems.
+
+## Royal Access
+
+Subscription infrastructure.
+
+## Private Audience
+
+Direct consulting and sessions.
+
+---
+
+# 14. CURRENT FEATURES
+
+✅ Empire Dashboard
+
+✅ Treasury Systems
+
+✅ AI Intelligence
+
+✅ Content Forge
+
+✅ Citizen Analytics
+
+✅ Alliance Infrastructure
+
+✅ Signal Broadcasting
+
+✅ Anonymous Citizen Codes
+
+✅ Empire Analytics
+
+✅ Strategic AI Systems
+
+---
+
+# 15. IN PROGRESS
+
+[ ] Production deployment
+
+[ ] Mobile optimization
+
+[ ] Signal automation
+
+[ ] AI scheduling systems
+
+[ ] Expansion forecasting
+
+[ ] Territory intelligence maps
+
+[ ] Empire map dashboard
+
+[ ] Real-time dominion analytics
+
+[ ] Strategic operator memory
+
+---
+
+# 16. POSITIONING
+
+Mansa’s Mogules is not competing with creator platforms.
+
+It is creating a new category:
+
+Empire Operating Systems.
+
+---
+
+# 17. FINAL BRAND MESSAGE
+
+Attention is temporary.
+
+Ownership scales.
+
+Platforms fade.
+
+Empires survive.
+
+Mansa’s Mogules helps digital operators build systems powerful enough to outlive platforms.

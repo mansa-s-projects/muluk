@@ -4,6 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 const VALID_NICHES = [
   "luxury", "fitness", "music", "art", "fashion", "gaming",
@@ -11,11 +12,33 @@ const VALID_NICHES = [
   "beauty", "sports", "crypto", "business",
 ];
 
+function getServiceDb() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createServiceClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function hasPublicSupabaseEnv() {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
 export async function GET(req: Request) {
   try {
+    if (!hasPublicSupabaseEnv()) {
+      return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const db = getServiceDb();
+    if (!db) {
+      return NextResponse.json({ error: "Signals service unavailable" }, { status: 503 });
+    }
 
     const { searchParams } = new URL(req.url);
     const nicheParam = searchParams.get("niche");
@@ -30,7 +53,7 @@ export async function GET(req: Request) {
       niches = [nicheParam];
     } else {
       // Load saved preferences
-      const { data: prefs } = await supabase
+      const { data: prefs } = await db
         .from("creator_signal_preferences")
         .select("niches")
         .eq("user_id", user.id)
@@ -40,7 +63,7 @@ export async function GET(req: Request) {
         niches = prefs.niches;
       } else {
         // Fall back to the niche stored in creator_applications
-        const { data: app } = await supabase
+        const { data: app } = await db
           .from("creator_applications")
           .select("category")
           .eq("user_id", user.id)
@@ -59,7 +82,7 @@ export async function GET(req: Request) {
     };
 
     // Build query
-    let query = supabase
+    let query = db
       .from("signals")
       .select(
         "id, niche, source, topic, title, summary, score, demand_level, velocity, " +
@@ -87,7 +110,7 @@ export async function GET(req: Request) {
     const engagementMap: Record<string, string[]> = {};
 
     if (signalIds.length > 0) {
-      const { data: engagement } = await supabase
+      const { data: engagement } = await db
         .from("signal_engagement")
         .select("signal_id, action")
         .eq("user_id", user.id)
@@ -126,15 +149,24 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    if (!hasPublicSupabaseEnv()) {
+      return NextResponse.json({ error: "Auth service unavailable" }, { status: 503 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const db = getServiceDb();
+    if (!db) {
+      return NextResponse.json({ error: "Signals service unavailable" }, { status: 503 });
+    }
 
     const body = await req.json() as { niches?: string[]; muted_topics?: string[]; notify_on_viral?: boolean };
 
     const niches = (body.niches ?? []).filter(n => VALID_NICHES.includes(n));
 
-    const { error } = await supabase
+    const { error } = await db
       .from("creator_signal_preferences")
       .upsert({
         user_id: user.id,

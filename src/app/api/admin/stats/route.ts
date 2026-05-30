@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
       creatorsResult,
       approvedCreatorsResult,
       newCreatorsResult,
-      fansResult,
-      fansRecentResult,
+      supportersResult,
+      supportersRecentResult,
       contentResult,
       activeContentResult,
       recentContentResult,
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
       supabase.from("creator_applications").select("id", { count: "exact", head: true }),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("status", "approved"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).gte("created_at", since),
-      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }),
-      supabase.from("fan_codes_v2").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase.from("supporter_codes_v2").select("id", { count: "exact", head: true }),
+      supabase.from("supporter_codes_v2").select("id", { count: "exact", head: true }).gte("created_at", since),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase.from("content_items_v2").select("id", { count: "exact", head: true }).gte("created_at", since),
@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
       supabase.from("transactions_v2").select("amount.sum(), platform_fee.sum(), creator_earnings.sum()").eq("status", "success").gte("created_at", since),
       supabase.from("creator_applications").select("id", { count: "exact" }).eq("status", "pending"),
       supabase.from("creator_bans").select("id", { count: "exact" }).eq("is_active", true),
-      supabase.from("fan_messages").select("id", { count: "exact", head: true }),
-      supabase.from("fan_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
+      supabase.from("supporter_messages").select("id", { count: "exact", head: true }),
+      supabase.from("supporter_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "cipher"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "legend"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "apex"),
@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
       creatorsResult.error,
       approvedCreatorsResult.error,
       newCreatorsResult.error,
-      fansResult.error,
-      fansRecentResult.error,
+      supportersResult.error,
+      supportersRecentResult.error,
       contentResult.error,
       activeContentResult.error,
       recentContentResult.error,
@@ -118,8 +118,8 @@ export async function GET(request: NextRequest) {
     const approvedCreators = approvedCreatorsResult.count || 0;
     const creatorsRecent = newCreatorsResult.count || 0;
 
-    const totalFans = fansResult.count || 0;
-    const fansRecent = fansRecentResult.count || 0;
+    const totalsupporters = supportersResult.count || 0;
+    const supportersRecent = supportersRecentResult.count || 0;
 
     const totalContent = contentResult.count || 0;
     const contentRecent = recentContentResult.count || 0;
@@ -150,12 +150,12 @@ export async function GET(request: NextRequest) {
         totalCreators,
         approvedCreators,
         pendingApplications: pendingAppsResult.count || 0,
-        totalFans,
+        totalsupporters,
         newCreatorsThisPeriod: creatorsRecent,
-        newFansThisPeriod: fansRecent,
+        newsupportersThisPeriod: supportersRecent,
         tierDistribution: tierStats,
         creatorGrowth: calculateGrowth(creatorsRecent, totalCreators),
-        fanGrowth: calculateGrowth(fansRecent, totalFans),
+        supporterGrowth: calculateGrowth(supportersRecent, totalsupporters),
       },
       
       // Content metrics

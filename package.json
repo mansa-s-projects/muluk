@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:raw": "next dev",
+    "dev:raw": "next dev --webpack -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

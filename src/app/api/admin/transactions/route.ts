@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         *,
         creator:creator_id(name, handle),
         content:content_id(title, price),
-        fan_code_ref:fan_code_id(code)
+        supporter_code_ref:supporter_code_id(code)
       `, { count: "exact" });
 
     // Apply filters

@@ -11,7 +11,7 @@ function getServiceDb() {
 
 type Params = { params: Promise<{ handle: string }> };
 
-// ── GET /api/series/public/[handle] — fan: list published series ───────────────
+// ── GET /api/series/public/[handle] — supporter: list published series ───────────────
 
 export async function GET(_req: Request, { params }: Params) {
   const { handle } = await params;

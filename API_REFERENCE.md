@@ -30,7 +30,7 @@ Add email to waitlist. Sends confirmation email via Resend.
 ```json
 {
   "email": "user@example.com",
-  "type": "creator" | "fan",
+  "type": "creator" | "supporter",
   "source": "landing"
 }
 ```
@@ -244,7 +244,7 @@ Fetch creator notifications.
   "notifications": [
     {
       "id": "uuid",
-      "message": "New fan subscribed!",
+      "message": "New supporter subscribed!",
       "created_at": "2026-03-30T12:00:00Z",
       "unread": true
     }
@@ -254,22 +254,22 @@ Fetch creator notifications.
 
 ---
 
-## Fan Codes
+## Supporter Codes
 
-### Get Fan Details
+### Get Supporter Details
 
-`GET /api/fans/{fan_code}`
+`GET /api/supporters/{supporter_code}`
 
 🔐 **Requires Authentication**
 
-Get details for a specific fan code.
+Get details for a specific supporter code.
 
 **Response:**
 ```json
 {
   "code": "ABC123",
   "status": "active",
-  "custom_name": "Premium Fan",
+  "custom_name": "Premium Supporter",
   "creator_notes": "Top supporter",
   "tags": ["VIP", "early-adopter"],
   "is_vip": true,

@@ -2,7 +2,7 @@
  * GET /api/vault/items/[handle]
  *
  * Returns active vault items for a creator, with public preview URLs.
- * Used by the fan-facing vault page. No auth required.
+ * Used by the supporter-facing vault page. No auth required.
  */
 
 import { NextResponse } from "next/server";

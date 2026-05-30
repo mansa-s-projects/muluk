@@ -1,6 +1,6 @@
 -- ============================================================
 -- 039_commissions.sql
--- Commission Inbox — fans request custom work, pay before delivery
+-- Commission Inbox — clients request custom work, pay before delivery
 -- ============================================================
 
 BEGIN;
@@ -12,9 +12,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS commissions (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id       UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  -- Fan details (no account required)
-  fan_email        TEXT        NOT NULL,
-  fan_name         TEXT,
+  -- Client details (no account required)
+  client_email     TEXT        NOT NULL,
+  client_name      TEXT,
   -- Request
   title            TEXT        NOT NULL,
   description      TEXT        NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS commissions (
   whop_product_id  TEXT,
   whop_checkout_id TEXT,
   whop_payment_id  TEXT        UNIQUE,
-  -- Per-purchase access token for fan to check status
+  -- Per-purchase access token for client to check status
   access_token     TEXT        UNIQUE NOT NULL
                      DEFAULT encode(extensions.gen_random_bytes(24), 'hex'),
   paid_at          TIMESTAMPTZ,
@@ -57,14 +57,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_commissions_access_token_unique
 
 CREATE INDEX IF NOT EXISTS idx_commissions_creator ON commissions(creator_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_commissions_token   ON commissions(access_token);
-CREATE INDEX IF NOT EXISTS idx_commissions_email   ON commissions(fan_email);
+CREATE INDEX IF NOT EXISTS idx_commissions_email   ON commissions(client_email);
 
--- ── Commission messages (creator ↔ fan thread) ────────────────────────────────
+-- ── Commission messages (creator ↔ client thread) ────────────────────────────
 
 CREATE TABLE IF NOT EXISTS commission_messages (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   commission_id  UUID        NOT NULL REFERENCES commissions(id) ON DELETE CASCADE,
-  sender_role    TEXT        NOT NULL CHECK(sender_role IN ('creator','fan')),
+  sender_role    TEXT        NOT NULL CHECK(sender_role IN ('creator','client')),
   content        TEXT        NOT NULL,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -76,12 +76,12 @@ CREATE INDEX IF NOT EXISTS idx_commission_messages_commission ON commission_mess
 ALTER TABLE commissions          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE commission_messages  ENABLE ROW LEVEL SECURITY;
 
--- Fans can insert commissions (public form) — only benign fields permitted
+-- Clients can insert commissions (public form) — only benign fields permitted
 DROP POLICY IF EXISTS "public_insert_commissions" ON commissions;
 CREATE POLICY "public_insert_commissions"
   ON commissions FOR INSERT
   WITH CHECK (
-    -- Fans must not pre-set ownership; the server API (service role) supplies creator_id
+    -- Clients must not pre-set ownership; the server API (service role) supplies creator_id
     creator_id       IS NULL
     AND (status      IS NULL OR status      = 'pending')
     AND agreed_cents IS NULL
@@ -110,18 +110,18 @@ CREATE POLICY "creator_manage_commission_messages"
     )
   );
 
--- Fans can view their own commission by access_token (token filtering enforced in app layer)
-DROP POLICY IF EXISTS "fan_view_commission" ON commissions;
-CREATE POLICY "fan_view_commission"
+-- Clients can view their own commission by access_token (token filtering enforced in app layer)
+DROP POLICY IF EXISTS "client_view_commission" ON commissions;
+CREATE POLICY "client_view_commission"
   ON commissions FOR SELECT
   USING (true);
 
--- Fans can post messages on commissions they have access to (sender_role must be 'fan')
-DROP POLICY IF EXISTS "fan_insert_commission_messages" ON commission_messages;
-CREATE POLICY "fan_insert_commission_messages"
+-- Clients can post messages on commissions they have access to (sender_role must be 'client')
+DROP POLICY IF EXISTS "client_insert_commission_messages" ON commission_messages;
+CREATE POLICY "client_insert_commission_messages"
   ON commission_messages FOR INSERT
   WITH CHECK (
-    sender_role = 'fan'
+    sender_role = 'client'
     AND EXISTS (
       SELECT 1 FROM commissions c
       WHERE c.id = commission_messages.commission_id

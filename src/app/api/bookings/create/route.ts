@@ -102,29 +102,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { slotId, fanName, fanEmail, handle } = body as {
+  const { slotId, supporterName, supporterEmail, handle } = body as {
     slotId:   unknown;
-    fanName:  unknown;
-    fanEmail: unknown;
+    supporterName:  unknown;
+    supporterEmail: unknown;
     handle:   unknown;
   };
 
   if (
     typeof slotId   !== "string" || !slotId ||
-    typeof fanName  !== "string" || !fanName.trim() ||
-    typeof fanEmail !== "string" || !fanEmail.trim() ||
+    typeof supporterName  !== "string" || !supporterName.trim() ||
+    typeof supporterEmail !== "string" || !supporterEmail.trim() ||
     typeof handle   !== "string" || !handle.trim()
   ) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   // Validate email
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fanEmail)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supporterEmail)) {
     return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
   }
 
-  // Sanitize fanName (prevent excessively long inputs)
-  const safeName = fanName.trim().slice(0, 100);
+  // Sanitize supporterName (prevent excessively long inputs)
+  const safeName = supporterName.trim().slice(0, 100);
 
   const db = getDb();
 
@@ -150,8 +150,8 @@ export async function POST(req: NextRequest) {
     .insert({
       availability_id: slot.id,
       creator_id:      slot.creator_id,
-      fan_name:        safeName,
-      fan_email:       fanEmail.trim().toLowerCase(),
+      supporter_name:        safeName,
+      supporter_email:       supporterEmail.trim().toLowerCase(),
       amount_cents:    slot.price_cents,
       status:          "pending",
     })
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
     timeLabel,
     durationMinutes: slot.duration_minutes,
     priceCents: slot.price_cents,
-    buyerEmail: fanEmail.trim().toLowerCase(),
+    buyerEmail: supporterEmail.trim().toLowerCase(),
     redirectUrl: `${siteUrl}/booking/success?booking=${booking.id}`,
   });
 

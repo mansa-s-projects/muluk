@@ -4,14 +4,14 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 // ROLE TYPES & UTILITIES (inlined from deleted permissions.ts)
 // ─────────────────────────────────────────────────────────────
 
-export type UserRole = "fan" | "creator" | "admin" | "super_admin";
+export type UserRole = "supporter" | "creator" | "admin" | "super_admin";
 
 export function isValidRole(role: unknown): role is UserRole {
-  return role === "fan" || role === "creator" || role === "admin" || role === "super_admin";
+  return role === "supporter" || role === "creator" || role === "admin" || role === "super_admin";
 }
 
 function hasMinimumRole(role: UserRole, minimum: UserRole): boolean {
-  const roleHierarchy: Record<UserRole, number> = { fan: 0, creator: 1, admin: 2, super_admin: 3 };
+  const roleHierarchy: Record<UserRole, number> = { supporter: 0, creator: 1, admin: 2, super_admin: 3 };
   return roleHierarchy[role] >= roleHierarchy[minimum];
 }
 export { hasMinimumRole };
@@ -22,11 +22,11 @@ export { hasMinimumRole };
 
 export const PUBLIC_ROUTES = new Set(["/", "/login", "/apply"]);
 
-const PUBLIC_PREFIXES   = ["/book", "/booking", "/r", "/vault", "/commission", "/tips", "/series", "/join", "/pay", "/offer"];
+const PUBLIC_PREFIXES   = ["/book", "/booking", "/r", "/vault", "/commission", "/series", "/join", "/pay", "/offer"];
 const ADMIN_PREFIXES    = ["/admin"];
 const DEBUG_PREFIXES    = ["/debug"];
 const CREATOR_PREFIXES  = ["/dashboard", "/onboarding"];
-const FAN_PREFIXES      = ["/fan"];
+const FAN_PREFIXES      = ["/supporter"];
 const MARKETING_PREFIXES = ["/marketing"];
 
 function matchesPrefixes(pathname: string, prefixes: string[]): boolean {
@@ -43,15 +43,15 @@ const ALL_KNOWN_PREFIXES = [
 ];
 
 // Sub-pages accessible at /:handle/:section
-const FAN_SECTIONS = new Set(["vault", "book", "series", "tips", "commission", "r", "pay", "offer"]);
+const FAN_SECTIONS = new Set(["vault", "book", "series", "commission", "r", "pay", "offer"]);
 
 export function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;
   if (matchesPrefixes(pathname, PUBLIC_PREFIXES)) return true;
   const parts = pathname.split("/").filter(Boolean);
-  // /:handle fan profiles
+  // /:handle supporter profiles
   if (parts.length === 1 && !matchesPrefixes(pathname, ALL_KNOWN_PREFIXES)) return true;
-  // /:handle/:section fan sub-pages (e.g. /john/vault)
+  // /:handle/:section supporter sub-pages (e.g. /john/vault)
   if (parts.length === 2 && FAN_SECTIONS.has(parts[1]) && !matchesPrefixes(pathname, ALL_KNOWN_PREFIXES)) return true;
   return false;
 }
@@ -68,7 +68,7 @@ export function isCreatorRoute(pathname: string): boolean {
   return matchesPrefixes(pathname, CREATOR_PREFIXES);
 }
 
-export function isFanRoute(pathname: string): boolean {
+export function isSupporterRoute(pathname: string): boolean {
   return matchesPrefixes(pathname, FAN_PREFIXES);
 }
 
@@ -122,12 +122,12 @@ type JwtUser = {
 /**
  * Reads the user's role from their JWT app_metadata.
  * The sync_role_to_jwt DB trigger keeps this fresh on every role change.
- * Falls back to 'fan' if absent or invalid.
+ * Falls back to 'supporter' if absent or invalid.
  */
 export function getRoleFromUser(user: JwtUser): UserRole {
-  if (!user) return "fan";
+  if (!user) return "supporter";
   const raw = user.app_metadata?.role ?? user.user_metadata?.role;
-  return isValidRole(raw) ? raw : "fan";
+  return isValidRole(raw) ? raw : "supporter";
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ export function getRoleFromUser(user: JwtUser): UserRole {
 
 type AllowlistResult =
   | { allowed: true; role: "admin" | "super_admin" }
-  | { allowed: false; role: "fan" };
+  | { allowed: false; role: "supporter" };
 
 /**
  * Returns whether `email` is in the admin_allowlist and active.
@@ -148,7 +148,7 @@ export async function isEmailInAdminAllowlist(
 ): Promise<AllowlistResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey || !email) return { allowed: false, role: "fan" };
+  if (!url || !serviceKey || !email) return { allowed: false, role: "supporter" };
 
   const service = createServiceClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -161,10 +161,10 @@ export async function isEmailInAdminAllowlist(
     .eq("is_active", true)
     .maybeSingle();
 
-  if (!data) return { allowed: false, role: "fan" };
+  if (!data) return { allowed: false, role: "supporter" };
 
   const role = data.role as UserRole;
-  if (role !== "admin" && role !== "super_admin") return { allowed: false, role: "fan" };
+  if (role !== "admin" && role !== "super_admin") return { allowed: false, role: "supporter" };
   return { allowed: true, role };
 }
 

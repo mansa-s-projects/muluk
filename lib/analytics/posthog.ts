@@ -57,10 +57,10 @@ export async function trackContentUploaded(
 }
 
 export async function trackContentPurchased(
-  fanId: string,
+  supporterId: string,
   props: { contentId: string; creatorId: string; amount: number }
 ) {
-  return capture(fanId, 'content_purchased', props);
+  return capture(supporterId, 'content_purchased', props);
 }
 
 // ── Payments ──────────────────────────────────────────────────────────────────

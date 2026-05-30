@@ -80,7 +80,7 @@ function buildDmScript(
   niche: string,
   price: number,
   platform: string,
-  fanPageUrl?: string
+  SupporterPageUrl?: string
 ): string {
   return `Hey! I just dropped something exclusive I think you'd actually use.
 
@@ -88,7 +88,7 @@ I launched a private ${niche} community — real behind-the-scenes content and d
 
 Founding rate is locked at $${price} and I'm keeping slots limited.
 
-Thought of you first. Here's the link: ${fanPageUrl ?? "muluk.vip/[your-handle]"}
+Thought of you first. Here's the link: ${SupporterPageUrl ?? "muluk.vip/[your-handle]"}
 
 No pressure — just wanted you to see it before I open it up.`;
 }
@@ -97,7 +97,7 @@ function buildLaunchCaption(
   niche: string,
   price: number,
   offer_label: string,
-  fanPageUrl?: string
+  SupporterPageUrl?: string
 ): string {
   const lines = [
     `I've been building this quietly for the real ones.`,
@@ -108,7 +108,7 @@ function buildLaunchCaption(
     ``,
     `This is where I put everything I can't post publicly.`,
     ``,
-    `Link in bio${fanPageUrl ? `: ${fanPageUrl}` : "."}.`,
+    `Link in bio${SupporterPageUrl ? `: ${SupporterPageUrl}` : "."}.`,
   ];
   return lines.join("\n");
 }
@@ -116,7 +116,7 @@ function buildLaunchCaption(
 function buildClosingScript(
   niche: string,
   price: number,
-  fanPageUrl?: string
+  SupporterPageUrl?: string
 ): string {
   return `Last chance — I'm closing founding access for my private ${niche} community tonight.
 
@@ -124,7 +124,7 @@ You get locked in at $${price} with everything included as long as you stay.
 
 After midnight the rate changes.
 
-${fanPageUrl ?? "muluk.vip/[your-handle]"}`;
+${SupporterPageUrl ?? "muluk.vip/[your-handle]"}`;
 }
 
 function buildSevenDayPlan(

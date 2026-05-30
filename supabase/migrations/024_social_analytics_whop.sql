@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS access_entitlements (
   purchase_id         UUID        REFERENCES purchases(id) ON DELETE CASCADE,
   creator_id          UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   unlock_type         TEXT        NOT NULL DEFAULT 'payment_link'
-                      CHECK (unlock_type IN ('payment_link', 'fan_code', 'invite', 'custom')),
+                      CHECK (unlock_type IN ('payment_link', 'invite', 'custom')),
   unlocked_content_id UUID,
   payment_link_id     UUID        REFERENCES payment_links(id) ON DELETE CASCADE,
   buyer_email         TEXT,

@@ -1,312 +1,565 @@
-check all mds lets make this app one of our magic apps lets finish building this baby and can u save some tokens
-# CIPHER Deployment Guide
+# MANSA’S MOGULES — Production Deployment Guide
 
-> Deploy CIPHER to production on Vercel with Supabase.
+Deploy Mansa’s Mogules to production using:
+Vercel + Supabase + OpenRouter.
+
+The platform is infrastructure for digital empires.
+
+NOT:
+a creator app,
+a crypto dashboard,
+or generic SaaS software.
+
+Every deployment decision should reinforce:
+speed,
+control,
+ownership,
+and stability.
 
 ---
 
-## Prerequisites
+# Prerequisites
 
-- Vercel account
-- Supabase project (production)
-- Resend account with verified domain
-- OAuth credentials for social platforms
-- OpenAI API key (for marketing agent) and OpenRouter API key (for core AI routes)
+Before deployment ensure:
+
+Vercel account
+
+Production Supabase project
+
+Resend account with verified domain
+
+OAuth credentials
+
+OpenRouter API access
+
+Anthropic API access
+
+PostHog project
+
+Domain configured
 
 ---
 
-## 1. Supabase Setup
+# 1. Supabase Production Setup
 
-### Create Production Project
+## Create Production Project
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Note your project URL and anon key
+Create a dedicated production project inside Supabase.
 
-### Run Migrations
+Store securely:
 
-Execute migrations in order in the SQL Editor:
+Project URL
 
-```sql
--- 1. Core tables (waitlist, creator_applications, etc.)
--- Run any initial migration first
+Anon key
 
--- 2. Tools & features
--- supabase/migrations/004_tools_and_features.sql
+Service role key
 
--- 3. Row Level Security
--- supabase/migrations/005_rls_core_tables.sql
+---
 
--- 4. Analytics
--- supabase/migrations/20240329000000_analytics.sql
+# Run Migrations
+
+Execute migrations sequentially.
+
+```sql id="dwhh2r"
+supabase/migrations/
 ```
 
-### Configure Auth
+Critical rules:
 
-1. **Email Auth:** Enable in Authentication → Providers
-2. **Site URL:** Set to `https://your-domain.com`
-3. **Redirect URLs:** Add:
-   - `https://your-domain.com/**`
-   - `https://your-domain.com/api/auth/*/callback`
+Never modify deployed migrations.
+
+Always create new migration files.
+
+Ensure:
+RLS is enabled everywhere.
 
 ---
 
-## 2. Vercel Deployment
+# Configure Authentication
 
-### Connect Repository
+Inside Supabase:
 
-1. Go to [vercel.com](https://vercel.com) and import your GitHub repo
-2. Select the `cipher` repository
+Enable:
+Email authentication.
 
-### Environment Variables
+Configure:
 
-Add these in Vercel → Settings → Environment Variables:
+Site URL
 
-```env
-# Supabase (Production)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-production-anon-key
+Redirect URLs
 
-# Email
-RESEND_API_KEY=re_xxxxx
+Example:
 
-# Site URL (your production domain)
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
+```txt id="n81m9i"
+https://your-domain.com/**
 
-# AI Features
-OPENROUTER_API_KEY=sk-or-v1-xxxxx
-OPENAI_API_KEY=sk-xxxxx
-
-# Twitter/X OAuth
-TWITTER_CLIENT_ID=xxxxx
-TWITTER_CLIENT_SECRET=xxxxx
-TWITTER_CALLBACK_URL=https://your-domain.com/api/auth/twitter/callback
-
-# Instagram OAuth
-INSTAGRAM_CLIENT_ID=xxxxx
-INSTAGRAM_CLIENT_SECRET=xxxxx
-INSTAGRAM_CALLBACK_URL=https://your-domain.com/api/auth/instagram/callback
-
-# YouTube OAuth
-YOUTUBE_CLIENT_ID=xxxxx
-YOUTUBE_CLIENT_SECRET=xxxxx
-
-# TikTok OAuth
-TIKTOK_CLIENT_KEY=xxxxx
-TIKTOK_CLIENT_SECRET=xxxxx
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=xxxxx
-TELEGRAM_BOT_USERNAME=CIPHERbot
-
-# Token Encryption (generate 32-byte hex)
-TOKEN_ENCRYPTION_KEY=xxxxx
+https://your-domain.com/api/auth/*/callback
 ```
 
-### Generate Encryption Key
+---
 
-```bash
-# Generate 32-byte hex key
+# 2. Vercel Deployment
+
+## Connect Repository
+
+Import repository into Vercel.
+
+Production branch:
+main
+
+---
+
+# Environment Variables
+
+Add all secrets inside:
+Vercel → Environment Variables
+
+```env id="k21n4d"
+NEXT_PUBLIC_SUPABASE_URL=
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+NEXT_PUBLIC_SITE_URL=
+
+TOKEN_ENCRYPTION_KEY=
+
+RESEND_API_KEY=
+
+OPENROUTER_API_KEY=
+
+ANTHROPIC_API_KEY=
+
+POSTHOG_KEY=
+
+STRIPE_SECRET_KEY=
+
+WHOP_API_KEY=
+
+TWITTER_CLIENT_ID=
+TWITTER_CLIENT_SECRET=
+
+INSTAGRAM_CLIENT_ID=
+INSTAGRAM_CLIENT_SECRET=
+
+TELEGRAM_BOT_TOKEN=
+
+YOUTUBE_CLIENT_ID=
+YOUTUBE_CLIENT_SECRET=
+
+TIKTOK_CLIENT_KEY=
+TIKTOK_CLIENT_SECRET=
+```
+
+---
+
+# Generate Encryption Key
+
+```bash id="z6q8ru"
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-### Deploy
+Must be:
+64-character hex string.
 
-```bash
-# Via Vercel CLI
+Used for:
+AES-256-GCM encryption.
+
+---
+
+# Deploy
+
+```bash id="lv0b9l"
 vercel --prod
+```
 
-# Or push to main branch for auto-deploy
+Or:
+
+```bash id="7v3y3s"
 git push origin main
 ```
 
 ---
 
-## 3. Domain Configuration
+# 3. Domain Configuration
 
-### Custom Domain
+## Add Domain
 
-1. In Vercel → Domains → Add
-2. Add your domain (e.g., `cipher.so`)
-3. Configure DNS:
-   - `A` record: `76.76.21.21`
-   - `CNAME` for `www`: `cname.vercel-dns.com`
+Inside Vercel:
 
-### Update OAuth Callbacks
+Domains → Add Domain
 
-Update callback URLs in each platform's developer console:
+Example:
 
-| Platform | Callback URL |
-|----------|--------------|
-| Twitter | `https://your-domain.com/api/auth/twitter/callback` |
-| Instagram | `https://your-domain.com/api/auth/instagram/callback` |
-| TikTok | `https://your-domain.com/api/auth/tiktok/callback` |
-| YouTube | `https://your-domain.com/api/auth/youtube/callback` |
-
----
-
-## 4. Email Configuration
-
-### Verify Domain in Resend
-
-1. Go to Resend → Domains → Add Domain
-2. Add DNS records (SPF, DKIM, DMARC)
-3. Update sender email in code: `CIPHER <hello@your-domain.com>`
-
-### Files to Update
-
-Update sender email in:
-- `src/app/api/waitlist/route.ts`
-- `src/app/api/apply/route.ts`
-
-```typescript
-await resend.emails.send({
-  from: "CIPHER <hello@your-domain.com>",
-  // ...
-});
+```txt id="xq1p1m"
+mansasmogules.com
 ```
 
 ---
 
-## 5. Monitoring
+# DNS Configuration
 
-### Vercel Analytics
+```txt id="52c4ir"
+A Record:
+76.76.21.21
 
-Enable in Vercel → Analytics to track:
-- Page views
-- Core Web Vitals
-- Error rates
-
-### PostHog
-
-Already integrated. Verify events are flowing:
-- Visit dashboard
-- Check PostHog project for events
-
-### Error Tracking
-
-Monitor Vercel → Logs for:
-- API errors
-- Build failures
-- Runtime exceptions
+CNAME:
+cname.vercel-dns.com
+```
 
 ---
 
-## 6. Security Checklist
+# OAuth Redirects
 
-- [ ] **RLS Enabled:** All Supabase tables have Row Level Security
-- [ ] **Tokens Encrypted:** `TOKEN_ENCRYPTION_KEY` is set
-- [ ] **HTTPS Only:** Vercel enforces HTTPS by default
-- [ ] **OAuth Secrets:** Never exposed in client-side code
-- [ ] **Environment Variables:** All secrets in Vercel, not in code
+Update all platform callbacks.
 
-### Verify RLS
+Example:
 
-```sql
-SELECT schemaname, tablename, rowsecurity 
-FROM pg_tables 
+```txt id="4xt0fr"
+https://your-domain.com/api/auth/twitter/callback
+```
+
+Repeat for:
+
+Instagram
+
+TikTok
+
+YouTube
+
+Telegram
+
+---
+
+# 4. Email Infrastructure
+
+## Resend Domain Verification
+
+Configure:
+
+SPF
+
+DKIM
+
+DMARC
+
+Never send from:
+gmail addresses.
+
+Use:
+
+```txt id="p2ytvl"
+Mansa’s Mogules <hello@your-domain.com>
+```
+
+---
+
+# Update Sender References
+
+Search and replace:
+
+CIPHER
+
+with:
+
+Mansa’s Mogules
+
+Files likely affected:
+
+```txt id="7h65hy"
+src/app/api/waitlist/route.ts
+
+src/app/api/apply/route.ts
+```
+
+---
+
+# 5. Monitoring Infrastructure
+
+## Vercel Analytics
+
+Enable:
+
+Performance tracking
+
+Error tracking
+
+Web vitals
+
+---
+
+# PostHog
+
+Verify events:
+
+Landing visits
+
+Authentication
+
+Treasury events
+
+Signal broadcasts
+
+Citizen conversions
+
+Alliance activity
+
+---
+
+# Runtime Monitoring
+
+Monitor:
+
+API failures
+
+Build failures
+
+Runtime exceptions
+
+Failed intelligence requests
+
+Treasury processing failures
+
+OAuth callback issues
+
+---
+
+# 6. Security Checklist
+
+## Mandatory
+
+[ ] RLS enabled on every table
+
+[ ] OAuth tokens encrypted
+
+[ ] HTTPS enforced
+
+[ ] No secrets exposed client-side
+
+[ ] Admin routes protected
+
+[ ] Service keys server-only
+
+[ ] Device fingerprints hashed
+
+[ ] Error responses sanitized
+
+---
+
+# Verify RLS
+
+```sql id="cl5y8f"
+SELECT schemaname,
+tablename,
+rowsecurity
+FROM pg_tables
 WHERE schemaname = 'public';
--- All tables should show rowsecurity = true
+```
+
+Every table must show:
+
+```txt id="s7l8f8"
+rowsecurity = true
 ```
 
 ---
 
-## 7. Performance
+# 7. Performance Standards
 
-### Edge Functions
+## Edge Infrastructure
 
-API routes run on Vercel Edge by default for low latency.
+Deploy critical APIs on Edge runtime.
 
-### Image Optimization
+Priority systems:
 
-Next.js optimizes images automatically. Ensure:
-- Use `next/image` component
-- Configure `remotePatterns` in `next.config.ts`
+Signals
 
-### Caching
+Treasury
 
-Static pages are cached at the edge. Dynamic routes use:
-- `revalidate` for ISR
-- `cache: 'no-store'` for real-time data
+Intelligence
+
+Citizens
 
 ---
 
-## 8. Post-Deployment
+# Image Optimization
 
-### Smoke Tests
+Use:
 
-1. ✅ Landing page loads
-2. ✅ Waitlist form submits
-3. ✅ Login works
-4. ✅ Dashboard loads for authenticated user
-5. ✅ Social OAuth connects
-6. ✅ AI ghostwrite generates content
+next/image
 
-### Database Seeding (Optional)
+Avoid:
+unoptimized large assets.
 
-For demo/testing, seed initial data:
+---
 
-```sql
--- Add test creator wallet
-INSERT INTO creator_wallets (creator_id, balance, total_earnings, referral_income)
-VALUES ('user-uuid-here', 250.00, 1250.00, 125.00);
+# Caching Strategy
+
+Static:
+edge cached.
+
+Real-time:
+cache: 'no-store'
+
+Analytics:
+ISR + revalidation.
+
+---
+
+# 8. Post-Deployment Validation
+
+## Smoke Test Checklist
+
+[ ] Landing page loads
+
+[ ] Authentication works
+
+[ ] Throne renders correctly
+
+[ ] Treasury systems load
+
+[ ] No NaN states
+
+[ ] Signals broadcast correctly
+
+[ ] AI systems respond
+
+[ ] OAuth integrations function
+
+[ ] Dominion analytics render safely
+
+[ ] Alliance systems load
+
+---
+
+# Optional Demo Seeding
+
+```sql id="ec9x4v"
+INSERT INTO operator_wallets (
+  operator_id,
+  balance,
+  treasury_total,
+  alliance_income
+)
+VALUES (
+  'user-uuid',
+  250.00,
+  1250.00,
+  125.00
+);
 ```
 
 ---
 
-## Rollback
+# Rollback Strategy
 
-### Vercel
+## Vercel
 
-1. Go to Vercel → Deployments
-2. Find previous successful deployment
-3. Click "..." → Promote to Production
-
-### Database
-
-Keep migrations versioned. To rollback:
-1. Create a reverse migration
-2. Run in Supabase SQL Editor
+Deployments →
+Select previous deployment →
+Promote to production.
 
 ---
 
-## Environment Matrix
+# Database Rollback
 
-| Variable | Development | Production |
-|----------|-------------|------------|
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | `https://your-domain.com` |
-| `*_CALLBACK_URL` | `localhost:3000` | `your-domain.com` |
-| Supabase Project | Dev project | Prod project |
+Never manually edit production tables.
+
+Always:
+create reverse migrations.
 
 ---
 
-## Troubleshooting
+# Environment Matrix
 
-### Build Fails
+| Variable        | Development | Production         |
+| --------------- | ----------- | ------------------ |
+| SITE_URL        | localhost   | production domain  |
+| OAuth Redirects | localhost   | production domain  |
+| Supabase        | dev project | production project |
 
-```bash
-# Check local build first
+---
+
+# Troubleshooting
+
+## Build Failures
+
+Run locally first:
+
+```bash id="5mw07y"
 npm run build
 ```
 
-Common issues:
-- TypeScript errors
-- Missing environment variables
-- Import path issues
+Common causes:
 
-### OAuth Not Working
+TypeScript errors
 
-1. Verify callback URLs match exactly
-2. Check platform developer console for errors
-3. Ensure `TOKEN_ENCRYPTION_KEY` is set
+Missing env vars
 
-### Database Connection Errors
+Broken imports
 
-1. Verify Supabase URL and anon key
-2. Check RLS policies
-3. Ensure migrations have run
+---
 
-### Emails Not Sending
+# OAuth Failures
 
-1. Verify Resend API key
-2. Check domain verification
-3. Look at Resend dashboard for failures
+Verify:
+
+callback URLs
+
+platform credentials
+
+TOKEN_ENCRYPTION_KEY
+
+---
+
+# Database Failures
+
+Check:
+
+Supabase URL
+
+Anon key
+
+RLS policies
+
+Migration execution order
+
+---
+
+# Email Failures
+
+Verify:
+
+Resend key
+
+domain verification
+
+SPF/DKIM records
+
+sender configuration
+
+---
+
+# Final Deployment Philosophy
+
+Mansa’s Mogules is not:
+another creator platform.
+
+It is:
+infrastructure for digital ownership.
+
+The deployment should prioritize:
+
+speed
+
+control
+
+security
+
+stability
+
+scalability
+
+Every system must feel:
+intentional,
+minimal,
+and operational.

@@ -50,7 +50,7 @@ export async function GET(req: Request) {
   const supabase = await getAuthSupabase();
   let query = supabase
     .from("commissions")
-    .select("id,fan_email,fan_name,title,description,budget_cents,agreed_cents,deadline,status,created_at,updated_at,paid_at,access_token", { count: "exact" })
+    .select("id,supporter_email,supporter_name,title,description,budget_cents,agreed_cents,deadline,status,created_at,updated_at,paid_at,access_token", { count: "exact" })
     .eq("creator_id", user.id)
     .order("created_at", { ascending: false })
     .range((page - 1) * limit, page * limit - 1);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const AGENT_PROMPTS: Record<string, string> = {
-  researcher: `You are a market research analyst for MULUK, a creator economy platform disrupting OnlyFans with 88% creator payouts, anonymous fan codes, and crypto payment rails to 190 countries.
+  researcher: `You are a market research analyst for MULUK, a creator economy platform disrupting Onlysupporters with 88% creator payouts, anonymous supporter codes, and crypto payment rails to 190 countries.
 
 Provide 3 concise insights:
 1. Creator migration patterns from competitor platforms
@@ -18,7 +18,7 @@ Write 3 high-converting marketing assets:
 2. TikTok video concept (15-30 seconds, creator frustration-to-solution hook)
 3. Email: subject line + opening sentence for creator outreach
 
-MULUK's differentiators: anonymous fan codes, 8% platform fee vs 20% on competitors, crypto payouts to 190 countries. Under 200 words total.`,
+MULUK's differentiators: anonymous supporter codes, 8% platform fee vs 20% on competitors, crypto payouts to 190 countries. Under 200 words total.`,
 
   critic: `You are a critical marketing strategist and devil's advocate for MULUK, a new creator platform.
 
@@ -36,7 +36,7 @@ const MOCK_OUTPUTS: Record<string, string> = {
 **Creator Migration Signals**
 • 34% of surveyed OF creators cite platform fees as #1 pain point — MULUK's 8-12% vs 20% is a decisive wedge
 • Migration intent spikes after payout delays: target creators who experienced holds in the past 6 months
-• Anonymous fan access removes the #1 barrier for mainstream creator crossover
+• Anonymous supporter access removes the #1 barrier for mainstream creator crossover
 
 **Target Demographics**
 • Primary: 22-32 year old creators in US, UK, AU, CA — highest switching intent + payment infrastructure
@@ -51,7 +51,7 @@ _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live
   writer: `**Copy Suite — Launch Assets**
 
 **Twitter/X Thread Opener**
-"OnlyFans quietly takes 20% of everything you make. On $10K/month that's $2,000 gone. Every month. Forever. I found out what happens when that number drops to 8%. 🧵"
+"Onlysupporters quietly takes 20% of everything you make. On $10K/month that's $2,000 gone. Every month. Forever. I found out what happens when that number drops to 8%. 🧵"
 
 **TikTok Video Concept**
 Open: creator staring at earnings dashboard, frustrated. Text overlay: "This is what I made." Cut to fee deduction. "This is what they kept." 2-second pause. Cut to MULUK. "This is what changes Monday."
@@ -65,7 +65,7 @@ _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live
   critic: `**Critical Risk Analysis**
 
 **Risk 1 — Fraud & Chargebacks**
-Anonymous fan codes are the product's crown jewel and its biggest liability. One viral chargeback wave destroys creator trust instantly. Fraud scoring must ship before beta.
+Anonymous supporter codes are the product's crown jewel and its biggest liability. One viral chargeback wave destroys creator trust instantly. Fraud scoring must ship before beta.
 
 **Risk 2 — Creator Activation Gap**
 Waitlist numbers are meaningless without day-one creator activation. If MULUK can't seed 50+ high-earning creators in launch week, the demand flywheel never starts. This is the most underprepared area.
@@ -74,7 +74,7 @@ Waitlist numbers are meaningless without day-one creator activation. If MULUK ca
 Stripe terminates adult content platforms without warning. MULUK needs 3 independent payment rails operational on launch day.
 
 **Core Assumption at Risk**
-MULUK assumes creators migrate for economics. What they actually migrate for is audience portability. Without a fan migration tool, switching cost is prohibitively high regardless of fee structure.
+MULUK assumes creators migrate for economics. What they actually migrate for is audience portability. Without a supporter migration tool, switching cost is prohibitively high regardless of fee structure.
 
 _Running with offline fallback — add OPENROUTER_API_KEY to .env.local for live analysis._`,
 };

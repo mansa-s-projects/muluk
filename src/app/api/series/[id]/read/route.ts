@@ -13,7 +13,7 @@ const TOKEN_RE = /^[0-9a-f]{48}$/;
 
 type Params = { params: Promise<{ id: string }> };
 
-// ── GET /api/series/[id]/read?token= — fan: read all episodes ─────────────────
+// ── GET /api/series/[id]/read?token= — supporter: read all episodes ─────────────────
 // Returns full episode list if:
 //   a) series is free (price_cents === 0), or
 //   b) a valid paid-purchase access_token is provided

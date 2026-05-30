@@ -1,0 +1,1 @@
+-- Migration 006: supporter_portal (removed — supporter portal tables dropped)

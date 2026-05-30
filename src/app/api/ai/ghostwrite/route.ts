@@ -83,7 +83,7 @@ export async function POST(req: Request) {
           messages: [
             {
               role: "system",
-              content: "You are a ghostwriter for this creator. Match their dark luxury brand voice. Write engaging content for their fans. Be bold, mysterious, direct."
+              content: "You are a ghostwriter for this creator. Match their dark luxury brand voice. Write engaging content for their supporters. Be bold, mysterious, direct."
             },
             { role: "user", content: prompt }
           ],

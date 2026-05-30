@@ -72,7 +72,7 @@ function buildFallbackAnalysis({
   const firstInterest = interests[0] || nicheLabel;
   const firstContentType = contentTypes[0] || "premium content";
   const topPlatform = currentPlatforms[0] || "instagram";
-  const normalizedGoals = goals.length > 0 ? goals : ["first 50 paying fans", "clear premium positioning"];
+  const normalizedGoals = goals.length > 0 ? goals : ["first 50 paying supporters", "clear premium positioning"];
 
   return {
     niche: primaryNiche,
@@ -108,7 +108,7 @@ function buildFallbackAnalysis({
       },
     ],
     targetAudience: {
-      primary: `${nicheLabel} fans who already follow creators on ${topPlatform} and are willing to pay for closer access or premium drops.`,
+      primary: `${nicheLabel} supporters who already follow creators on ${topPlatform} and are willing to pay for closer access or premium drops.`,
       psychographics: ["status-driven", "community-seeking", "impulse-upgrade friendly"],
       painPoints: "They want sharper curation, more exclusive access, and a reason to pay instead of just passively scrolling.",
     },
@@ -116,7 +116,7 @@ function buildFallbackAnalysis({
     first30Days: [
       `Publish 10 short posts that anchor your ${nicheLabel.toLowerCase()} positioning and repeat the same paid offer.`,
       `Create 3 paid pieces of ${titleCase(firstContentType).toLowerCase()} content tied directly to these goals: ${normalizedGoals.join(", ")}.`,
-      "Message early fans, collect objections, and tighten pricing plus hooks every week.",
+      "Message early supporters, collect objections, and tighten pricing plus hooks every week.",
     ],
     rawAnalysis: "Fallback onboarding strategy generated locally because the AI provider was unavailable.",
   };

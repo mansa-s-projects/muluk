@@ -11,7 +11,7 @@ function getServiceDb() {
 
 type Params = { params: Promise<{ id: string }> };
 
-// ── POST /api/series/[id]/buy — fan: initiate purchase ────────────────────────
+// ── POST /api/series/[id]/buy — supporter: initiate purchase ────────────────────────
 
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
@@ -37,8 +37,8 @@ export async function POST(req: Request, { params }: Params) {
     .eq("status", "approved")
     .maybeSingle();
 
-  const fanEmail = typeof body.fan_email === "string" ? body.fan_email.trim() || undefined : undefined;
-  const fanName  = typeof body.fan_name  === "string" ? body.fan_name.trim()  || undefined : undefined;
+  const supporterEmail = typeof body.supporter_email === "string" ? body.supporter_email.trim() || undefined : undefined;
+  const supporterName  = typeof body.supporter_name  === "string" ? body.supporter_name.trim()  || undefined : undefined;
   const handle   = (creator?.handle as string) ?? "creator";
 
   const priceCents = series.price_cents as number;
@@ -49,8 +49,8 @@ export async function POST(req: Request, { params }: Params) {
     .insert({
       series_id:  id,
       creator_id: series.creator_id,
-      fan_email:  fanEmail ?? null,
-      fan_name:   fanName  ?? null,
+      supporter_email:  supporterEmail ?? null,
+      supporter_name:   supporterName  ?? null,
       status:     "pending",
     })
     .select()
@@ -98,7 +98,7 @@ export async function POST(req: Request, { params }: Params) {
     creatorHandle: handle,
     priceCents,
     redirectUrl,
-    fanEmail,
+    supporterEmail,
   });
 
   if (!checkout) {

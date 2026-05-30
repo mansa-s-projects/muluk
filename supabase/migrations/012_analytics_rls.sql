@@ -18,25 +18,6 @@ CREATE POLICY "activity_log_user_insert"
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "transactions_user_select" ON transactions;
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'transactions'
-      AND column_name = 'fan_id'
-  ) THEN
-    EXECUTE $policy$
-      CREATE POLICY "transactions_user_select"
-        ON transactions FOR SELECT
-        USING (creator_id = auth.uid() OR fan_id = auth.uid())
-    $policy$;
-  ELSE
-    EXECUTE $policy$
-      CREATE POLICY "transactions_user_select"
-        ON transactions FOR SELECT
-        USING (creator_id = auth.uid())
-    $policy$;
-  END IF;
-END $$;
+CREATE POLICY "transactions_user_select"
+  ON transactions FOR SELECT
+  USING (creator_id = auth.uid());

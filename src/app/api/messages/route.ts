@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// GET - Fetch messages (creator or fan)
+// GET - Fetch messages (creator or supporter)
 export async function GET(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     const url = new URL(req.url);
-    const fanCode = url.searchParams.get("fanCode");
-    const asFan = url.searchParams.get("asFan") === "true";
+    const SupporterCode = url.searchParams.get("SupporterCode");
+    const asSupporter = url.searchParams.get("asSupporter") === "true";
 
-    let query = supabase.from("fan_messages").select("*");
+    let query = supabase.from("supporter_messages").select("*");
 
-    if (user && !asFan) {
+    if (user && !asSupporter) {
       // Creator view - messages to/from this creator
       query = query.eq("creator_id", user.id);
-    } else if (fanCode) {
-      // Fan view - messages for this fan code
-      query = query.eq("fan_code", fanCode);
+    } else if (SupporterCode) {
+      // Supporter view - messages for this supporter code
+      query = query.eq("supporter_code", SupporterCode);
     } else {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -43,44 +43,44 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     
     const body = await req.json();
-    const { fanCode, content, asFan } = body;
+    const { SupporterCode, content, asSupporter } = body;
 
-    if (!fanCode || !content?.trim()) {
+    if (!SupporterCode || !content?.trim()) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const messageData: {
       content: string;
-      fan_code: string;
+      supporter_code: string;
       creator_id?: string;
       from_creator?: boolean;
     } = {
       content: content.trim(),
-      fan_code: fanCode,
+      supporter_code: SupporterCode,
     };
 
-    if (user && !asFan) {
+    if (user && !asSupporter) {
       // Creator sending message
       messageData.creator_id = user.id;
       messageData.from_creator = true;
       
-      // Verify fan code belongs to this creator
-      const { data: fanData } = await supabase
-        .from("fan_codes")
+      // Verify supporter code belongs to this creator
+      const { data: supporterData } = await supabase
+        .from("supporter_codes")
         .select("creator_id")
-        .eq("code", fanCode)
+        .eq("code", SupporterCode)
         .single();
         
-      if (fanData?.creator_id !== user.id) {
-        return NextResponse.json({ error: "Invalid fan code" }, { status: 403 });
+      if (supporterData?.creator_id !== user.id) {
+        return NextResponse.json({ error: "Invalid supporter code" }, { status: 403 });
       }
     } else {
-      // Fan sending message (anonymous)
+      // Supporter sending message (anonymous)
       messageData.from_creator = false;
     }
 
     const { data: message, error } = await supabase
-      .from("fan_messages")
+      .from("supporter_messages")
       .insert(messageData)
       .select()
       .single();
@@ -89,26 +89,26 @@ export async function POST(req: Request) {
 
     // Create notification for recipient
     if (message.from_creator) {
-      // Notify fan (if they have notifications enabled)
+      // Notify supporter (if they have notifications enabled)
       await supabase.from("notifications").insert({
-        user_id: null, // Fan is anonymous
-        fan_code: fanCode,
+        user_id: null, // Supporter is anonymous
+        supporter_code: SupporterCode,
         type: "message",
         message: "New message from creator",
       });
     } else {
       // Notify creator
-      const { data: fanData } = await supabase
-        .from("fan_codes")
+      const { data: supporterData } = await supabase
+        .from("supporter_codes")
         .select("creator_id")
-        .eq("code", fanCode)
+        .eq("code", SupporterCode)
         .single();
         
-      if (fanData?.creator_id) {
+      if (supporterData?.creator_id) {
         await supabase.from("notifications").insert({
-          user_id: fanData.creator_id,
+          user_id: supporterData.creator_id,
           type: "message",
-          message: `New message from fan ${fanCode.slice(0, 8)}...`,
+          message: `New message from supporter ${SupporterCode.slice(0, 8)}...`,
         });
       }
     }

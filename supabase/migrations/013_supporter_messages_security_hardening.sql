@@ -1,0 +1,1 @@
+-- Migration 013: supporter messages security hardening (removed — supporter_messages table dropped)

@@ -41,8 +41,8 @@ export interface SubscriptionTier {
   display_name:      string;
   platform_fee_pct:  number;
   creator_pct:       number;
-  /** null = unlimited fan codes */
-  max_fans:          number | null;
+  /** null = unlimited supporter codes */
+  max_supporters:          number | null;
   referral_pct:      number;
   /** "7d" | "48h" | "24h" */
   payout_speed:      string;
@@ -66,7 +66,7 @@ export type Feature =
   | "custom_domain"  // apex only — custom vanity domain
   | "api_access"     // apex only — programmatic API keys
   | "white_glove"    // apex only — dedicated account manager
-  | "fan_codes";     // all tiers — cipher has max_fans quantity cap
+  | "supporter_codes";     // all tiers — cipher has max_supporters quantity cap
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export const FEATURE_MIN_TIER: Record<Feature, TierSlug> = {
   custom_domain: "apex",
   api_access:    "apex",
   white_glove:   "apex",
-  fan_codes:     "cipher",  // everyone has it; cipher has quantity cap
+  supporter_codes:     "cipher",  // everyone has it; cipher has quantity cap
 };
 
 /**
@@ -97,7 +97,7 @@ const DEFAULT_MULUK_TIER: SubscriptionTier = {
   display_name:      "Cipher",
   platform_fee_pct:  12,
   creator_pct:       88,
-  max_fans:          500,
+  max_supporters:          500,
   referral_pct:      10,
   payout_speed:      "7d",
   has_ai_tools:      false,
@@ -211,7 +211,7 @@ export async function checkFeatureAccess(
     custom_domain: tier.has_custom_domain,
     api_access:    tier.has_api_access,
     white_glove:   tier.has_white_glove,
-    fan_codes:     true,  // quantity-gated separately via checkFanCodeLimit
+    supporter_codes:     true,  // quantity-gated separately via checkSupporterCodeLimit
   };
 
   const allowed = featureFlagMap[feature] ?? false;
@@ -261,22 +261,22 @@ export async function assertFeatureAccess(
 }
 
 /**
- * Fan-code quantity gate for Cipher-tier creators (max 500 fan codes).
- * Legend and Apex skip the count query entirely (max_fans === null).
+ * Supporter-code quantity gate for Cipher-tier creators (max 500 supporter codes).
+ * Legend and Apex skip the count query entirely (max_supporters === null).
  *
  * @example
- * const limit = await checkFanCodeLimit(user.id, supabase);
+ * const limit = await checkSupporterCodeLimit(user.id, supabase);
  * if (!limit.allowed) {
  *   return NextResponse.json({
  *     upgrade_required: true,
  *     current_tier: limit.tier.slug,
  *     required_tier: "legend",
- *     feature: "fan_codes",
- *     message: `Fan code limit reached (${limit.current}/${limit.limit}). Upgrade to Legend for unlimited.`,
+ *     feature: "supporter_codes",
+ *     message: `Supporter code limit reached (${limit.current}/${limit.limit}). Upgrade to Legend for unlimited.`,
  *   }, { status: 403 });
  * }
  */
-export async function checkFanCodeLimit(
+export async function checkSupporterCodeLimit(
   userId: string,
   supabase: SupabaseClient
 ): Promise<{
@@ -288,11 +288,11 @@ export async function checkFanCodeLimit(
   const tier = await getUserTier(userId, supabase);
 
   // Unlimited tiers skip counting
-  if (tier.max_fans === null) {
+  if (tier.max_supporters === null) {
     return { allowed: true, current: 0, limit: null, tier };
   }
 
-  // Fetch all content IDs for this creator, then count fan codes
+  // Fetch all content IDs for this creator, then count supporter codes
   const { data: contents } = await supabase
     .from("content_items_v2")
     .select("id")
@@ -303,16 +303,16 @@ export async function checkFanCodeLimit(
   let current = 0;
   if (contentIds.length > 0) {
     const { count } = await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .select("id", { count: "exact", head: true })
       .in("content_id", contentIds);
     current = count ?? 0;
   }
 
   return {
-    allowed: current < tier.max_fans,
+    allowed: current < tier.max_supporters,
     current,
-    limit:   tier.max_fans,
+    limit:   tier.max_supporters,
     tier,
   };
 }

@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS subscription_tiers (
   display_name     TEXT NOT NULL,
   platform_fee_pct NUMERIC(5,2) NOT NULL,          -- platform cut as % (12, 10, 8)
   creator_pct      NUMERIC(5,2) NOT NULL,          -- creator keeps as % (88, 90, 92)
-  max_fans         INTEGER,                         -- NULL = unlimited
   referral_pct     NUMERIC(5,2) NOT NULL DEFAULT 10,
   payout_speed     TEXT NOT NULL DEFAULT '7d',     -- '7d' | '48h' | '24h'
   has_ai_tools     BOOLEAN NOT NULL DEFAULT false,
@@ -25,16 +24,15 @@ CREATE TABLE IF NOT EXISTS subscription_tiers (
 
 -- Seed the three tiers
 INSERT INTO subscription_tiers
-  (slug, display_name, platform_fee_pct, creator_pct, max_fans, referral_pct, payout_speed,
+  (slug, display_name, platform_fee_pct, creator_pct, referral_pct, payout_speed,
    has_ai_tools, has_live_rooms, has_collab_split, has_custom_domain, has_api_access, has_white_glove, sort_order)
 VALUES
-  ('cipher', 'Cipher',  12.00, 88.00, 500,  10.00, '7d',  false, false, false, false, false, false, 1),
-  ('legend', 'Legend',  10.00, 90.00, NULL, 15.00, '48h', true,  true,  true,  false, false, false, 2),
-  ('apex',   'Apex',     8.00, 92.00, NULL, 20.00, '24h', true,  true,  true,  true,  true,  true,  3)
+  ('cipher', 'Cipher',  12.00, 88.00, 10.00, '7d',  false, false, false, false, false, false, 1),
+  ('legend', 'Legend',  10.00, 90.00, 15.00, '48h', true,  true,  true,  false, false, false, 2),
+  ('apex',   'Apex',     8.00, 92.00, 20.00, '24h', true,  true,  true,  true,  true,  true,  3)
 ON CONFLICT (slug) DO UPDATE SET
   platform_fee_pct  = EXCLUDED.platform_fee_pct,
   creator_pct       = EXCLUDED.creator_pct,
-  max_fans          = EXCLUDED.max_fans,
   referral_pct      = EXCLUDED.referral_pct,
   payout_speed      = EXCLUDED.payout_speed,
   has_ai_tools      = EXCLUDED.has_ai_tools,

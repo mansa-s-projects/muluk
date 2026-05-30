@@ -1,0 +1,1 @@
+-- Migration 048: supporter presence full (removed — supporter_presence and supporter_activity tables dropped)

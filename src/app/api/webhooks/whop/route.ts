@@ -64,8 +64,8 @@ async function getCreatorTier(supabase: ReturnType<typeof getSupabase>, creatorI
  * POST /api/webhooks/whop
  *
  * Handles Whop payment events:
- *   - payment.completed  → mark fan_code as paid, record transaction, credit creator
- *   - payment.refunded   → mark transaction as refunded, revoke fan_code access
+ *   - payment.completed  → mark supporter_code as paid, record transaction, credit creator
+ *   - payment.refunded   → mark transaction as refunded, revoke supporter_code access
  *   - membership.went_valid → (future: subscription access grants)
  */
 export async function POST(req: Request) {
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
   // ── payment.completed ─────────────────────────────────────────────────────
   if (eventType === "payment.completed") {
-    // Route by metadata priority: instant_link → booking → vault → commission → tip → fan_code
+    // Route by metadata priority: instant_link → booking → vault → commission → tip → supporter_code
     const paymentMeta = (data.metadata as Record<string, unknown>) ?? {};
     if (paymentMeta.instant_link_payment === "true") {
       return handleInstantLinkPaymentCompleted(supabase, data, paymentMeta);
@@ -108,9 +108,6 @@ export async function POST(req: Request) {
     }
     if (paymentMeta.commission_id && paymentMeta.commission_payment === "true") {
       return handleCommissionPaymentCompleted(supabase, data, paymentMeta);
-    }
-    if (paymentMeta.tip_id && paymentMeta.tip_payment === "true") {
-      return handleTipPaymentCompleted(supabase, data, paymentMeta);
     }
     if (paymentMeta.series_purchase_id && paymentMeta.series_payment === "true") {
       return handleSeriesPurchaseCompleted(supabase, data, paymentMeta);
@@ -148,7 +145,7 @@ async function handlePaymentCompleted(
 ) {
   const whopPaymentId  = String(data.id ?? "");
   const metadata       = (data.metadata as Record<string, unknown>) ?? {};
-  const fanCodeStr     = String(metadata.fan_code ?? "");
+  const SupporterCodeStr     = String(metadata.supporter_code ?? "");
   const paymentLinkId  = String(metadata.payment_link_id ?? "");
   const buyerEmail     = String(metadata.buyer_email ?? data.email ?? "");
   const amountCents    = Number(data.amount ?? data.amount_cents ?? 0);
@@ -178,7 +175,7 @@ async function handlePaymentCompleted(
             received: true,
             action: "payment_link_access_granted",
             access_token: existingAccess.access_token,
-            pay_url: `/fan/access/${existingAccess.access_token}`,
+            pay_url: `/supporter/access/${existingAccess.access_token}`,
           });
         }
       }
@@ -198,7 +195,7 @@ async function handlePaymentCompleted(
       received:     true,
       action:       "payment_link_access_granted",
       access_token: result.access_token,
-      pay_url:      `/fan/access/${result.access_token}`,
+      pay_url:      `/supporter/access/${result.access_token}`,
     });
   }
 
@@ -213,25 +210,25 @@ async function handlePaymentCompleted(
     return NextResponse.json({ received: true, action: "duplicate_skipped" });
   }
 
-  // ── Resolve fan code ───────────────────────────────────────────────────────
-  const normalizedCode = fanCodeStr.trim().toUpperCase();
-  const { data: fanCode, error: codeErr } = await supabase
-    .from("fan_codes_v2")
+  // ── Resolve supporter code ───────────────────────────────────────────────────────
+  const normalizedCode = SupporterCodeStr.trim().toUpperCase();
+  const { data: SupporterCode, error: codeErr } = await supabase
+    .from("supporter_codes_v2")
     .select("id, content_id, is_paid")
     .eq("code", normalizedCode)
     .maybeSingle();
 
-  if (codeErr || !fanCode) {
-    console.error("[whop-webhook] Fan code not found:", normalizedCode, codeErr?.message);
+  if (codeErr || !SupporterCode) {
+    console.error("[whop-webhook] Supporter code not found:", normalizedCode, codeErr?.message);
     // Still return 200 — Whop retries on 4xx which would spam logs
-    return NextResponse.json({ received: true, action: "fan_code_not_found", code: normalizedCode });
+    return NextResponse.json({ received: true, action: "supporter_code_not_found", code: normalizedCode });
   }
 
   // ── Resolve content + creator ──────────────────────────────────────────────
   const { data: content } = await supabase
     .from("content_items_v2")
     .select("id, creator_id, price")
-    .eq("id", fanCode.content_id)
+    .eq("id", SupporterCode.content_id)
     .single();
 
   if (!content) {
@@ -247,7 +244,7 @@ async function handlePaymentCompleted(
   // ── Upsert transaction ────────────────────────────────────────────────────
   const txPayload = {
     content_id:       content.id,
-    fan_code_id:      fanCode.id,
+    supporter_code_id:      SupporterCode.id,
     creator_id:       content.creator_id,
     amount,
     currency:         "usd",
@@ -277,7 +274,7 @@ async function handlePaymentCompleted(
       p_metadata: {
         source: "whop_webhook",
         whop_payment_id: whopPaymentId,
-        fan_code: normalizedCode,
+        supporter_code: normalizedCode,
         content_id: content.id,
       },
     })
@@ -290,12 +287,12 @@ async function handlePaymentCompleted(
       }
     });
 
-  // ── Mark fan code as paid (unlock access) ─────────────────────────────────
-  if (!fanCode.is_paid) {
+  // ── Mark supporter code as paid (unlock access) ─────────────────────────────────
+  if (!SupporterCode.is_paid) {
     await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .update({ is_paid: true, payment_method: "whop", paid_at: new Date().toISOString() })
-      .eq("id", fanCode.id);
+      .eq("id", SupporterCode.id);
   }
 
   console.info(
@@ -305,7 +302,7 @@ async function handlePaymentCompleted(
   return NextResponse.json({
     received: true,
     action:   "payment_processed",
-    fan_code: normalizedCode,
+    supporter_code: normalizedCode,
     creator_earnings_cents: creatorEarnings,
   });
 }
@@ -463,15 +460,15 @@ async function handlePaymentRefunded(
     .from("transactions_v2")
     .update({ status: "refunded" })
     .eq("whop_payment_id", whopPaymentId)
-    .select("fan_code_id")
+    .select("supporter_code_id")
     .maybeSingle();
 
-  // Revoke fan code access
-  if (tx?.fan_code_id) {
+  // Revoke supporter code access
+  if (tx?.supporter_code_id) {
     await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .update({ is_paid: false })
-      .eq("id", tx.fan_code_id);
+      .eq("id", tx.supporter_code_id);
   }
 
   const { data: refundedPurchases } = await supabase
@@ -722,61 +719,6 @@ async function handleCommissionPaymentCompleted(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tip payment — mark tip as paid so it appears on the Wall of Love
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function handleTipPaymentCompleted(
-  supabase: ReturnType<typeof getSupabase>,
-  data: Record<string, unknown>,
-  metadata: Record<string, unknown>
-) {
-  const whopPaymentId = String(data.id ?? "");
-  const tipId         = String(metadata.tip_id ?? "");
-
-  if (!whopPaymentId || !tipId) {
-    return NextResponse.json({ error: "Missing tip payment data" }, { status: 400 });
-  }
-
-  // Idempotency
-  const { data: existing } = await supabase
-    .from("tips")
-    .select("id, status")
-    .eq("id", tipId)
-    .maybeSingle();
-
-  if (!existing) {
-    return NextResponse.json({ received: true, action: "tip_not_found" });
-  }
-  if (existing.status === "paid") {
-    return NextResponse.json({ received: true, action: "tip_duplicate_skipped" });
-  }
-
-  const { data: tipUpdated, error: tipUpdateError } = await supabase
-    .from("tips")
-    .update({
-      status:          "paid",
-      whop_payment_id: whopPaymentId,
-      paid_at:         new Date().toISOString(),
-    })
-    .eq("id", tipId)
-    .select("id");
-
-  if (tipUpdateError || !tipUpdated || tipUpdated.length === 0) {
-    console.error("[whop-webhook] tip update failed", {
-      tipId,
-      whopPaymentId,
-      error: tipUpdateError,
-    });
-    return NextResponse.json({ error: "Failed to persist tip payment" }, { status: 500 });
-  }
-
-  console.info(
-    `[whop-webhook] tip paid — id=${tipId} payment=${whopPaymentId}`
-  );
-  return NextResponse.json({ received: true, action: "tip_payment_confirmed" });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Booking payment — mark booking as confirmed and lock availability slot
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -848,7 +790,7 @@ async function handleBookingPaymentCompleted(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Series purchase — mark series_purchases row as paid so fan can read content
+// Series purchase — mark series_purchases row as paid so supporter can read content
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function handleSeriesPurchaseCompleted(
@@ -903,7 +845,7 @@ async function handleSeriesPurchaseCompleted(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Instant pay link — mark instant_purchases row as paid so fan can unlock
+// Instant pay link — mark instant_purchases row as paid so supporter can unlock
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function handleInstantLinkPaymentCompleted(

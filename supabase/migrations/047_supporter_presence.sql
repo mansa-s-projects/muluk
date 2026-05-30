@@ -1,0 +1,1 @@
+-- Migration 047: supporter presence (removed — supporter_codes_v2 and supporter presence dropped)

@@ -8,8 +8,8 @@ const WHOP_API_BASE = "https://api.whop.com/api/v2";
 export interface Commission {
   id: string;
   creator_id: string;
-  fan_email: string;
-  fan_name: string | null;
+  supporter_email: string;
+  supporter_name: string | null;
   title: string;
   description: string;
   budget_cents: number;
@@ -30,7 +30,7 @@ export interface Commission {
 export interface CommissionMessage {
   id: string;
   commission_id: string;
-  sender_role: "creator" | "fan";
+  sender_role: "creator" | "supporter";
   content: string;
   created_at: string;
 }
@@ -46,7 +46,7 @@ export function formatPrice(cents: number): string {
  */
 export async function provisionCommissionCheckout(opts: {
   commissionId: string;
-  fanEmail: string;
+  supporterEmail: string;
   title: string;
   agreedCents: number;
   redirectUrl: string;
@@ -116,7 +116,7 @@ export async function provisionCommissionCheckout(opts: {
     return {
       whop_product_id: product.id,
       whop_checkout_id: plan.id,
-      whop_checkout_url: `https://whop.com/checkout/${plan.id}/?email=${encodeURIComponent(opts.fanEmail)}`,
+      whop_checkout_url: `https://whop.com/checkout/${plan.id}/?email=${encodeURIComponent(opts.supporterEmail)}`,
     };
   } catch {
     return null;

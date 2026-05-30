@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 
-// Public endpoint — no auth required (fans don't have accounts)
+// Public endpoint — no auth required (supporters don't have accounts)
 function getSupabase() {
   return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,7 +11,7 @@ function getSupabase() {
 
 /**
  * GET /api/v2/unlock/[code]
- * Returns content metadata + fan code payment status.
+ * Returns content metadata + supporter code payment status.
  * Does NOT return file_url unless is_paid = true.
  */
 export async function GET(
@@ -21,20 +21,20 @@ export async function GET(
   const { code } = await params;
   const sanitized = code?.trim().toUpperCase();
 
-  if (!sanitized || !/^FAN-[A-Z2-9]{10}$/.test(sanitized)) {
+  if (!sanitized || !/^SUPPORTER-[A-Z2-9]{10}$/.test(sanitized)) {
     return NextResponse.json({ error: "Invalid code format" }, { status: 400 });
   }
 
   const supabase = getSupabase();
 
-  // ── Fetch fan code ────────────────────────────────────────────────────
-  const { data: fanCode, error: codeErr } = await supabase
-    .from("fan_codes_v2")
+  // ── Fetch supporter code ────────────────────────────────────────────────────
+  const { data: SupporterCode, error: codeErr } = await supabase
+    .from("supporter_codes_v2")
     .select("id, code, content_id, is_paid, payment_method")
     .eq("code", sanitized)
     .single();
 
-  if (codeErr || !fanCode) {
+  if (codeErr || !SupporterCode) {
     return NextResponse.json({ error: "Code not found" }, { status: 404 });
   }
 
@@ -42,7 +42,7 @@ export async function GET(
   const { data: content, error: contentErr } = await supabase
     .from("content_items_v2")
     .select("id, title, description, price, currency, file_url, preview_url")
-    .eq("id", fanCode.content_id)
+    .eq("id", SupporterCode.content_id)
     .single();
 
   if (contentErr || !content) {
@@ -52,26 +52,26 @@ export async function GET(
   // ── Gate file_url behind payment ──────────────────────────────────────
   const responseContent = {
     ...content,
-    file_url: fanCode.is_paid ? content.file_url : null,
+    file_url: SupporterCode.is_paid ? content.file_url : null,
   };
 
-  // ── Record fan presence on successful paid unlock ─────────────────────
-  if (fanCode.is_paid) {
+  // ── Record supporter presence on successful paid unlock ─────────────────────
+  if (SupporterCode.is_paid) {
     await supabase
-      .from("fan_codes_v2")
+      .from("supporter_codes_v2")
       .update({ last_seen_at: new Date().toISOString() })
-      .eq("id", fanCode.id);
+      .eq("id", SupporterCode.id);
   }
 
   return NextResponse.json({
     success: true,
     data: {
       content: responseContent,
-      fanCode: {
-        id: fanCode.id,
-        code: fanCode.code,
-        is_paid: fanCode.is_paid,
-        payment_method: fanCode.payment_method,
+      SupporterCode: {
+        id: SupporterCode.id,
+        code: SupporterCode.code,
+        is_paid: SupporterCode.is_paid,
+        payment_method: SupporterCode.payment_method,
       },
     },
   });

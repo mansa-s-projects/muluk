@@ -107,7 +107,7 @@ export async function GET(
   });
 }
 
-// ── POST /api/creator/[handle] — submit fan code request ───────────────────────
+// ── POST /api/creator/[handle] — submit supporter code request ───────────────────────
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ handle: string }> }
@@ -150,7 +150,7 @@ export async function POST(
     return NextResponse.json({ error: "Creator not found" }, { status: 404 });
   }
 
-  const { error } = await supabase.from("fan_code_requests").insert({
+  const { error } = await supabase.from("supporter_code_requests").insert({
     creator_id: creator.user_id,
     email,
     message: message || null,
@@ -175,14 +175,14 @@ export async function POST(
       void resend.emails.send({
         from: "CIPHER <noreply@cipher.so>",
         to: creatorEmail,
-        subject: `New fan access request — ${email}`,
+        subject: `New supporter access request — ${email}`,
         html: `
           <div style="font-family:monospace;background:#080810;color:#fff;padding:32px;max-width:480px">
             <p style="font-size:22px;color:#c8a96e;margin:0 0 24px">✦ CIPHER</p>
-            <p style="margin:0 0 8px">A fan wants access to your exclusive content.</p>
+            <p style="margin:0 0 8px">A supporter wants access to your exclusive content.</p>
             <p style="margin:0 0 16px;color:#c8a96e;font-size:18px">${email}</p>
             ${msgHtml}
-            <p style="margin:16px 0 4px;font-size:11px;color:#555">Go to your dashboard &rarr; Fans to generate and send them a code.</p>
+            <p style="margin:16px 0 4px;font-size:11px;color:#555">Go to your dashboard &rarr; supporters to generate and send them a code.</p>
             <a href="https://cipher.so/creator/${creatorHandle}" style="color:#c8a96e;font-size:11px">cipher.so/creator/${creatorHandle}</a>
           </div>`,
       }).catch(err => console.error("creator-profile: resend error", err));

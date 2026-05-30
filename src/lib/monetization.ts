@@ -4,14 +4,14 @@ import crypto from "crypto";
  * Generate a cryptographically secure random code.
  * Format: MULUK-XXXXXXXXXX (10 alphanumeric chars)
  */
-export function generateFanCode(): string {
+export function generateSupporterCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (0/O, 1/I)
   const bytes = crypto.randomBytes(10);
   let code = "";
   for (let i = 0; i < 10; i++) {
     code += chars[bytes[i] % chars.length];
   }
-  return `FAN-${code}`;
+  return `SUPPORTER-${code}`;
 }
 
 /**
@@ -34,13 +34,13 @@ export function calculateSplit(
 }
 
 /**
- * Sanitize and validate a fan code parameter.
+ * Sanitize and validate a supporter code parameter.
  * Returns null if invalid.
  */
-export function sanitizeFanCode(raw: string): string | null {
+export function sanitizeSupporterCode(raw: string): string | null {
   const cleaned = raw.trim().toUpperCase();
-  // Must match FAN-XXXXXXXXXX format
-  if (/^FAN-[A-Z2-9]{10}$/.test(cleaned)) {
+  // Must match SUPPORTER-XXXXXXXXXX format
+  if (/^SUPPORTER-[A-Z2-9]{10}$/.test(cleaned)) {
     return cleaned;
   }
   return null;

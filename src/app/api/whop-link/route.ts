@@ -14,7 +14,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 
 /**
  * POST /api/whop-link
- * Public endpoint for fan checkout URL provisioning by content item.
+ * Public endpoint for supporter checkout URL provisioning by content item.
  *
  * Body: { content_id: string }
  * Returns: { checkout_url: string, whop_product_id: string | null }

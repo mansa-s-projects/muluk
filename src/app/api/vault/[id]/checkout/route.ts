@@ -1,7 +1,7 @@
 /**
  * POST /api/vault/[id]/checkout
  *
- * Fan initiates purchase of a vault item.
+ * Supporter initiates purchase of a vault item.
  * Creates a pending vault_purchase and provisions a Whop checkout URL.
  *
  * Body: { buyer_email?: string, email?: string }

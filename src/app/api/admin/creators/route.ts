@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 
     let creatorsWithBans = creators || [];
     if (creatorIds.length > 0) {
-      const [bansResult, contentResult, fansResult, transactionsResult] = await Promise.all([
+      const [bansResult, contentResult, supportersResult, transactionsResult] = await Promise.all([
         supabase
           .from("creator_bans")
           .select("creator_id, is_active, ban_type, expires_at, reason, created_at")
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
           .select("creator_id")
           .in("creator_id", creatorIds),
         supabase
-          .from("fan_codes_v2")
+          .from("supporter_codes_v2")
           .select("content_items_v2!inner(creator_id)")
           .in("content_items_v2.creator_id", creatorIds),
         supabase
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
 
       if (bansResult.error) console.error("[admin-creators] bans query failed:", bansResult.error.message);
       if (contentResult.error) console.error("[admin-creators] content query failed:", contentResult.error.message);
-      if (fansResult.error) console.error("[admin-creators] fan codes query failed:", fansResult.error.message);
+      if (supportersResult.error) console.error("[admin-creators] supporter codes query failed:", supportersResult.error.message);
       if (transactionsResult.error) console.error("[admin-creators] transactions query failed:", transactionsResult.error.message);
 
       const banMap = new Map<string, { is_active: boolean; ban_type: string; expires_at: string | null; reason: string | null }>();
@@ -156,12 +156,12 @@ export async function GET(request: NextRequest) {
         contentCountMap.set(row.creator_id, (contentCountMap.get(row.creator_id) || 0) + 1);
       }
 
-      const fanCountMap = new Map<string, number>();
-      for (const row of fansResult.data || []) {
+      const supporterCountMap = new Map<string, number>();
+      for (const row of supportersResult.data || []) {
         const content = (row as { content_items_v2?: { creator_id?: string } | Array<{ creator_id?: string }> }).content_items_v2;
         const creatorId = Array.isArray(content) ? content[0]?.creator_id : content?.creator_id;
         if (!creatorId) continue;
-        fanCountMap.set(creatorId, (fanCountMap.get(creatorId) || 0) + 1);
+        supporterCountMap.set(creatorId, (supporterCountMap.get(creatorId) || 0) + 1);
       }
 
       const txnStatsMap = new Map<string, { transaction_count: number; total_volume: number }>();
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
           ban_status: banMap.get(creator.user_id) || null,
           stats: {
             content_count: contentCountMap.get(creator.user_id) || 0,
-            fan_count: fanCountMap.get(creator.user_id) || 0,
+            supporter_count: supporterCountMap.get(creator.user_id) || 0,
             transaction_count: txn.transaction_count,
             total_volume: txn.total_volume,
           },

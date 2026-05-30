@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
  * Returns a mock wallet address and status.
  */
 export async function POST(request: Request) {
-  let body: { fan_code?: string };
+  let body: { supporter_code?: string };
 
   try {
     body = await request.json();
@@ -14,9 +14,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const fanCode = body.fan_code?.trim().toUpperCase();
-  if (!fanCode) {
-    return NextResponse.json({ error: "fan_code is required" }, { status: 400 });
+  const SupporterCode = body.supporter_code?.trim().toUpperCase();
+  if (!SupporterCode) {
+    return NextResponse.json({ error: "supporter_code is required" }, { status: 400 });
   }
 
   // ── Crypto integration placeholder ────────────────────────────────────────
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   //   2. Generate a unique payment address or payment intent
   //   3. Return address + amount + QR code data
   //   4. A separate webhook/polling mechanism confirms on-chain payment
-  //   5. Updates fan_codes_v2.is_paid = true, payment_method = 'crypto'
+  //   5. Updates supporter_codes_v2.is_paid = true, payment_method = 'crypto'
   //   6. Records transaction with crypto_tx_hash
 
   return NextResponse.json({

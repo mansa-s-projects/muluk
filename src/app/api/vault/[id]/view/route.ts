@@ -1,7 +1,7 @@
 /**
  * GET /api/vault/[id]/view?token=<access_token>
  *
- * Verifies fan owns a paid purchase for this vault item.
+ * Verifies supporter owns a paid purchase for this vault item.
  * Returns a short-lived signed URL to the original file.
  *
  * Query params:

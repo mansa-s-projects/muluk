@@ -3,7 +3,6 @@
 
 CREATE OR REPLACE FUNCTION get_creator_dashboard_stats(p_user_id UUID)
 RETURNS TABLE (
-  total_fans         BIGINT,
   monthly_revenue_cents BIGINT,
   active_content_count  BIGINT
 )
@@ -12,15 +11,6 @@ STABLE
 SECURITY DEFINER
 AS $$
   SELECT
-    -- total unique fans: fan codes purchased for this creator's content
-    (
-      SELECT COUNT(DISTINCT fv.id)
-      FROM fan_codes_v2 fv
-      JOIN content_items_v2 ci ON ci.id = fv.content_id
-      WHERE ci.creator_id = p_user_id
-        AND fv.is_paid = true
-    )::BIGINT AS total_fans,
-
     -- monthly revenue: tips + payment links this calendar month (cents)
     (
       COALESCE((
