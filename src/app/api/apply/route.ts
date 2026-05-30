@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   analyzeCreatorApplication,
   buildCreatorReasoningOptions,
@@ -140,10 +140,7 @@ function decisionRoute(decision: CreatorRecommendation): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createServiceClient();
     const resend = createResendClient();
 
     // Link to auth user if logged in
@@ -161,6 +158,8 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
+
+    const referrerSlug = typeof body.referrer_slug === "string" ? (body.referrer_slug as string).trim().toLowerCase() : null;
 
     let payload: ApplyPayload;
     try {
@@ -332,6 +331,30 @@ export async function POST(req: NextRequest) {
 
       if (legacyError) {
         console.error("Legacy creator_applications upsert failed:", legacyError);
+      }
+    }
+
+    // Record referral relationship if someone referred this applicant
+    if (referrerSlug) {
+      try {
+        const { data: referrer } = await supabase
+          .from("creator_applications")
+          .select("user_id")
+          .or(`referral_slug.ilike.${referrerSlug},handle.ilike.${referrerSlug}`)
+          .maybeSingle();
+
+        if (referrer?.user_id) {
+          await supabase.from("referrals").insert({
+            referrer_id: referrer.user_id,
+            referred_email: payload.email,
+            referral_slug: referrerSlug,
+            status: "pending",
+            reward_amount: 0,
+          });
+        }
+      } catch (refErr) {
+        // Referral tracking failure should never block the application
+        console.error("Referral record failed:", refErr);
       }
     }
 

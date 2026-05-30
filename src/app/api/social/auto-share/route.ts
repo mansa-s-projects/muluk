@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { decryptToken } from "../../auth/_utils";
 
 type ConnectionRow = {
   platform: string;
@@ -37,6 +38,13 @@ export async function POST(req: NextRequest) {
 
   for (const conn of connections) {
     if (conn.platform === "twitter" && conn.access_token) {
+      let plainToken: string;
+      try {
+        plainToken = decryptToken(conn.access_token);
+      } catch {
+        // Fallback: token may not be encrypted (e.g. legacy or test tokens)
+        plainToken = conn.access_token;
+      }
       const controller = new AbortController();
       const timeoutMs = 10_000;
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -45,7 +53,7 @@ export async function POST(req: NextRequest) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${conn.access_token}`,
+            Authorization: `Bearer ${plainToken}`,
           },
           body: JSON.stringify({ text: `${shareText}\n\n${contentTitle}`.trim() }),
           signal: controller.signal,
