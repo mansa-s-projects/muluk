@@ -25,7 +25,7 @@ export default function Loading() {
         color: "rgba(255,255,255,0.4)",
         textTransform: "uppercase",
       }}>
-        Loading MULUK
+        Loading Mansas Moguls
       </div>
 
       <span style={{
@@ -39,7 +39,7 @@ export default function Loading() {
         width: "1px",
         whiteSpace: "nowrap",
       }}>
-        Loading MULUK
+        Loading Mansas Moguls
       </span>
 
       <style>{`

@@ -51,7 +51,12 @@
       "Bash(npm list *)",
       "Bash(npm uninstall *)",
       "Bash(grep *)",
-      "Bash(python -m json.tool)"
+      "Bash(python -m json.tool)",
+      "Bash(cat .env.example)",
+      "Bash(cat .env.local.example)",
+      "PowerShell(py *)",
+      "PowerShell(python -m pip install playwright -q 2>&1 | Select-Object -Last 3; python -m playwright install chromium 2>&1 | Select-Object -Last 3)",
+      "PowerShell(python \"C:\\\\Users\\\\mehdi\\\\AppData\\\\Local\\\\Temp\\\\landing_shot.py\" 2>&1)"
     ]
   }
 }

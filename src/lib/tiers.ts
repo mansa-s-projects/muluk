@@ -1,5 +1,5 @@
 /**
- * MULUK Subscription Tier Enforcement
+ * Mansas Moguls Subscription Tier Enforcement
  *
  * Single source of truth for all feature gating.
  * All tier data is read from the subscription_tiers + creator_subscriptions tables
@@ -23,7 +23,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *   {
  *     "upgrade_required": true,
- *     "current_tier": "cipher",
+ *     "current_tier": "mogul",
  *     "required_tier": "legend",
  *     "feature": "ai_tools",
  *     "message": "ai tools requires the legend plan or higher"
@@ -34,7 +34,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-export type TierSlug = "cipher" | "legend" | "apex";
+export type TierSlug = "mogul" | "legend" | "apex";
 
 export interface SubscriptionTier {
   slug:              TierSlug;
@@ -66,13 +66,13 @@ export type Feature =
   | "custom_domain"  // apex only — custom vanity domain
   | "api_access"     // apex only — programmatic API keys
   | "white_glove"    // apex only — dedicated account manager
-  | "supporter_codes";     // all tiers — cipher has max_supporters quantity cap
+  | "supporter_codes";     // all tiers — mansas-moguls has max_supporters quantity cap
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 /** Numeric rank — higher = more privileged. Used for upgrade comparisons. */
 export const TIER_ORDER: Record<TierSlug, number> = {
-  cipher: 1,
+  "mogul": 1,
   legend: 2,
   apex:   3,
 };
@@ -85,16 +85,16 @@ export const FEATURE_MIN_TIER: Record<Feature, TierSlug> = {
   custom_domain: "apex",
   api_access:    "apex",
   white_glove:   "apex",
-  supporter_codes:     "cipher",  // everyone has it; cipher has quantity cap
+  supporter_codes:     "mogul",  // everyone has it; mansas-moguls has quantity cap
 };
 
 /**
  * Hardcoded fallback used when a creator has no subscription row in the DB.
- * Prevents crashes while giving cipher-level access by default.
+ * Prevents crashes while giving mansas-moguls-level access by default.
  */
-const DEFAULT_MULUK_TIER: SubscriptionTier = {
-  slug:              "cipher",
-  display_name:      "Cipher",
+const DEFAULT_MOGUL_TIER: SubscriptionTier = {
+  slug:              "mogul",
+  display_name:      "Mansas Moguls",
   platform_fee_pct:  12,
   creator_pct:       88,
   max_supporters:          500,
@@ -144,7 +144,7 @@ export class TierGateError extends Error {
 /**
  * Returns the full SubscriptionTier row for a creator.
  *
- * Never throws — falls back to Cipher defaults when:
+ * Never throws — falls back to Mansas Moguls defaults when:
  *   - creator has no row in creator_subscriptions yet
  *   - the subscription_tiers table is unavailable (RPC error)
  *
@@ -164,7 +164,7 @@ export async function getUserTier(
     .limit(1)
     .maybeSingle();
 
-  const tierSlug: TierSlug = ((sub?.tier_slug as TierSlug | null) ?? "cipher");
+  const tierSlug: TierSlug = ((sub?.tier_slug as TierSlug | null) ?? "mogul");
 
   // 2. Fetch full tier details from the reference table
   const { data: tier, error: tierError } = await supabase
@@ -174,14 +174,14 @@ export async function getUserTier(
     .maybeSingle();
 
   if (!tier) {
-    if (tierSlug !== "cipher") {
-      console.warn("[tiers] Falling back to cipher tier due to missing tier row", {
+    if (tierSlug !== "mogul") {
+      console.warn("[tiers] Falling back to mansas-moguls tier due to missing tier row", {
         userId,
         requestedTier: tierSlug,
         error: tierError?.message,
       });
     }
-    return { ...DEFAULT_MULUK_TIER, slug: "cipher" };
+    return { ...DEFAULT_MOGUL_TIER, slug: "mogul" };
   }
 
   return tier as SubscriptionTier;
@@ -261,7 +261,7 @@ export async function assertFeatureAccess(
 }
 
 /**
- * Supporter-code quantity gate for Cipher-tier creators (max 500 supporter codes).
+ * Supporter-code quantity gate for Mansas Moguls-tier creators (max 500 supporter codes).
  * Legend and Apex skip the count query entirely (max_supporters === null).
  *
  * @example

@@ -37,7 +37,7 @@ function mapApplicationInput(row: Record<string, unknown>): CreatorApplicationIn
     offerDescription: String(row.offer_description ?? row.short_description ?? ""),
     audienceSize: String(row.audience_size ?? row.audience_size_self_reported ?? "0"),
     monthlyEarnings: row.monthly_earnings ? String(row.monthly_earnings) : undefined,
-    reasonForJoining: String(row.reason_for_joining ?? row.why_join_muluk ?? ""),
+    reasonForJoining: String(row.reason_for_joining ?? row.why_join_platform ?? ""),
   };
 }
 

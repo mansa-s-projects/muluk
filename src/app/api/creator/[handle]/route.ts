@@ -173,17 +173,17 @@ export async function POST(
         ? `<p style="margin:0 0 8px"><em>"${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}"</em></p>`
         : "";
       void resend.emails.send({
-        from: "CIPHER <noreply@cipher.so>",
+        from: "Mansas Moguls <noreply@mansas-moguls.so>",
         to: creatorEmail,
         subject: `New supporter access request — ${email}`,
         html: `
           <div style="font-family:monospace;background:#080810;color:#fff;padding:32px;max-width:480px">
-            <p style="font-size:22px;color:#c8a96e;margin:0 0 24px">✦ CIPHER</p>
+            <p style="font-size:22px;color:#c8a96e;margin:0 0 24px">✦ Mansas Moguls</p>
             <p style="margin:0 0 8px">A supporter wants access to your exclusive content.</p>
             <p style="margin:0 0 16px;color:#c8a96e;font-size:18px">${email}</p>
             ${msgHtml}
             <p style="margin:16px 0 4px;font-size:11px;color:#555">Go to your dashboard &rarr; supporters to generate and send them a code.</p>
-            <a href="https://cipher.so/creator/${creatorHandle}" style="color:#c8a96e;font-size:11px">cipher.so/creator/${creatorHandle}</a>
+            <a href="https://mansas-moguls.so/creator/${creatorHandle}" style="color:#c8a96e;font-size:11px">mansas-moguls.so/creator/${creatorHandle}</a>
           </div>`,
       }).catch(err => console.error("creator-profile: resend error", err));
     }

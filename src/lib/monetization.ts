@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 /**
  * Generate a cryptographically secure random code.
- * Format: MULUK-XXXXXXXXXX (10 alphanumeric chars)
+ * Format: Mansas Moguls-XXXXXXXXXX (10 alphanumeric chars)
  */
 export function generateSupporterCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (0/O, 1/I)
@@ -16,14 +16,14 @@ export function generateSupporterCode(): string {
 
 /**
  * Calculate platform fee and creator earnings.
- * Uses MULUK tier system: 12% default, 10% Legend, 8% Apex
+ * Uses Mansas Moguls tier system: 12% default, 10% Legend, 8% Apex
  */
 export function calculateSplit(
   amountCents: number,
-  tier: "cipher" | "legend" | "apex" = "cipher"
+  tier: "mogul" | "legend" | "apex" = "mogul"
 ): { platformFee: number; creatorEarnings: number } {
   const rates: Record<string, number> = {
-    cipher: 0.12,
+    "mogul": 0.12,
     legend: 0.10,
     apex: 0.08,
   };

@@ -21,7 +21,7 @@ function getDb() {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://muluk.vip").replace(/\/$/, "");
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://mansasmoguls.com").replace(/\/$/, "");
 
 export async function POST(
   req: Request,

@@ -4,7 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const VALID_NICHES = [
   "luxury", "fitness", "music", "art", "fashion", "gaming",
@@ -13,12 +13,8 @@ const VALID_NICHES = [
 ];
 
 function getServiceDb() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createServiceClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createServiceClient();
 }
 
 function hasPublicSupabaseEnv() {

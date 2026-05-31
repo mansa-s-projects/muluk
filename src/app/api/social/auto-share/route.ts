@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const contentTitle = String(body.contentTitle ?? "").trim();
-  const shareText = String(body.shareText ?? "").trim() || "New exclusive content just dropped 🔒 cipher.co/@creator";
+  const shareText = String(body.shareText ?? "").trim() || "New exclusive content just dropped 🔒 mansas-moguls.co/@creator";
 
   const { data: rawConnections, error: connErr } = await supabase
     .from("social_connections")

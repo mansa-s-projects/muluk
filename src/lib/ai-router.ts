@@ -150,8 +150,8 @@ export class AIRouter {
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-              "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip",
-              "X-Title": "MULUK Platform",
+              "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "https://mansasmoguls.com",
+              "X-Title": "Mansas Moguls Platform",
             },
             body: JSON.stringify({
               model: config.model,

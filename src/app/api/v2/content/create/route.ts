@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // ── Supporter code quantity gate (cipher tier: max 500) ───────────────────────────
+  // ── Supporter code quantity gate (mansas-moguls tier: max 500) ───────────────────────────
   const SupporterCodeCheck = await checkSupporterCodeLimit(user.id, supabase);
   if (!SupporterCodeCheck.allowed) {
     return NextResponse.json({
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
   }
 
   // ── Build unlock URL ──────────────────────────────────────────────────────
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://muluk.vip";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mansasmoguls.com";
   const unlockUrl = `${baseUrl}/unlock/${code}`;
 
   return NextResponse.json({

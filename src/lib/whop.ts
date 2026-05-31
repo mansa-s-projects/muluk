@@ -1,5 +1,5 @@
 /**
- * Whop API client for MULUK.
+ * Whop API client for Mansas Moguls.
  * Handles programmatic product + plan creation for one-click monetization.
  *
  * Env required:

@@ -240,7 +240,7 @@ async function handleShadowBan(supabase: any, adminId: string, creatorId: string
 }
 
 async function handleChangeTier(supabase: any, adminId: string, creatorId: string, tier: string) {
-  if (!["cipher", "legend", "apex"].includes(tier)) {
+  if (!["mogul", "legend", "apex"].includes(tier)) {
     throw new Error("Invalid tier");
   }
 

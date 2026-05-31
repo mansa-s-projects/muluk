@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Build Whop checkout session
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://muluk.vip").replace(/\/$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://mansasmoguls.com").replace(/\/$/, "");
   const profilesRaw = slot.profiles as unknown;
   const profile = Array.isArray(profilesRaw)
     ? (profilesRaw[0] as { display_name: string | null; handle: string | null } | undefined)

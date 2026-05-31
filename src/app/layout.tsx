@@ -1,44 +1,67 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Outfit, DM_Mono } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-heading",
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
   display: "swap",
 });
 
-const manrope = Manrope({
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
 });
 
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "GC Sovereign AI",
+  title: "Mansas Moguls — Creator Empire Platform",
   description:
-    "AI Transformation Advisory for Dubai and GCC companies.",
-  metadataBase: new URL("https://gcsovereign.ai"),
+    "88% payouts. Anonymous supporter codes. Crypto rails to 190 countries. The platform built for creators who operate like empires.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://mansasmoguls.com"),
   openGraph: {
-    title: "GC Sovereign AI",
-    description: "AI Operating System installations for measurable executive outcomes.",
-    url: "https://gcsovereign.ai",
-    siteName: "GC Sovereign AI",
+    title: "Mansas Moguls",
+    description: "88% payouts. Anonymous supporter codes. Crypto rails to 190 countries.",
+    siteName: "Mansas Moguls",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GC Sovereign AI",
-    description: "AI Transformation Advisory for Dubai and GCC companies.",
+    title: "Mansas Moguls",
+    description: "88% payouts. Anonymous supporter codes. Crypto rails to 190 countries.",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${manrope.variable}`}>
-      <body suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${outfit.variable} ${dmMono.variable}`}
+      style={{
+        backgroundColor: "#020203",
+        color: "rgba(255,255,255,0.92)",
+        colorScheme: "dark",
+      }}
+    >
+      <body
+        suppressHydrationWarning
+        style={{
+          backgroundColor: "#020203",
+          color: "rgba(255,255,255,0.92)",
+          margin: 0,
+          minHeight: "100vh",
+        }}
+      >
         {children}
       </body>
     </html>

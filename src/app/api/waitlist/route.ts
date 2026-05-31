@@ -1,29 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { createSupabaseClient } from "@/lib/supabase";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
-
-function createResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    return null;
-  }
-
-  return new Resend(apiKey);
-}
+import { createServiceClient } from "@/lib/supabase/service";
+import getResendClient from "@/lib/notifications/resend";
 
 function createDbClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (url && serviceKey) {
-    return createServiceClient(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-
+  if (url && serviceKey) return createServiceClient();
   if (!url || !anonKey) return null;
 
   try {
@@ -48,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Waitlist service unavailable" }, { status: 503 });
     }
 
-    const resend = createResendClient();
+    const resend = getResendClient();
     const body = await req.json();
     const { email, source } = body;
     const normalizedType = normalizeWaitlistType(body.type);
@@ -84,11 +69,11 @@ export async function POST(req: NextRequest) {
       const isCreator = normalizedType === "creator";
 
       await resend.emails.send({
-        from:    "MULUK <hello@muluk.vip>",   // ← change to your verified domain
+        from:    "Mansas Moguls <hello@mansasmoguls.com>",   // ← change to your verified domain
         to:      email,
         subject: isCreator
-          ? "You're on the MULUK waitlist — founding creator spot reserved"
-          : "You're on the MULUK waitlist",
+          ? "You're on the Mansas Moguls waitlist — founding creator spot reserved"
+          : "You're on the Mansas Moguls waitlist",
         html: emailTemplate({ email, type: normalizedType }),
       });
     }
@@ -112,7 +97,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "supp
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>You're on the MULUK waitlist</title>
+<title>You're on the Mansas Moguls waitlist</title>
 </head>
 <body style="margin:0;padding:0;background:#020203;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#020203;min-height:100vh;">
@@ -123,7 +108,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "supp
           <!-- LOGO -->
           <tr>
             <td style="padding-bottom:48px;">
-              <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">MULUK</span>
+              <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:500;letter-spacing:0.3em;color:#c8a96e;">Mansas Moguls</span>
             </td>
           </tr>
 
@@ -151,7 +136,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "supp
                   ? `We received your application for <strong style="color:rgba(255,255,255,0.7);font-weight:400;">${email}</strong>.<br/><br/>
                      You're among the first 500 creators we're onboarding personally. That means lower fees locked in for life, a founding creator badge, and direct access to our team before we open to the public.`
                   : `You're on the list at <strong style="color:rgba(255,255,255,0.7);font-weight:400;">${email}</strong>.<br/><br/>
-                     We'll let you know the moment MULUK opens. You'll get access before anyone else.`
+                     We'll let you know the moment Mansas Moguls opens. You'll get access before anyone else.`
                 }
               </p>
             </td>
@@ -187,7 +172,7 @@ function emailTemplate({ email, type }: { email: string; type: "creator" | "supp
           <tr>
             <td>
               <p style="margin:0;font-family:'Courier New',monospace;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:0.1em;">
-                © 2025 MULUK &nbsp;·&nbsp; muluk.vip &nbsp;·&nbsp;
+                © 2025 Mansas Moguls &nbsp;·&nbsp; mansasmoguls.com &nbsp;·&nbsp;
                 <a href="#" style="color:rgba(255,255,255,0.2);text-decoration:none;">Unsubscribe</a>
               </p>
             </td>

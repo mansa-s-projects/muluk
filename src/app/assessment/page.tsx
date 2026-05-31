@@ -1,4 +1,4 @@
-export const metadata = { title: "Assessment — GC Sovereign AI" };
+export const metadata = { title: "Assessment — Mansas Moguls" };
 
 export default function AssessmentPage() {
   return (

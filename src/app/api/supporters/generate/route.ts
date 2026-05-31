@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
       .select("*", { count: "exact", head: true })
       .eq("creator_id", user.id);
 
-    const tier = creatorProfile?.tier || "cipher";
+    const tier = creatorProfile?.tier || "mogul";
     const limits: Record<string, number> = {
-      cipher: 500,
+      "mogul": 500,
       legend: 999999, // unlimited
       apex: 999999,   // unlimited
     };

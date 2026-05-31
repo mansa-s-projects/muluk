@@ -1,4 +1,4 @@
-export const metadata = { title: "Reports — GC Sovereign AI" };
+export const metadata = { title: "Reports — Mansas Moguls" };
 
 export default function ReportsPage() {
   return (

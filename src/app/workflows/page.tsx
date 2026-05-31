@@ -1,4 +1,4 @@
-export const metadata = { title: "Workflows — GC Sovereign AI" };
+export const metadata = { title: "Workflows — Mansas Moguls" };
 
 export default function WorkflowsPage() {
   return (

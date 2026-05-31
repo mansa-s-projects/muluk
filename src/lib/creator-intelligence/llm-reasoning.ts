@@ -14,11 +14,11 @@ type CreatorReasoningInput = {
   onboardingPath: OnboardingPath;
 };
 
-const SYSTEM_PROMPT = `You are MULUK's creator intelligence reasoning layer.
+const SYSTEM_PROMPT = `You are Mansas Moguls's creator intelligence reasoning layer.
 
 Your job is to add sharp qualitative judgment on top of an existing rule-based score.
 Do not change the score. Do not contradict the provided recommendation unless there is an obvious strategic nuance.
-Focus on creator earnings potential, audience quality, monetization readiness, and fit for the MULUK ecosystem.
+Focus on creator earnings potential, audience quality, monetization readiness, and fit for the Mansas Moguls ecosystem.
 
 Return exactly four labeled sections:
 MONETIZATION_READINESS:
@@ -38,7 +38,7 @@ function buildPrompt(input: CreatorReasoningInput): string {
       ? input.application.secondaryPlatforms.join(", ")
       : "none";
 
-  return `Analyze this creator application for MULUK.
+  return `Analyze this creator application for Mansas Moguls.
 
 APPLICATION:
 Name: ${input.application.name}

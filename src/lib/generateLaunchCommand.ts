@@ -88,7 +88,7 @@ I launched a private ${niche} community — real behind-the-scenes content and d
 
 Founding rate is locked at $${price} and I'm keeping slots limited.
 
-Thought of you first. Here's the link: ${SupporterPageUrl ?? "muluk.vip/[your-handle]"}
+Thought of you first. Here's the link: ${SupporterPageUrl ?? "mansasmoguls.com/[your-handle]"}
 
 No pressure — just wanted you to see it before I open it up.`;
 }
@@ -124,7 +124,7 @@ You get locked in at $${price} with everything included as long as you stay.
 
 After midnight the rate changes.
 
-${SupporterPageUrl ?? "muluk.vip/[your-handle]"}`;
+${SupporterPageUrl ?? "mansasmoguls.com/[your-handle]"}`;
 }
 
 function buildSevenDayPlan(

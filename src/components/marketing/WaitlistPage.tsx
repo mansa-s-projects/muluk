@@ -111,7 +111,7 @@ export default function WaitlistPage() {
         className="wl-anim"
         style={{ ...disp, fontSize: "clamp(64px, 11vw, 148px)", fontWeight: 300, fontStyle: "italic", lineHeight: 0.88, letterSpacing: "-0.01em", ...gold, margin: "0 0 28px" }}
       >
-        MULUK
+        Mansas Moguls
       </h1>
 
       {/* tagline */}
@@ -239,7 +239,7 @@ export default function WaitlistPage() {
           ...dim,
         }}
       >
-        © 2025 MULUK
+        © 2025 Mansas Moguls
       </div>
     </div>
   );

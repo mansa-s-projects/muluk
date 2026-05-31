@@ -496,7 +496,7 @@ export type ToolGating = {
   bioGenerator: { enabled: true };
   priceOptimizer: { enabled: boolean; reason: string };
   contentCalendar: { enabled: true; mode: "planning" | "live" };
-  SupporterMessageBlast: { enabled: boolean; reason: string };
+  supporterMessageBlast: { enabled: boolean; reason: string };
   collabFinder: { enabled: true; mode: "placeholder" };
   taxSummary: { enabled: boolean; reason: string };
 };
@@ -530,7 +530,7 @@ export async function getToolGating(userId: string): Promise<ToolGating> {
           : `Needs more transaction data (${successCount}/5 successful payments)`,
     },
     contentCalendar: { enabled: true, mode: "planning" },
-    SupporterMessageBlast: {
+    supporterMessageBlast: {
       enabled: supporterMsgExists,
       reason: supporterMsgExists ? "Ready" : "Supporter messaging infrastructure not yet available",
     },

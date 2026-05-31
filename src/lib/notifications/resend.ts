@@ -1,4 +1,4 @@
-// MULUK Resend Email Notification System
+// Mansas Moguls Resend Email Notification System
 import { Resend } from 'resend';
 
 let resendClient: Resend | null = null;
@@ -20,8 +20,8 @@ async function sendWithResend(args: SendArgs) {
   return client.emails.send(args);
 }
 
-const FROM_EMAIL = 'MULUK <notifications@muluk.vip>';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://muluk.vip';
+const FROM_EMAIL = 'Mansas Moguls <notifications@mansasmoguls.com>';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mansasmoguls.com';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,9 +79,9 @@ const emailTemplate = (content: string) => `
 </head>
 <body>
   <div class="wrap">
-    <div class="hdr"><div class="logo">MULUK</div></div>
+    <div class="hdr"><div class="logo">Mansas Moguls</div></div>
     <div class="bod">${content}</div>
-    <div class="ftr">MULUK · The Creator Monetization Platform</div>
+    <div class="ftr">Mansas Moguls · The Creator Monetization Platform</div>
   </div>
 </body>
 </html>
@@ -90,20 +90,20 @@ const emailTemplate = (content: string) => `
 // ─── Existing functions ───────────────────────────────────────────────────────
 
 export const sendWelcomeEmail = async (data: WelcomeEmailData) => {
-  const content = `<h2>Welcome to MULUK, ${data.name}</h2>
+  const content = `<h2>Welcome to Mansas Moguls, ${data.name}</h2>
     <p>You've joined the most exclusive creator platform. 88% of every dollar goes to you.</p>`;
-  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Welcome to MULUK', html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Welcome to Mansas Moguls', html: emailTemplate(content) });
 };
 
 export const sendEarningsNotification = async (data: EarningsEmailData) => {
   const content = `<h2>You just earned $${data.amount}</h2>
     <p>New balance: <strong style="color:#e8cc90">$${data.newBalance}</strong></p>`;
-  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: `You earned $${data.amount} on MULUK`, html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: `You earned $${data.amount} on Mansas Moguls`, html: emailTemplate(content) });
 };
 
 export const sendPurchaseReceipt = async (data: PurchaseReceiptData) => {
   const content = `<h2>Purchase Successful</h2><p>You purchased ${data.itemType} from ${data.creatorName}.</p>`;
-  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Your MULUK Purchase', html: emailTemplate(content) });
+  return sendWithResend({ from: FROM_EMAIL, to: data.to, subject: 'Your Mansas Moguls Purchase', html: emailTemplate(content) });
 };
 
 // ─── Creator approval ─────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ export const sendCreatorApprovalEmail = async (data: CreatorApprovalData) => {
   const dashboardUrl = data.dashboardUrl ?? `${SITE_URL}/dashboard`;
   const content = `
     <h2>You're approved.</h2>
-    <p>Hey ${data.name}, your MULUK creator account is live.</p>
+    <p>Hey ${data.name}, your Mansas Moguls creator account is live.</p>
     <div class="box">
       <div class="lbl">Your payout rate</div>
       <div class="val">88% of every dollar</div>
@@ -142,7 +142,7 @@ export const sendCreatorRejectionEmail = async (data: CreatorRejectionData) => {
   return sendWithResend({
     from: FROM_EMAIL,
     to: data.to,
-    subject: 'Your MULUK application',
+    subject: 'Your Mansas Moguls application',
     html: emailTemplate(content),
   });
 };

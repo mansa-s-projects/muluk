@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       activeBansResult,
       messagesResult,
       recentMessagesResult,
-      tierCipherResult,
+      tierMogulResult,
       tierLegendResult,
       tierApexResult,
     ] = await Promise.all([
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       supabase.from("creator_bans").select("id", { count: "exact" }).eq("is_active", true),
       supabase.from("supporter_messages").select("id", { count: "exact", head: true }),
       supabase.from("supporter_messages").select("id", { count: "exact", head: true }).gte("created_at", since),
-      supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "cipher"),
+      supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "mogul"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "legend"),
       supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("tier", "apex"),
     ]);
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       activeBansResult.error,
       messagesResult.error,
       recentMessagesResult.error,
-      tierCipherResult.error,
+      tierMogulResult.error,
       tierLegendResult.error,
       tierApexResult.error,
     ].filter(Boolean);
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     }
 
     const tierStats = {
-      cipher: tierCipherResult.count || 0,
+      "mogul": tierMogulResult.count || 0,
       legend: tierLegendResult.count || 0,
       apex: tierApexResult.count || 0,
     };

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Operate, verify, and recover the CIPHER production system.
+Operate, verify, and recover the Mansas Moguls production system.
 
 ## Pre-Deploy Checklist
 

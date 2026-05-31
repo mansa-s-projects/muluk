@@ -106,9 +106,9 @@ export function encryptToken(value: string): string {
 
   const keyBuf = Buffer.from(hexKey, "hex");
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", keyBuf, iv);
-  const enc = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
+  const aesEncrypt = crypto.createCipheriv("aes-256-gcm", keyBuf, iv);
+  const enc = Buffer.concat([aesEncrypt.update(value, "utf8"), aesEncrypt.final()]);
+  const tag = aesEncrypt.getAuthTag();
   return Buffer.concat([iv, tag, enc]).toString("hex");
 }
 
@@ -140,9 +140,9 @@ export function decryptToken(hex: string): string {
   const iv = buf.subarray(0, 12);
   const tag = buf.subarray(12, 28);
   const enc = buf.subarray(28);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", keyBuf, iv);
-  decipher.setAuthTag(tag);
-  return decipher.update(enc).toString("utf8") + decipher.final("utf8");
+  const aesDecrypt = crypto.createDecipheriv("aes-256-gcm", keyBuf, iv);
+  aesDecrypt.setAuthTag(tag);
+  return aesDecrypt.update(enc).toString("utf8") + aesDecrypt.final("utf8");
 }
 
 /**

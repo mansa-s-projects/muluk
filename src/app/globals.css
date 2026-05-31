@@ -2,172 +2,141 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   MANSAS MOGULS — Global Design Tokens
+   Applied synchronously before any JS — prevents FOUC entirely.
+   These are render-blocking by design: first paint must be dark.
+═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --ivory: #faf8f3;
-  --white: #ffffff;
-  --navy: #0f172a;
-  --gold: #c8a45d;
-  --line: rgba(15, 23, 42, 0.1);
-  --muted: rgba(15, 23, 42, 0.65);
+  /* Backgrounds */
+  --void:      #020203;
+  --ink:       #060610;
+  --deep:      #09090f;
+  --surface:   #0d0d18;
+  --lift:      #111122;
+  --card:      #0f0f1e;
+  --card2:     #141430;
+
+  /* Borders */
+  --rim:       rgba(255,255,255,0.055);
+  --rim2:      rgba(255,255,255,0.09);
+  --rim3:      rgba(255,255,255,0.14);
+
+  /* Gold */
+  --gold:      #c8a96e;
+  --gold-bright: #e8cc90;
+  --gold-mid:  #a88848;
+  --gold-dim:  #7a6030;
+  --gold-faint: #2e1e08;
+  --gold-glow: rgba(200,169,110,0.12);
+  --gold-glow2: rgba(200,169,110,0.20);
+
+  /* Text */
+  --white:     rgba(255,255,255,0.92);
+  --muted:     rgba(255,255,255,0.48);
+  --dim:       rgba(255,255,255,0.22);
+  --faint:     rgba(255,255,255,0.10);
+
+  /* Semantic */
+  --green:     #50d48a;
+  --green-d:   rgba(80,212,138,0.12);
+  --red:       #e05555;
+  --red-d:     rgba(224,85,85,0.12);
+  --blue:      #5b8de8;
+  --blue-d:    rgba(91,141,232,0.12);
+  --amber:     #e8a830;
+  --amber-d:   rgba(232,168,48,0.12);
+
+  /* Typography */
+  --font-display: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+  --font-body:    var(--font-body, 'Outfit', system-ui, sans-serif);
+  --font-mono:    var(--font-mono, 'DM Mono', 'Courier New', monospace);
 }
 
+/* ── Critical: first-paint dark background ───────────────────────
+   This must be here — not in a component — so it applies before JS.
+   The browser renders this synchronously from the <link> tag.
+─────────────────────────────────────────────────────────────── */
 html {
-  background: var(--ivory);
-  color-scheme: light;
+  background: var(--void);
+  color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--ivory);
-  color: var(--navy);
-  font-family: var(--font-body, sans-serif);
+  background: var(--void);
+  color: var(--white);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   margin: 0;
+  min-height: 100vh;
+}
+
+/* Noise texture — applied globally at z-index 0 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.038'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
 }
 
 * { box-sizing: border-box; }
 
-a { color: inherit; }
+a { color: inherit; text-decoration: none; }
 
-.site-shell {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 48px 20px 80px;
-}
+/* ── Custom scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: var(--void); }
+::-webkit-scrollbar-thumb { background: rgba(200,169,110,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(200,169,110,0.35); }
 
-.section {
-  margin-bottom: 28px;
-}
-
-.hero {
-  background: linear-gradient(180deg, rgba(200, 164, 93, 0.14) 0%, rgba(250, 248, 243, 0.7) 100%);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 44px;
-}
-
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--gold);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-h1, h2, h3 {
-  font-family: var(--font-heading, serif);
-  margin: 0 0 10px;
-  color: var(--navy);
-}
-
-h1 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.15; }
-h2 { font-size: clamp(1.45rem, 2.4vw, 2rem); }
-h3 { font-size: 1.2rem; }
-
-.lead {
-  font-size: 1.06rem;
-  line-height: 1.7;
-  color: var(--muted);
-  max-width: 80ch;
-}
-
-.cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  padding: 12px 18px;
-  text-decoration: none;
-  font-weight: 700;
-  border: 1px solid transparent;
-}
-
-.btn-primary {
-  background: var(--gold);
-  color: #2f2410;
-}
-
-.btn-secondary {
-  background: var(--white);
-  border-color: var(--line);
-  color: var(--navy);
-}
-
-.card-grid {
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 30px;
-}
-
-.cards-3,
-.cards-4 {
-  display: grid;
-  gap: 14px;
-  margin-top: 14px;
-}
-
-.cards-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.cards-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-
-.card {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px;
-}
-
-.card p {
+/* ── Typography base ──────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  color: var(--white);
   margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
+  letter-spacing: -0.01em;
 }
 
-.final-cta {
-  text-align: center;
-  background: linear-gradient(180deg, #ffffff 0%, #f5efe2 100%);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 36px;
-}
+p { margin: 0; }
 
+/* ── Stub pages (dashboard placeholders, reports, etc.) ─────────
+   These use .simple-page for temporary content.
+─────────────────────────────────────────────────────────────── */
 .simple-page {
+  position: relative;
+  z-index: 1;
   max-width: 860px;
-  margin: 40px auto;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 28px;
+  margin: 80px auto;
+  padding: 40px 48px;
+  background: var(--card);
+  border: 1px solid var(--rim);
+  border-radius: 12px;
+}
+
+.simple-page h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 300;
+  color: var(--white);
+  margin-bottom: 12px;
 }
 
 .simple-page p {
+  font-size: 15px;
   color: var(--muted);
   line-height: 1.7;
+  font-weight: 300;
 }
 
-@media (max-width: 920px) {
-  .cards-3,
-  .cards-4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .hero,
-  .card-grid,
-  .final-cta,
-  .simple-page {
-    padding: 22px;
-  }
-
-  .cards-3,
-  .cards-4 {
-    grid-template-columns: 1fr;
-  }
+/* ── Utility: gold divider ────────────────────────────────────── */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  margin: 32px 0;
 }

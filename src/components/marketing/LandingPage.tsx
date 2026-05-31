@@ -1,86 +1,17 @@
-"use client";
-
 import Image from "next/image";
-import { useMemo, useState } from "react";
-import { track } from "@/lib/analytics/track";
+import { LandingTracking } from "@/components/marketing/LandingTracking.client";
+import { WaitlistPanel } from "@/components/marketing/WaitlistPanel.client";
 
 function snapCoord(value: number) {
   return value.toFixed(3);
 }
 
-function WaitlistPanel() {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("operator");
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const canSubmit = useMemo(() => email.includes("@") && email.includes("."), [email]);
-
-  const submit = async () => {
-    if (!canSubmit || status === "loading") return;
-    setStatus("loading");
-    try {
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, type: role, source: "landing-redesign" }),
-      });
-      if (!res.ok) throw new Error();
-      track.event("waitlist_joined", { role, surface: "hero" });
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
-  };
-
-  return (
-    <div className="waitlist-wrap">
-      <div className="waitlist-eyebrow">Private Access Queue</div>
-      {status === "done" ? (
-        <div className="waitlist-success">
-          <span>Access request secured.</span>
-          <small>Founding operator invite will be delivered before public release.</small>
-        </div>
-      ) : (
-        <>
-          <div className="waitlist-row">
-            <select value={role} onChange={(e) => setRole(e.target.value)} aria-label="Role">
-              <option value="operator">Operator</option>
-              <option value="citizen">Citizen</option>
-            </select>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@domain.com"
-              aria-label="Email"
-              onKeyDown={(e) => { if (e.key === "Enter") void submit(); }}
-            />
-            <button disabled={!canSubmit || status === "loading"} onClick={() => void submit()}>
-              {status === "loading" ? "Securing…" : "Enter the Empire"}
-            </button>
-          </div>
-          {status === "error" && (
-            <p className="waitlist-error">Could not secure access. Try again.</p>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function LandingPage() {
   return (
     <main className="lux-root low-motion">
+      <LandingTracking />
 
-      {/* Watermark emblem — enormous, ghosted into the architecture */}
-      <div className="bg-watermark" aria-hidden="true">
-        <Image
-          src="/Logo/Logo.png"
-          alt=""
-          width={920}
-          height={920}
-          style={{ objectFit: "contain", width: "100%", height: "100%" }}
-        />
-      </div>
+      {/* bg-watermark removed â€” hero emblem is the sole logo anchor */}
 
       {/* Sacred geometry + celestial grid */}
       <div className="bg-geometry" aria-hidden="true">
@@ -102,7 +33,7 @@ export default function LandingPage() {
             <line x1="0" y1="0" x2="1440" y2="900" stroke="rgba(200,169,110,0.025)" strokeWidth="0.6" />
             <line x1="1440" y1="0" x2="0" y2="900" stroke="rgba(200,169,110,0.025)" strokeWidth="0.6" />
 
-            {/* Concentric sacred geometry circles — centered on viewport mid */}
+            {/* Concentric sacred geometry circles â€” centered on viewport mid */}
             {[110, 190, 280, 390, 520, 670, 840, 1040].map((r, i) => (
               <circle
                 key={`c${i}`}
@@ -162,49 +93,38 @@ export default function LandingPage() {
       {/* Cinematic light rays from top-center */}
       <div className="light-rays" aria-hidden="true" />
 
-      {/* ── NAVBAR ── */}
+      {/* â”€â”€ NAVBAR â”€â”€ */}
       <header className="lux-nav">
         <a href="#" className="brand-mark" aria-label="Mansa's Mogules">
           <span className="brand-crop-frame">
-            <Image
-              src="/Logo/Logo.png"
-              alt="Mansa's Mogules mark"
-              fill
-              sizes="34px"
-              style={{ objectFit: "cover", objectPosition: "50% 30%" }}
-            />
+            <Image src="/Images/branding/Logo.png" alt="Mansas Moguls" fill sizes="34px" style={{ objectFit: "cover", objectPosition: "50% 30%" }} />
           </span>
         </a>
 
         <nav className="lux-nav-links" aria-label="Main">
           <a href="#system">System</a>
-          <span className="nav-dot" aria-hidden="true">•</span>
+          <span className="nav-dot" aria-hidden="true">â€¢</span>
           <a href="#architecture">Architecture</a>
-          <span className="nav-dot" aria-hidden="true">•</span>
+          <span className="nav-dot" aria-hidden="true">â€¢</span>
           <a href="#access">Access</a>
         </nav>
 
         <a
           href="#access"
           className="nav-cta"
-          onClick={() => track.event("landing_cta_click", { placement: "nav", label: "enter_empire" })}
+          data-mm-event="landing_cta_click"
+          data-mm-payload='{"placement":"nav","label":"enter_empire"}'
         >
           Enter The Empire
         </a>
       </header>
 
-      {/* ── HERO ── */}
+      {/* â”€â”€ HERO â”€â”€ */}
       <section className="hero" id="access">
 
-        {/* Flanking ghosted M marks */}
-        <div className="flank flank-left" aria-hidden="true">
-          <Image src="/Logo/Logo.png" alt="" width={320} height={320} style={{ objectFit: "contain", width: "100%", height: "100%" }} />
-        </div>
-        <div className="flank flank-right" aria-hidden="true">
-          <Image src="/Logo/Logo.png" alt="" width={320} height={320} style={{ objectFit: "contain", width: "100%", height: "100%" }} />
-        </div>
+        {/* Flanking ghosts removed â€” single centered emblem only */}
 
-        {/* Imperial emblem — the living seal */}
+        {/* Imperial emblem â€” the living seal */}
         <div className="emblem-wrap">
           <div className="emblem-corona" />
           <div className="emblem-ring emblem-ring-1" />
@@ -212,14 +132,13 @@ export default function LandingPage() {
           <div className="emblem-ring emblem-ring-3" />
           <div className="emblem-img">
             <Image
-              src="/Logo/Logo.png"
-              alt="Mansa's Mogules Imperial Seal"
+              src="/Images/branding/Logo.png"
+              alt="Mansas Moguls Imperial Seal"
               width={260}
               height={260}
               style={{
                 objectFit: "contain",
-                filter:
-                  "drop-shadow(0 0 52px rgba(200,169,110,0.65)) drop-shadow(0 0 18px rgba(200,169,110,0.3)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))",
+                filter: "drop-shadow(0 0 52px rgba(200,169,110,0.65)) drop-shadow(0 0 18px rgba(200,169,110,0.3)) drop-shadow(0 4px 8px rgba(0,0,0,0.8))",
               }}
             />
           </div>
@@ -242,14 +161,16 @@ export default function LandingPage() {
           <a
             href="#access"
             className="btn-primary"
-            onClick={() => track.event("landing_cta_click", { placement: "hero", label: "enter_empire" })}
+            data-mm-event="landing_cta_click"
+            data-mm-payload='{"placement":"hero","label":"enter_empire"}'
           >
             Enter The Empire
           </a>
           <a
             href="#system"
             className="btn-secondary"
-            onClick={() => track.event("landing_cta_click", { placement: "hero", label: "explore_system" })}
+            data-mm-event="landing_cta_click"
+            data-mm-payload='{"placement":"hero","label":"explore_system"}'
           >
             Explore the System
           </a>
@@ -258,7 +179,7 @@ export default function LandingPage() {
         <WaitlistPanel />
       </section>
 
-      {/* ── FEATURE CARDS ── */}
+      {/* â”€â”€ FEATURE CARDS â”€â”€ */}
       <section className="pillars" id="system">
         <article className="pillar-card">
           <div className="pillar-shimmer" />
@@ -280,14 +201,14 @@ export default function LandingPage() {
         </article>
       </section>
 
-      {/* ── ARCHITECTURE DIVIDER ── */}
+      {/* â”€â”€ ARCHITECTURE DIVIDER â”€â”€ */}
       <section className="architecture" id="architecture">
         <div className="arch-tick" />
         <p>Luxury Intelligence Network</p>
         <div className="arch-tick" />
       </section>
 
-      <style jsx global>{`
+      <style>{`
         :root {
           --void: #020203;
           --gold: #c8a96e;
@@ -316,7 +237,11 @@ export default function LandingPage() {
           transition: none !important;
         }
 
-        /* ── BACKGROUND LAYERS ── */
+        /* â”€â”€ BACKGROUND LAYERS â”€â”€ */
+        @keyframes watermarkReveal {
+          from { opacity: 0; }
+          to   { opacity: 0.04; }
+        }
         .bg-watermark {
           position: fixed;
           top: 50%;
@@ -326,8 +251,8 @@ export default function LandingPage() {
           height: min(920px, 95vw);
           pointer-events: none;
           z-index: 0;
-          opacity: 0.04;
           filter: blur(1.5px);
+          animation: watermarkReveal 1.8s ease 0.8s forwards;
         }
 
         .bg-geometry {
@@ -385,7 +310,7 @@ export default function LandingPage() {
           -webkit-mask-image: radial-gradient(ellipse 80% 90% at 50% 0%, black 0%, transparent 72%);
         }
 
-        /* ── NAVBAR ── */
+        /* â”€â”€ NAVBAR â”€â”€ */
         .lux-nav {
           position: sticky;
           top: 0.9rem;
@@ -479,7 +404,7 @@ export default function LandingPage() {
           box-shadow: 0 8px 22px rgba(200,169,110,0.1);
         }
 
-        /* ── HERO ── */
+        /* â”€â”€ HERO â”€â”€ */
         .hero {
           max-width: 960px;
           min-height: calc(100vh - 90px);
@@ -502,15 +427,17 @@ export default function LandingPage() {
           height: 320px;
           top: 50%;
           transform: translateY(-50%);
-          opacity: 0.045;
+          opacity: 0;
           filter: blur(1px);
           pointer-events: none;
+          animation: watermarkReveal 2s ease 1.2s forwards;
         }
 
-        .flank-left  { left: -260px; }
-        .flank-right { right: -260px; transform: translateY(-50%) scaleX(-1); }
+        .flank-left  { left: -260px; animation-name: flankReveal; }
+        .flank-right { right: -260px; transform: translateY(-50%) scaleX(-1); animation-name: flankReveal; }
+        @keyframes flankReveal { from { opacity: 0; } to { opacity: 0.045; } }
 
-        /* ── EMBLEM ── */
+        /* â”€â”€ EMBLEM â”€â”€ */
         .emblem-wrap {
           position: relative;
           width: 280px;
@@ -572,7 +499,7 @@ export default function LandingPage() {
           justify-content: center;
         }
 
-        /* ── HERO TYPOGRAPHY ── */
+        /* â”€â”€ HERO TYPOGRAPHY â”€â”€ */
         .hero-rule {
           width: 80px;
           height: 1px;
@@ -668,7 +595,7 @@ export default function LandingPage() {
           color: var(--gold-bright);
         }
 
-        /* ── WAITLIST ── */
+        /* â”€â”€ WAITLIST â”€â”€ */
         .waitlist-wrap {
           margin-top: 1.4rem;
           width: min(760px, 100%);
@@ -755,7 +682,7 @@ export default function LandingPage() {
         .waitlist-success span { color: var(--gold-bright); font-size: 0.96rem; }
         .waitlist-success small { color: var(--muted); font-size: 0.82rem; }
 
-        /* ── FEATURE CARDS ── */
+        /* â”€â”€ FEATURE CARDS â”€â”€ */
         .pillars {
           max-width: 1180px;
           margin: 4.5rem auto 2.5rem;
@@ -830,7 +757,7 @@ export default function LandingPage() {
           margin: 0;
         }
 
-        /* ── ARCHITECTURE ── */
+        /* â”€â”€ ARCHITECTURE â”€â”€ */
         .architecture {
           max-width: 1180px;
           margin: 1.5rem auto 0;
@@ -858,7 +785,7 @@ export default function LandingPage() {
           background: linear-gradient(to right, transparent, rgba(200,169,110,0.3), transparent);
         }
 
-        /* ── KEYFRAMES ── */
+        /* â”€â”€ KEYFRAMES â”€â”€ */
         @keyframes bgPulse { 0%, 100% { opacity: 0.88; } 50% { opacity: 1; } }
 
         @keyframes breathe {
@@ -876,12 +803,12 @@ export default function LandingPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── SCROLLBAR ── */
+        /* â”€â”€ SCROLLBAR â”€â”€ */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: var(--void); }
         ::-webkit-scrollbar-thumb { background: rgba(200,169,110,0.18); border-radius: 2px; }
 
-        /* ── RESPONSIVE ── */
+        /* â”€â”€ RESPONSIVE â”€â”€ */
         @media (max-width: 1024px) {
           .lux-nav { grid-template-columns: auto auto; }
           .lux-nav-links { display: none; }

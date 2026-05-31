@@ -257,7 +257,7 @@ Mansa’s Mogules <hello@your-domain.com>
 
 Search and replace:
 
-CIPHER
+Mansas Moguls
 
 with:
 

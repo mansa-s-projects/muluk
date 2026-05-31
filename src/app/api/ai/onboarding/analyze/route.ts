@@ -83,7 +83,7 @@ function buildFallbackAnalysis({
       `${titleCase(firstContentType)} exclusives`,
     ]).slice(0, 3),
     handleSuggestions: uniqueList([
-      `${String(firstInterest).replace(/\s+/g, "").toLowerCase()}cipher`,
+      `${String(firstInterest).replace(/\s+/g, "").toLowerCase()}mansas-moguls`,
       `${String(firstInterest).replace(/\s+/g, "").toLowerCase()}afterdark`,
       `${primaryNiche}privateclub`,
       `${primaryNiche}innercircle`,

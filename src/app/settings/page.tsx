@@ -1,4 +1,4 @@
-export const metadata = { title: "Settings — GC Sovereign AI" };
+export const metadata = { title: "Settings — Mansas Moguls" };
 
 export default function SettingsPage() {
   return (

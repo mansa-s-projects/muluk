@@ -45,7 +45,7 @@ function verifyWhopSignature(rawBody: string, signature: string | null): boolean
  * Used to compute creator_earnings at webhook time.
  */
 const PLATFORM_FEE_PCT: Record<string, number> = {
-  cipher: 0.12,
+  "mogul": 0.12,
   legend: 0.10,
   apex:   0.08,
 };
@@ -57,7 +57,7 @@ async function getCreatorTier(supabase: ReturnType<typeof getSupabase>, creatorI
     .eq("creator_id", creatorId)
     .eq("status", "active")
     .maybeSingle();
-  return data?.tier_slug ?? "cipher";
+  return data?.tier_slug ?? "mogul";
 }
 
 /**
@@ -538,7 +538,7 @@ async function handlePayoutCompleted(
 //     metadata: {
 //       offer_id:    "<uuid>",   ← set via provisionWhopCheckout
 //       creator_id:  "<uuid>",   ← set via provisionWhopCheckout
-//       user_id:     "<uuid>",   ← MULUK auth.users UUID (optional — falls back to lookup)
+//       user_id:     "<uuid>",   ← Mansas Moguls auth.users UUID (optional — falls back to lookup)
 //     }
 //   }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -581,7 +581,7 @@ async function handleMembershipValid(data: Record<string, unknown>) {
     }
 
     if (!userId || !UUID_RE.test(userId)) {
-      console.warn("[whop-webhook] membership.went_valid — cannot resolve MULUK user_id for whop user", data.user);
+      console.warn("[whop-webhook] membership.went_valid — cannot resolve Mansas Moguls user_id for whop user", data.user);
       return NextResponse.json({ received: true, action: "offer_unlock_skipped", reason: "no_user_id" });
     }
   }

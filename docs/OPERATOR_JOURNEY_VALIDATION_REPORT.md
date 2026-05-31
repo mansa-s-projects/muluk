@@ -107,7 +107,7 @@ Method: Live browser navigation (desktop + mobile viewport) plus route/code vali
 - Impact: Users receive misleading success-like navigation and lose context.
 
 2. Global loading/error UI branding mismatch.
-- Loading and error experiences still reference MULUK visual language.
+- Loading and error experiences still reference Mansas Moguls visual language.
 - Impact: Product trust and consistency are reduced during failures/loading.
 
 ### Low

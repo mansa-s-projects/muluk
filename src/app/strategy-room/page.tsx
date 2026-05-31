@@ -1,4 +1,4 @@
-export const metadata = { title: "Strategy Room — GC Sovereign AI" };
+export const metadata = { title: "Strategy Room — Mansas Moguls" };
 
 export default function StrategyRoomPage() {
   return (
