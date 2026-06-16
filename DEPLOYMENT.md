@@ -61,7 +61,7 @@ Service role key
 Execute migrations sequentially.
 
 ```sql id="dwhh2r"
-supabase/migrations/
+src/supabase/migrations/
 ```
 
 Critical rules:
@@ -69,6 +69,16 @@ Critical rules:
 Never modify deployed migrations.
 
 Always create new migration files.
+
+Use Supabase CLI from repo root with explicit workdir:
+
+```bash
+npx supabase db push --workdir src/supabase
+```
+
+Migration 060 guardrail:
+- `src/supabase/migrations/060_affiliate_intelligence.sql` contains `TRUNCATE ... CASCADE` and must not be applied to production without a signed backup and recovery plan.
+- Before applying 060 in production, capture a DB backup/snapshot and document restore owner, restore command path, and max recovery time objective.
 
 Ensure:
 RLS is enabled everywhere.
@@ -466,6 +476,12 @@ Never manually edit production tables.
 
 Always:
 create reverse migrations.
+
+For migrations with destructive operations (including migration 060), rollback readiness requires:
+- Verified pre-deploy backup timestamp
+- Named rollback owner
+- Trigger criteria for rollback (error rate, data mismatch, or smoke test failure)
+- Exact restore command/runbook link
 
 ---
 

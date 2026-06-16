@@ -8,8 +8,10 @@ Operate, verify, and recover the Mansas Moguls production system.
 
 1. `npm run lint -- --quiet`
 2. `npm run build`
-3. Confirm required env vars are set in Vercel.
-4. Confirm Supabase migrations are up to date.
+3. `npm test`
+4. Confirm required env vars are set in Vercel.
+5. Confirm Supabase migrations are up to date from `src/supabase/migrations`.
+6. For migration 060, confirm pre-deploy backup and rollback owner are documented.
 
 ## Deploy
 
@@ -52,7 +54,15 @@ Operate, verify, and recover the Mansas Moguls production system.
 
 1. In Vercel, promote previous healthy deployment.
 2. Re-run smoke tests.
-3. Post incident summary with root cause and fix.
+3. If DB migration rollback is required, execute documented restore plan owner + command path.
+4. Post incident summary with root cause and fix.
+
+## Migration 060 Guardrails
+
+1. Do not apply `src/supabase/migrations/060_affiliate_intelligence.sql` in production without a fresh backup/snapshot.
+2. Record backup identifier, operator, and timestamp before migration execution.
+3. Define rollback trigger criteria before deploy (e.g., referral/affiliate data integrity mismatch, critical API smoke failure).
+4. Validate post-deploy row counts for affiliate tables before declaring release healthy.
 
 ## Security Ops
 

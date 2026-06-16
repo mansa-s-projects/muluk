@@ -56,7 +56,10 @@
       "Bash(cat .env.local.example)",
       "PowerShell(py *)",
       "PowerShell(python -m pip install playwright -q 2>&1 | Select-Object -Last 3; python -m playwright install chromium 2>&1 | Select-Object -Last 3)",
-      "PowerShell(python \"C:\\\\Users\\\\mehdi\\\\AppData\\\\Local\\\\Temp\\\\landing_shot.py\" 2>&1)"
+      "PowerShell(python \"C:\\\\Users\\\\mehdi\\\\AppData\\\\Local\\\\Temp\\\\landing_shot.py\" 2>&1)",
+      "PowerShell(cd \"C:\\\\Users\\\\mehdi\\\\Desktop\\\\02_PROJECTS\\\\01_ACTIVE\\\\Mansas_Mogules\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"dashboard\" })",
+      "Bash(ls src/app/)",
+      "Bash(dir src\\\\app)"
     ]
   }
 }

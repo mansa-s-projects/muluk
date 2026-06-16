@@ -106,7 +106,7 @@ TIKTOK_CLIENT_SECRET=
 Run migrations sequentially inside Supabase SQL Editor.
 
 ```bash id="yb3e3k"
-supabase/migrations/
+src/supabase/migrations/
 ```
 
 Important:

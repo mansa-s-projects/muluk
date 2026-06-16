@@ -39,7 +39,7 @@ src/app/           # All routes (App Router)
 lib/               # Shared utilities
   auth/role-guards.ts  # Route classification (isAdminRoute, isPublicRoute, etc.)
   supabase/        # Supabase clients
-supabase/migrations/   # SQL migrations (numbered 001–032+)
+src/supabase/migrations/   # SQL migrations (legacy + timestamped)
 ```
 
 ## Auth & Middleware
@@ -56,7 +56,7 @@ supabase/migrations/   # SQL migrations (numbered 001–032+)
 - Column is `name` (not `display_name`) in `creator_applications`
 - `creator_applications` has a `user_id` column (added in migration `fix_creator_profile_and_vault_pins`)
 - Never do cross-schema joins (`auth.users` ↔ public tables) in TypeScript — query separately
-- Migration files: `supabase/migrations/` — numbered sequentially
+- Migration files: `src/supabase/migrations/` — legacy numbered + timestamped files both exist; add new files without renaming deployed history
 
 ## Key Env Vars
 

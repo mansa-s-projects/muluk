@@ -21,7 +21,8 @@ export async function GET() {
     waitlistWeek,
     creatorTotal,
     hotLeads,
-    referralStats,
+    referralClickCount,
+    referralConversionCount,
     emailStats,
     contentQueue,
   ] = await Promise.all([
@@ -29,14 +30,14 @@ export async function GET() {
     db.from("waitlist").select("id", { count: "exact", head: true }).gte("created_at", day7),
     db.from("creator_applications").select("id", { count: "exact", head: true }),
     db.from("lead_scores").select("id", { count: "exact", head: true }).in("tier", ["hot", "vip"]),
-    db.from("referrals").select("id, clicks, conversions").limit(1000),
+    db.from("referral_events").select("id", { count: "exact", head: true }).eq("event_type", "link_click"),
+    db.from("referrals").select("id", { count: "exact", head: true }).eq("status", "converted"),
     db.from("email_sequence_enrollments").select("id, completed, unsubscribed", { count: "exact" }),
     db.from("marketing_content_queue").select("id, platform, status").eq("status", "pending"),
   ]);
 
-  const refs = referralStats.data ?? [];
-  const totalClicks = refs.reduce((s, r) => s + (r.clicks ?? 0), 0);
-  const totalConversions = refs.reduce((s, r) => s + (r.conversions ?? 0), 0);
+  const totalClicks = referralClickCount.count ?? 0;
+  const totalConversions = referralConversionCount.count ?? 0;
   const viralCoeff = totalClicks > 0 ? (totalConversions / totalClicks).toFixed(3) : "0";
 
   const enrollments = emailStats.data ?? [];
