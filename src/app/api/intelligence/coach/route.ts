@@ -30,9 +30,18 @@ async function callAI(messages: Array<{ role: string; content: string }>): Promi
 }
 
 export async function GET() {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    return NextResponse.json({ messages: [], bypassUsed: true });
+  }
 
   const { data } = await supabase
     .from("ai_coach_sessions")
@@ -41,13 +50,27 @@ export async function GET() {
     .order("created_at", { ascending: true })
     .limit(50);
 
-  return NextResponse.json({ messages: data ?? [] });
+  return NextResponse.json({ messages: data ?? [], bypassUsed: false });
 }
 
 export async function POST(req: NextRequest) {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    const { message } = await req.json() as { message: string };
+    if (!message?.trim()) return NextResponse.json({ error: "Message required" }, { status: 400 });
+    return NextResponse.json({
+      reply: "Dev bypass is active. Sign in to store AI Coach conversations and get personalized analytics-based coaching.",
+      bypassUsed: true,
+    });
+  }
 
   const { message } = await req.json() as { message: string };
   if (!message?.trim()) return NextResponse.json({ error: "Message required" }, { status: 400 });
@@ -96,14 +119,23 @@ Be direct, data-driven, and specific. Give advice worth $10,000. No generic tips
   // Save assistant reply
   await db.from("ai_coach_sessions").insert({ creator_id: user.id, role: "assistant", content: reply });
 
-  return NextResponse.json({ reply });
+  return NextResponse.json({ reply, bypassUsed: false });
 }
 
 export async function DELETE() {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    return NextResponse.json({ success: true, bypassUsed: true });
+  }
 
   await supabase.from("ai_coach_sessions").delete().eq("creator_id", user.id);
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, bypassUsed: false });
 }

@@ -24,11 +24,18 @@ type SocialRow = {
 
 export async function GET() {
   try {
+    const allowDevBypass =
+      process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+
+    if (!user && !allowDevBypass) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!user && allowDevBypass) {
+      return NextResponse.json({ connections: [], bypassUsed: true });
     }
 
     const { data: rows, error } = await supabase
@@ -50,7 +57,7 @@ export async function GET() {
       views: row.metrics?.views || undefined,
     }));
 
-    return NextResponse.json({ connections });
+    return NextResponse.json({ connections, bypassUsed: false });
   } catch (error) {
     console.error("Social connections fetch failed:", error);
     return NextResponse.json({ error: "Fetch failed" }, { status: 500 });

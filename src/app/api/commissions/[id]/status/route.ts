@@ -1,15 +1,22 @@
 /**
  * GET /api/commissions/[id]/status?token=<access_token>
- * Supporter checks their commission status (no auth — token-gated)
+ * Supporter checks their commission status (no auth — token-gated via DB RLS)
  * Returns checkout URL if accepted + unpaid, or delivery status
  */
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-function getService() {
-  return createServiceClient(
+function getSupporterClient(token: string) {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        headers: {
+          "x-commission-token": token,
+        },
+      },
+    }
   );
 }
 
@@ -24,12 +31,11 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 
-  const supabase = getService();
+  const supabase = getSupporterClient(token);
   const { data, error } = await supabase
     .from("commissions")
     .select("id,title,description,budget_cents,agreed_cents,status,deadline,whop_checkout_id,supporter_email,paid_at,delivered_at,created_at")
     .eq("id", id)
-    .eq("access_token", token)
     .maybeSingle();
 
   if (error) {

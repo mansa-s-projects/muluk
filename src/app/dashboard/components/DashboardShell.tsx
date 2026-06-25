@@ -12,12 +12,15 @@ const NAV = [
     items: [
       { href: "/dashboard",              icon: "⬡", label: "Overview" },
       { href: "/dashboard/intelligence", icon: "◈", label: "Intelligence" },
+      { href: "/dashboard/war-room",     icon: "◎", label: "War Room" },
     ],
   },
   {
     group: "Audience",
     items: [
       { href: "/dashboard/integrations", icon: "⌁", label: "Integrations" },
+      { href: "/dashboard/messages", icon: "✦", label: "Messages" },
+      { href: "/dashboard/social", icon: "⇪", label: "Share" },
     ],
   },
   {
@@ -32,6 +35,8 @@ const NAV = [
       { href: "/strategy-room",          icon: "◎", label: "Strategy Room" },
       { href: "/workflows",              icon: "⇒", label: "Workflows" },
       { href: "/reports",                icon: "▦", label: "Reports" },
+      { href: "/dashboard/voices",       icon: "◌", label: "Voice Lab" },
+      { href: "/dashboard/release",      icon: "↗", label: "Release" },
     ],
   },
   {
@@ -293,8 +298,13 @@ export default function DashboardShell({ children, userEmail }: Props) {
         {[
           { href: "/dashboard",              icon: "⬡", label: "Home" },
           { href: "/dashboard/intelligence", icon: "◈", label: "Intel" },
+          { href: "/dashboard/war-room",     icon: "◎", label: "War" },
+          { href: "/dashboard/messages",     icon: "✦", label: "Inbox" },
           { href: "/dashboard/integrations", icon: "⌁", label: "Connect" },
+          { href: "/dashboard/social",       icon: "⇪", label: "Share" },
           { href: "/dashboard/affiliates",   icon: "◆", label: "Brands" },
+          { href: "/dashboard/voices",      icon: "◌", label: "Voice" },
+          { href: "/dashboard/release",     icon: "↗", label: "Deploy" },
           { href: "/settings",               icon: "⚙", label: "Settings" },
         ].map((item) => {
           const active = item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);

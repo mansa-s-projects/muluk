@@ -5,9 +5,18 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    return NextResponse.json({ content: [], bypassUsed: true });
+  }
 
   const { data, error } = await supabase
     .from("content_rankings")
@@ -17,5 +26,5 @@ export async function GET() {
     .limit(24);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ content: data ?? [] });
+  return NextResponse.json({ content: data ?? [], bypassUsed: false });
 }

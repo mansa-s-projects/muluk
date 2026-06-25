@@ -5,9 +5,32 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    return NextResponse.json({
+      scores: {
+        moguls_score: 0,
+        total_followers: 0,
+        total_revenue_usd: 0,
+        growth_pct_30d: 0,
+        predicted_revenue_30d: 0,
+        top_platform: null,
+        last_scored_at: null,
+      },
+      history: [],
+      connections: [],
+      demographics: [],
+      bypassUsed: true,
+    });
+  }
 
   const cutoff = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
 
@@ -80,5 +103,6 @@ export async function GET() {
     history,
     connections: connectionsRes.data ?? [],
     demographics: demographicsRes.data ?? [],
+    bypassUsed: false,
   });
 }

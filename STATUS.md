@@ -130,13 +130,16 @@ Routes inside `getAuthUser()` that have `setAll: () => {}` — refreshed session
 
 | Feature | Notes |
 |---|---|
-| Auto-posting to Instagram & TikTok | `auto-share` route only calls Twitter + Telegram. IG/TikTok require separate OAuth token flow and platform API (Graph API, TikTok Content Posting API). |
-| Auto-reply suggestions for supporter DMs | AI feature — planned, not built |
-| Weekly email digest | Planned, not built |
-| Smart auto-scheduling (optimal post times) | Planned, not built |
-| Trend prediction | Planned, not built |
-| Voice clone UI + route | Migration exists (`20250403130000_voice_clone_tables.sql`), DB schema ready — **no API route or dashboard UI** |
-| Supporter-side commission token validation in SQL | RLS policy uses `USING (true)` — token validated at app layer only (in `creator/[handle]/route.ts`). Consider adding a DB-level check. |
+| Social share composer | ✅ Built — dashboard Share page at `/dashboard/social` uses `/api/social/auto-share` for connected accounts |
+| Auto-reply suggestions for supporter DMs | ✅ Built — `POST /api/ai/direct-line/suggest-reply` returns 3 context-aware response drafts and the dashboard inbox is at `/dashboard/messages` |
+| Weekly email digest | ✅ Built — `POST /api/cron/weekly-digest` sends founder weekly summary with WoW deltas |
+| Smart auto-scheduling (optimal post times) | ✅ Built — `POST /api/intelligence/schedule-optimize` returns ranked posting windows from historical performance |
+| Trend prediction | ✅ Built — `GET /api/intelligence/trends` returns heuristic 14-day projections + posting windows |
+| Voice clone UI + route | ✅ Built — dashboard Voice Lab at `/dashboard/voices` with clone + TTS UI |
+| Release readiness page | ✅ Built — dashboard smoke checks at `/dashboard/release` |
+| Environment debug endpoint | ✅ Built — `GET /api/debug/env` returns safe env presence summary |
+| Revenue War Room | ✅ Built — dashboard command center at `/dashboard/war-room` stitches together revenue, inbox, forecast, and timing |
+| Supporter-side commission token validation in SQL | ✅ Built — migration `20260618100000_commission_token_rls.sql` now enforces token-gated commission/message access in DB policy layer. |
 | Mobile responsiveness pass | Incomplete across dashboard and supporter pages |
 
 ---

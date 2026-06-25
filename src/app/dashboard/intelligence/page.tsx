@@ -75,6 +75,33 @@ type Brief = {
 
 type CoachMessage = { role: string; content: string; id: string };
 
+type TrendPrediction = {
+  platform: string;
+  samplePoints: number;
+  confidence: "low" | "medium" | "high";
+  followerGrowth90dPct: number;
+  avgEngagement: number;
+  avgViews: number;
+  projectedFollowers14d: number;
+  opportunityScore: number;
+};
+
+type TrendWindow = {
+  hourUtc: number;
+  labelUtc: string;
+  expectedEngagementRate: number;
+  samples: number;
+};
+
+type ScheduleSlot = {
+  dayOfWeek: number;
+  dayLabel: string;
+  hourUtc: number;
+  slotLabelUtc: string;
+  confidence: "low" | "medium" | "high";
+  evidenceSamples: number;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
@@ -127,6 +154,11 @@ export default function IntelligencePage() {
   const [content, setContent] = useState<ContentRanking[]>([]);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [coachMessages, setCoachMessages] = useState<CoachMessage[]>([]);
+  const [trendPredictions, setTrendPredictions] = useState<TrendPrediction[]>([]);
+  const [trendWindows, setTrendWindows] = useState<TrendWindow[]>([]);
+  const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([]);
+  const [trendSummary, setTrendSummary] = useState<string | null>(null);
+  const [scheduleNotes, setScheduleNotes] = useState<string | null>(null);
   const [coachInput, setCoachInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -141,10 +173,18 @@ export default function IntelligencePage() {
       fetch("/api/intelligence/scores").then(r => r.ok ? r.json() as Promise<{ scores: Scores | null; connections: Connection[]; history: Snapshot[] }> : null),
       fetch("/api/intelligence/content").then(r => r.ok ? r.json() as Promise<{ content: ContentRanking[] }> : null),
       fetch("/api/intelligence/coach").then(r => r.ok ? r.json() as Promise<{ messages: CoachMessage[] }> : null),
-    ]).then(([intel, cont, coach]) => {
+      fetch("/api/intelligence/trends").then(r => r.ok ? r.json() as Promise<{ predictions: TrendPrediction[]; recommendedPostingWindowsUtc: TrendWindow[]; summary: string }> : null),
+      fetch("/api/intelligence/schedule-optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: "all", lookbackDays: 90 }),
+      }).then(r => r.ok ? r.json() as Promise<{ recommendedSlots: ScheduleSlot[]; notes: string }> : null),
+    ]).then(([intel, cont, coach, trends, schedule]) => {
       if (intel) { setScores(intel.scores); setConnections(intel.connections ?? []); setHistory(intel.history ?? []); }
       if (cont) setContent(cont.content ?? []);
       if (coach) setCoachMessages(coach.messages ?? []);
+      if (trends) { setTrendPredictions(trends.predictions ?? []); setTrendWindows(trends.recommendedPostingWindowsUtc ?? []); setTrendSummary(trends.summary ?? null); }
+      if (schedule) { setScheduleSlots(schedule.recommendedSlots ?? []); setScheduleNotes(schedule.notes ?? null); }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -424,6 +464,76 @@ export default function IntelligencePage() {
                   Sync your accounts to see growth charts
                 </div>
               )}
+            </div>
+
+            {/* Forecast + Schedule */}
+            <div className="grid-2">
+              <div className="card">
+                <div className="card-label">Trend Forecast</div>
+                {trendSummary ? (
+                  <div style={{ fontSize: 13, lineHeight: 1.8, color: "rgba(255,255,255,0.62)", marginBottom: 12 }}>
+                    {trendSummary}
+                  </div>
+                ) : (
+                  <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, marginBottom: 12 }}>
+                    Not enough data yet. Sync more historical performance to unlock forecasts.
+                  </div>
+                )}
+                {trendPredictions.slice(0, 3).map(p => (
+                  <div key={p.platform} className="platform-row" style={{ padding: "12px 0" }}>
+                    <div className="plat-info">
+                      <div className="plat-dot" style={{ background: p.opportunityScore >= 70 ? "#50d48a" : p.opportunityScore >= 45 ? "#c8a96e" : "#e05555" }} />
+                      <div>
+                        <div className="plat-name">{p.platform}</div>
+                        <div className="plat-handle">{p.samplePoints} sample points · {p.confidence} confidence</div>
+                      </div>
+                    </div>
+                    <div className="plat-right">
+                      <div className="plat-val">{p.projectedFollowers14d.toLocaleString()}</div>
+                      <div className="plat-sub">14d projected followers</div>
+                    </div>
+                  </div>
+                ))}
+                {trendWindows.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <div className="card-label" style={{ marginBottom: 8 }}>Best UTC Windows</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {trendWindows.slice(0, 3).map(w => (
+                        <span key={w.labelUtc} className="gold-tag" style={{ fontSize: 8, padding: "4px 8px" }}>
+                          {w.labelUtc} · {w.expectedEngagementRate.toFixed(3)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="card">
+                <div className="card-label">Smart Scheduling</div>
+                {scheduleNotes ? (
+                  <div style={{ fontSize: 13, lineHeight: 1.8, color: "rgba(255,255,255,0.62)", marginBottom: 12 }}>
+                    {scheduleNotes}
+                  </div>
+                ) : (
+                  <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 13, marginBottom: 12 }}>
+                    Historical posting data will unlock recommended time slots.
+                  </div>
+                )}
+                {scheduleSlots.slice(0, 5).map(slot => (
+                  <div key={slot.slotLabelUtc} className="platform-row" style={{ padding: "12px 0" }}>
+                    <div className="plat-info">
+                      <div className="plat-dot" style={{ background: slot.confidence === "high" ? "#50d48a" : slot.confidence === "medium" ? "#c8a96e" : "#e05555" }} />
+                      <div>
+                        <div className="plat-name">{slot.slotLabelUtc}</div>
+                        <div className="plat-handle">{slot.evidenceSamples} sample posts · {slot.confidence} confidence</div>
+                      </div>
+                    </div>
+                    <div className="plat-right">
+                      <div className="plat-sub">recommended</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Platform Breakdown + AI Insights */}

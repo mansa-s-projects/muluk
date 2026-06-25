@@ -1,427 +1,489 @@
-# CIPHER - Creator Intelligence Platform
-## Project Overview & Presentation Script
+# MOGULS MOGUS - Creator Intelligence Operating System
+## Full System Build Overview
 
 ---
 
-## 1. ELEVATOR PITCH
+## 1. Product Identity
 
-**CIPHER** is an AI-native operating system for content creators. Think "Notion + AI Co-pilot + Monetization Infrastructure" for the creator economy.
+Working product name for this phase: MOGULS MOGUS
 
-**Core Value Proposition:**
-- AI handles strategy, pricing, content ideas, supporter engagement
-- Creators focus on creating
-- Dark luxury aesthetic (UAE private members club meets engineer-built)
-- 84% cheaper AI costs than competitors
+Note:
+- This is a temporary working name and can be replaced later.
+- All references in this overview use MOGULS MOGUS.
 
-**Tagline:** *"The platform they were afraid to build."*
+Tagline:
+- The creator operating system for revenue, audience, and execution.
 
----
-
-## 2. TECH STACK
-
-### Frontend
-- **Framework:** Next.js 16 (App Router, Turbopack)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS + CSS Variables (CIPHER Design System)
-- **Fonts:** Cormorant Garamond (display), Outfit (body), DM Mono (data)
-- **UI:** Custom components (no shadcn/ui dependency)
-
-### Backend
-- **Runtime:** Node.js (Edge/Serverless)
-- **Database:** Supabase (PostgreSQL + Realtime)
-- **Auth:** Supabase Auth (Email + OAuth: Twitter, TikTok, Instagram, YouTube, Telegram)
-- **Storage:** Supabase Storage (creator assets)
-- **Payments:** Whop checkout links for hosted supporter payments, plus creator payout rails
-- **Email:** Resend
-- **AI:** OpenRouter (unified API for multiple providers)
-
-### Infrastructure
-- **Hosting:** Vercel (serverless)
-- **CI/CD:** GitHub → Vercel auto-deploy
-- **Monitoring:** Vercel Logs
+Core promise:
+- Creators run strategy and publishing from one command center.
+- AI handles planning, pricing, execution support, and reporting.
+- Revenue infrastructure is integrated from content unlocks to payouts.
 
 ---
 
-## 3. PROJECT STRUCTURE
+## 2. What The System Is
 
-```
-cipher/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── (routes)/
-│   │   │   ├── page.tsx        # Landing page
-│   │   │   ├── apply/          # Creator application
-│   │   │   ├── login/          # Authentication
-│   │   │   ├── dashboard/      # Main creator dashboard
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── content/    # Content management
-│   │   │   │   ├── settings/   # Profile & payout settings
-│   │   │   │   └── tools/      # AI tools (bio, pricing, calendar)
-│   │   │   ├── admin/          # Admin command center
-│   │   │   ├── unlock/[code]/  # Supporter unlock pages
-│   │   │   └── marketing/      # Marketing materials
-│   │   ├── api/                # API Routes
-│   │   │   ├── ai/             # AI endpoints
-│   │   │   │   ├── onboarding/analyze    # Smart profiling
-│   │   │   │   ├── content/ideas         # Content calendar
-│   │   │   │   ├── supporters/personas         # Supporter segmentation
-│   │   │   │   ├── monetization/dynamic-pricing
-│   │   │   │   └── copilot/daily-brief
-│   │   │   ├── auth/[provider]/          # OAuth callbacks
-│   │   │   ├── tools/
-│   │   │   │   ├── bio/                  # Bio generator
-│   │   │   │   ├── caption/              # Caption generator
-│   │   │   │   └── predict/              # Price optimizer
-│   │   │   ├── v2/
-│   │   │   │   ├── content/create
-│   │   │   │   └── unlock/[code]
-│   │   │   └── dashboard/notifications
-│   │   └── debug/              # Debug panels
-│   │       ├── ai-status
-│   │       ├── env
-│   │       ├── database
-│   │       └── monetization
-│   ├── lib/                    # Shared libraries
-│   │   ├── ai-router.ts        # AI model routing
-│   │   ├── supabase/           # Supabase clients
-│   │   └── dashboard-v2.ts     # Dashboard data layer
-│   └── hooks/                  # React hooks
-├── supabase/
-│   └── migrations/             # SQL migrations
-│       ├── 004_tools_and_features.sql
-│       ├── 005_rls_core_tables.sql
-│       ├── 006_monetization_engine.sql
-│       └── ...
-├── public/                     # Static assets
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── API_REFERENCE.md
-    ├── DEPLOYMENT.md
-    └── TODO.md
-```
+MOGULS MOGUS is a full-stack creator platform with five integrated layers:
+
+1. Experience Layer
+- Public site, onboarding, dashboard, settings, and operator surfaces.
+
+2. Intelligence Layer
+- AI copilots for content planning, monetization, and supporter segmentation.
+
+3. Commerce Layer
+- Unlock flows, payment links, checkout integration, withdrawals, payout preferences.
+
+4. Data Layer
+- Supabase PostgreSQL, secure RLS access, event logging, analytics model.
+
+5. Operations Layer
+- Admin controls, risk checks, scheduled jobs, alerts, deployment safeguards.
 
 ---
 
-## 4. COMPLETED FEATURES (✅)
+## 3. System Goals
 
-### Core Platform
-- [x] **Authentication System**
-  - Email/password auth
-  - OAuth: Twitter, TikTok, Instagram, YouTube, Telegram
-  - Protected routes middleware
+Primary goals:
+- Increase creator earnings and speed to publish.
+- Reduce creator time spent on manual admin work.
+- Give operators complete visibility over growth and monetization.
 
-- [x] **Creator Dashboard**
-  - Real-time wallet (earnings, balance, referrals)
-  - 7-day earnings chart
-  - Social reach analytics
-  - Notification center
-  - Dark mode (always on)
-
-- [x] **Content Management**
-  - Create content with unlock prices
-  - Burn mode (self-destructing content)
-  - Content calendar scheduling
-  - Auto-generated unlock links
-
-- [x] **Supporter Management**
-  - Anonymous supporter codes
-  - Supporter CRM (notes, tags, VIP status)
-  - Transaction tracking
-  - Supporter activity heatmap
-
-- [x] **Monetization**
-  - Whop checkout-link integration for hosted supporter payments
-  - Multiple payout methods (Whop, Wise, USDC, PayPal)
-  - Referral system with custom handles
-  - Withdrawal requests
-
-### AI Features ("God Mode" Suite)
-- [x] **AI Daily Brief** - Morning co-pilot briefing
-- [x] **Bio Generator** - 3 bio variations from keywords
-- [x] **Caption Generator** - Platform-optimized captions
-- [x] **Content Ideas** - 7-day calendar generator
-- [x] **Price Optimizer** - AI pricing based on transaction history
-- [x] **Supporter Personas** - Auto-segmentation (Whale, Loyal, At-Risk, New, Lurker)
-- [x] **Ghostwriter** - Content drafting
-- [x] **Onboarding Analyzer** - Smart creator profiling
-
-### Tools
-- [x] **Phantom Mode** - Privacy toggle
-- [x] **Dark Vault** - PIN-protected content
-- [x] **Cipher Radio** - In-app music player
-- [x] **Supporter Code Generator** - Bulk code creation
-- [x] **Tax Summary** - CSV export for accountants
-- [x] **Collaboration Finder** - Mock creator matching
-
-### Admin Features
-- [x] **Command Center** - Admin dashboard
-- [x] **Application Review** - Creator approval workflow
-- [x] **Analytics** - Platform-wide stats
+Success criteria:
+- Creator can onboard and publish first monetized offer in under 20 minutes.
+- Creator can view wallet, audience signals, and action recommendations in one dashboard.
+- Operator can audit and intervene with complete event and transaction history.
 
 ---
 
-## 5. IN PROGRESS / TODO (❌)
+## 4. Platform Scope (End-to-End)
 
-> Items previously listed as TODO that are now **fully shipped**: email notifications (Resend), content file uploads (Supabase Storage), supporter messaging / Direct Line, subscription tiers, AI onboarding wizard, PostHog analytics, Vault/Drops, Bookings, Series, Commissions, Brand Deals, Referrals, Signals, Members, Presence, Instant Pay Links, Tip Jar, dashboard error boundary, loading skeletons for all dashboard pages, improved empty states (commissions/deals/series), AI auto-reply suggestions in Direct Line, mobile responsive nav.
+### 4.1 Public and Acquisition Surface
+- Landing page and join funnel.
+- Creator application flow.
+- Waitlist and qualification capture.
+- Marketing automation hooks.
 
-### Critical
-- [ ] **Production Deployment**
-  - Confirm `OPENROUTER_API_KEY` → Vercel env (currently uses Anthropic directly in some routes)
-  - Confirm `SUPABASE_SERVICE_ROLE_KEY` → Vercel env
-  - Confirm `TOKEN_ENCRYPTION_KEY` (64-char hex) → Vercel env
-  - Full smoke test on production URL before first creator invite
+### 4.2 Authentication and Identity
+- Email and password authentication.
+- OAuth connections (Instagram, TikTok, YouTube, X/Twitter, Telegram, LinkedIn).
+- Session management and protected-route middleware.
+- Role-based access: creator, admin, operator.
 
-### In Progress
+### 4.3 Creator Workspace
+- Dashboard overview with earnings, trend cards, and recent activity.
+- Intelligence page with multi-tab analysis surfaces.
+- Integrations page for social and account connectivity.
+- Affiliates page for program discovery and link generation.
+- Settings and social account controls.
 
-- [ ] **Social media auto-posting** — Twitter + Telegram real calls exist (`/api/social/auto-share`); Instagram and TikTok require separate OAuth token flow (Graph API / TikTok Content Posting API) — not yet built
+### 4.4 Content and Offer Engine
+- Create monetized content and campaign units.
+- Price and unlock controls.
+- Scheduling metadata for publishing workflows.
+- Offer and payment-link generation.
 
-### Crypto / Global Payouts
+### 4.5 Supporter and Audience Layer
+- Supporter identifiers and lifecycle states.
+- Engagement history and segmentation.
+- Messaging and communication hooks.
+- VIP and lead scoring surfaces.
 
-- [ ] **Crypto rails** — withdrawal settings accept `crypto` method, `/api/v2/crypto/initiate` has architecture comments for USDC / Polygon / Solana / Lightning but returns a mock response; no on-chain integration yet
-- [ ] **190-country routing** — no country-based payout routing implemented; currently manual Whop/Wise/PayPal withdrawal only
+### 4.6 Monetization and Payouts
+- Checkout links and hosted payment paths.
+- Wallet balances and transaction streams.
+- Withdrawal requests and payout preference management.
+- Extensible architecture for crypto payout rails.
 
-### AI Enhancements
+### 4.7 AI Copilot Layer
+- Daily brief and strategic recommendations.
+- Content idea generation and calendar support.
+- Pricing recommendations from historical behavior.
+- Persona segmentation and engagement guidance.
+- Operator summary generation for performance reports.
 
-- [x] **Auto-reply suggestions** — `✦ AI` button in Direct Line composer calls `/api/ai/direct-line/suggest-reply`; shows 3 tap-to-fill suggestions above composer
-- [ ] **Weekly email digest** — Resend is live but no scheduled weekly report job
-- [ ] **Smart content scheduling** — content calendar UI exists, but no "auto-post at optimal time" engine
-- [ ] **Trend prediction** — signals board shows engagement data but no forward-looking trend model
-
-### Polish
-
-- [x] **Error boundary** — `src/app/dashboard/error.tsx` catches all unhandled errors under `/dashboard/*`
-- [x] **Loading skeletons** — `DashboardPageLoading` skeleton added to all 12 dashboard subdirectory routes
-- [x] **Empty states** — commissions, deals, and series now show icon + description + CTA instead of bare text
-- [x] **Mobile nav** — hamburger + slide-out sidebar + overlay added to `DashboardShell`; auto-closes on route change
-- [ ] **Supporter page OG image** — `generateMetadata` exists on `[handle]` page but OG images are static placeholders; dynamic creator card not yet built
-
----
-
-## 6. ARCHITECTURE
-
-### Database Schema (Supabase)
-
-**Core Tables:**
-```sql
-- creator_applications    # Creator profiles
-- creator_wallets         # Earnings & balance
-- supporter_codes              # Anonymous supporter identities
-- transactions           # Payments & tips
-- content_items          # Creator content
-- withdrawal_requests    # Payout requests
-- social_connections     # OAuth connections
-- notifications          # User notifications
-- creator_onboarding     # AI onboarding data
-- pricing_recommendations # AI pricing history
-- daily_briefs          # AI brief history
-```
-
-### AI Architecture
-
-**Router Pattern:**
-```
-Request → AI Router → OpenRouter → Model
-                ↓
-         Task-based routing:
-         - Fast: GPT-4o-mini ($0.15/M)
-         - Balanced: Gemini Flash ($0.075/M)
-```
-
-**Cost Optimization:**
-- 98% cheaper than direct premium-model usage
-- 84% cheaper than old GPT-3.5 stack
-- All via OpenRouter (single API key)
-
-### Security
-- Row Level Security (RLS) on all tables
-- Service role key for backend operations
-- Client-side auth for user operations
-- No secrets exposed to client
+### 4.8 Admin and Operations
+- Application review and approvals.
+- Creator monitoring and override actions.
+- Platform analytics and growth metrics.
+- Scheduled jobs, digest reporting, and event auditing.
 
 ---
 
-## 7. API ENDPOINTS
+## 5. Current Build Status (Reality Check)
 
-### AI Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/ai/onboarding/analyze | POST | Smart creator profiling |
-| /api/ai/content/ideas | POST | Generate 7-day content calendar |
-| /api/ai/supporters/personas | GET | Supporter segmentation analysis |
-| /api/ai/monetization/dynamic-pricing | POST | Optimal price recommendation |
-| /api/ai/copilot/daily-brief | GET | Morning AI briefing |
+Built and present in codebase:
+- Dashboard module set (overview, intelligence, integrations, affiliates).
+- AI API surfaces for onboarding, pricing, personas, content ideas, and daily brief.
+- Tool APIs for bio, caption, and prediction workflows.
+- OAuth connect flows for major platforms.
+- Social sync and auto-share endpoints.
+- Cron-based metrics digest pipeline.
+- Admin and creator workflow APIs across applications, offers, notifications, and reporting.
 
-### Tools
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/tools/bio | POST | Generate 3 bio variations |
-| /api/tools/caption | POST | Generate social captions |
-| /api/tools/predict | POST | Price optimization analysis |
-
-### Core
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/v2/content/create | POST | Create content with unlock |
-| /api/v2/unlock/[code] | GET | Unlock state + payment configuration |
-| /api/auth/[provider]/callback | GET | OAuth callbacks |
-
-### Debug
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| /api/debug/ai-status | GET | AI system health |
-| /api/debug/env | GET | Environment check |
-| /api/debug/database | GET | DB connection test |
+Partially built or placeholder:
+- Crypto initiate route is currently a placeholder response.
+- Full country-based payout routing is not complete.
+- Some roadmap items exist as architecture-ready but not fully productized UX.
 
 ---
 
-## 8. DESIGN SYSTEM
+## 6. Reference Architecture
 
-### Colors
-```css
---void: #020203          /* Page background */
---surface: #0d0d18       /* Cards, panels */
---gold: #c8a96e          /* Primary accent */
---white: rgba(255,255,255,0.92)  /* Text */
---muted: rgba(255,255,255,0.48)  /* Secondary text */
---dim: rgba(255,255,255,0.22)    /* Tertiary text */
-```
+### 6.1 Frontend
+- Next.js App Router application with TypeScript.
+- Dashboard shell and route-grouped pages.
+- Shared utility libraries for auth, data access, analytics, and intelligence.
 
-### Typography
-- **Display:** Cormorant Garamond (300-600)
-- **Body:** Outfit (300-700)
-- **Mono:** DM Mono (300-500)
+### 6.2 Backend
+- Route handlers under app/api for domain services.
+- Server-only access patterns for privileged operations.
+- Service clients for scheduled jobs and operator workflows.
 
-### Principles
-- No white backgrounds (ever)
-- No drop shadows (depth via layered darks)
-- Gold is the only accent
-- Noise texture overlay on all surfaces
-- Generous whitespace
-- Motion feels inevitable, not decorative
+### 6.3 Data
+- Supabase PostgreSQL as source of truth.
+- RLS-protected tables for creator and supporter data.
+- Event and metrics tables for observability and reporting.
 
----
+### 6.4 AI
+- Router-based provider abstraction for prompt tasks.
+- Task-specific prompt paths and output validation.
+- Cost-aware model selection.
 
-## 9. ECONOMICS
-
-### AI Costs (Per 1M Tokens)
-| Model | Input | Output | Use Case |
-|-------|-------|--------|----------|
-| GPT-4o-mini | $0.15 | $0.60 | Fast tasks |
-| Gemini Flash | $0.075 | $0.30 | Most features |
-| Claude Sonnet | $3.00 | $15.00 | Premium (unused) |
-
-### Estimated Monthly Bills
-| Usage | Cost |
-|-------|------|
-| 10K requests | ~$8 |
-| 50K requests | ~$40 |
-| 100K requests | ~$80 |
-
-### Revenue Model
-- 12-15% platform fee on transactions
-- Tiered: Cipher (12%), Legend (10%), Apex (8%)
+### 6.5 Integrations
+- Social platform OAuth and sync pipelines.
+- Payment and monetization connectors.
+- Email delivery and automation services.
 
 ---
 
-## 10. ROADMAP
+## 7. Canonical Domain Modules
 
-### Phase 1: MVP (Completed)
-- ✅ Core platform
-- ✅ AI features
-- ✅ Payments
-- ✅ Dashboard
+1. Identity
+- Users, sessions, roles, platform identity links.
 
-### Phase 2: Launch (Next 2 weeks)
-- 🔄 Production deploy
-- 🔄 Email notifications
-- 🔄 First 10 beta creators
+2. Creator Profile
+- Application data, profile completeness, onboarding state.
 
-### Phase 3: Growth (Month 2-3)
-- ⏳ Mobile app
-- ⏳ Advanced analytics
-- ⏳ API for developers
-- ⏳ White-label option
+3. Audience Intelligence
+- Follower aggregates, engagement pull, score and tier assignment.
 
-### Phase 4: Scale (Month 6+)
-- ⏳ AI agent marketplace
-- ⏳ Creator DAO
-- ⏳ Tokenized ownership
+4. Monetization
+- Offers, links, transactions, earnings, withdrawals.
 
----
+5. Content Operations
+- Drafts, schedules, publishing states, campaign metadata.
 
-## 11. COMPETITIVE ADVANTAGES
+6. Messaging and Notifications
+- In-app notification feed, email triggers, system alerts.
 
-1. **AI-Native:** Built with AI, not bolted on
-2. **Cost Efficiency:** 84% cheaper AI than competitors
-3. **Dark Luxury Aesthetic:** Unique positioning
-4. **Unified Platform:** Creation + monetization + AI in one
-5. **Privacy-First:** Anonymous supporter codes
-6. **Engineer-Built:** Reliable, scalable architecture
+7. Admin Control Plane
+- Review queues, moderation actions, lifecycle controls.
+
+8. Analytics and Events
+- Event ingestion, KPI computation, dashboard summaries.
 
 ---
 
-## 12. KEY METRICS TO TRACK
+## 8. Core Data Contracts (High-Level)
 
-- Creator signups
-- Content created
-- Transactions processed
-- AI feature usage
-- Supporter conversion rate
-- Average transaction value
-- Creator retention
-- Platform fees collected
+Foundational entities:
+- creators
+- creator_applications
+- social_connections
+- supporter_codes and supporter profiles
+- offers and payment links
+- transactions
+- creator_wallets
+- withdrawal_requests
+- notifications
+- lead_scores
+- daily_briefs and pricing_recommendations
+- marketing_events
 
----
-
-## 13. TEAM & ACKNOWLEDGMENTS
-
-**Built by:** Mansa Musa Mogule
-**Design System:** CIPHER Dark Luxury
-**AI Infrastructure:** OpenRouter
-**Database:** Supabase
-**Hosting:** Vercel
-
----
-
-## 14. DEMO SCRIPT (3 minutes)
-
-**0:00-0:30 - Hook**
-"Most creator platforms are spreadsheets with a logo. CIPHER is an AI operating system."
-
-**0:30-1:00 - Dashboard**
-"This is the creator dashboard. Real-time earnings, AI daily brief, content calendar."
-
-**1:00-1:30 - AI Features**
-"Click 'Generate' - AI suggests 7 days of content. Click 'Optimize' - AI sets the perfect price based on your supporters."
-
-**1:30-2:00 - Supporter Intelligence**
-"AI segments your supporters: Whales, Loyal, At-Risk. Each gets a personalized engagement strategy."
-
-**2:00-2:30 - Monetization**
-"Create content, set unlock price, share link. supporters pay, you earn. 12% fee, rest is yours."
-
-**2:30-3:00 - Close**
-"We're not a tool. We're a co-pilot. The platform they were afraid to build."
+Contract principles:
+- Every creator-owned row must be RLS-protected.
+- Every money movement must be traceable to transaction and actor metadata.
+- Every critical workflow should emit events for audit and analytics.
 
 ---
 
-## 15. CALL TO ACTION
+## 9. API Surface Strategy
 
-**For Investors:**
-- AI-native creator economy infrastructure
-- 84% cost advantage
-- Dark luxury market positioning
+Public and auth:
+- Login and signup routes.
+- OAuth connect and callback routes.
 
-**For Creators:**
-- Join beta: cipher.so/apply
-- Get your AI co-pilot
-- Keep 88-92% of earnings
+Creator product APIs:
+- Dashboard intelligence and summary routes.
+- Offer and content creation routes.
+- Social connection and sync routes.
+- Notifications and settings routes.
 
-**For Developers:**
-- Open source components
-- API coming soon
-- Build on CIPHER
+AI APIs:
+- onboarding/analyze
+- onboarding/blueprint
+- content/ideas
+- supporters/personas
+- monetization/dynamic-pricing
+- copilot/daily-brief
+
+Operations APIs:
+- Admin application and moderation routes.
+- Cron routes for metrics and automation workloads.
+
+Versioning approach:
+- Keep v2 endpoints for monetization and unlock pathways.
+- Introduce v3 only when breaking contract changes are unavoidable.
 
 ---
 
-*End of Presentation Script*
+## 10. Security and Compliance Baseline
+
+Security controls:
+- Strict RLS on all creator and supporter domain tables.
+- No service-role key exposure client-side.
+- Encrypted storage for third-party OAuth tokens.
+- Sanitized redirect handling for OAuth flows.
+
+Operational safeguards:
+- Role guards and route classification for admin-only surfaces.
+- Verification middleware for scheduled and privileged endpoints.
+- Immutable event logging for payment and policy-sensitive operations.
+
+Privacy requirements:
+- Hash-based device or fingerprint identifiers where needed.
+- Retention limits for sensitive telemetry.
+- Minimal data principle on supporter PII.
+
+---
+
+## 11. Full Buildout Plan
+
+### Phase A - Harden Core (Immediate)
+- Align all docs to real route and API tree.
+- Close stale naming and stale endpoint references.
+- Add contract tests for core creator, wallet, and transaction flows.
+- Establish deployment smoke suite.
+
+### Phase B - Monetization Completeness
+- Replace crypto placeholder endpoint with live provider integration.
+- Add payout rail abstraction for multi-network support.
+- Add ledger and reconciliation reports.
+
+### Phase C - Intelligence Expansion
+- Add trend prediction model pipeline.
+- Add schedule optimization engine with confidence scoring.
+- Add operator explainability layer for AI recommendations.
+
+### Phase D - Global Operations
+- Country-aware payout routing logic.
+- Compliance controls per market.
+- Failure recovery playbooks and auto-escalation.
+
+### Phase E - Platformization
+- Public API contracts for partner integrations.
+- Tenant-aware controls for white-label variants.
+- Advanced reporting packs and benchmark intelligence.
+
+---
+
+## 12. Engineering Standards For Buildout
+
+Code quality:
+- Type-safe contracts across API boundaries.
+- Shared DTO schemas and strict response typing.
+- Backward-compatible migrations with rollback path.
+
+Testing:
+- Unit tests for business rules.
+- Integration tests for route handlers and database writes.
+- E2E tests for onboarding, publish, and payout flows.
+
+Reliability:
+- Structured logs for all payment and auth paths.
+- Retries and idempotency keys on external calls.
+- Alerting on cron failures and reconciliation drift.
+
+---
+
+## 13. Delivery Artifacts Required
+
+Every major module shipment must include:
+- Feature spec and acceptance criteria.
+- Database migration and rollback strategy.
+- API contract notes and consumer impact statement.
+- Test coverage summary.
+- Runbook entry for operations handoff.
+
+---
+
+## 14. Updated Product Narrative
+
+MOGULS MOGUS is the operating system for creators who treat their audience and monetization like a real business.
+
+What makes it different:
+- Unified execution across intelligence, content, audience, and payments.
+- AI-native recommendations that are tied to real platform data.
+- Operator-grade infrastructure, not just creator-facing UI.
+
+---
+
+## 15. Immediate Next Actions
+
+1. Keep MOGULS MOGUS as the temporary product name in docs and demos.
+2. Reconcile PROJECT_OVERVIEW.md against implementation weekly.
+3. Prioritize completion of crypto rails and payout routing.
+4. Add a full production readiness checklist before beta scaling.
+5. Freeze v2 API contracts once payout and unlock flows are complete.
+
+---
+
+## 16. Competitive Platform Analysis (Creator Economy)
+
+Scope:
+- Membership and community platforms.
+- Digital product and monetization platforms.
+- Creator storefront and link-in-bio monetization platforms.
+
+Primary platforms reviewed:
+- Whop
+- Skool
+- Patreon
+- Kajabi
+- Gumroad
+- Fourthwall
+- Stan
+- Beacons
+- Ko-fi
+- Circle
+
+Platform strengths snapshot:
+- Whop: strong offer packaging, checkout, affiliate mechanics, and marketplace distribution.
+- Skool: sticky cohort community loop with courses plus community in one surface.
+- Patreon: reliable recurring membership model and patron retention familiarity.
+- Kajabi: polished course and funnel builder for high-ticket education creators.
+- Gumroad: extremely fast time-to-sell for digital products.
+- Fourthwall: creator commerce and merch workflows for audience monetization.
+- Stan and Beacons: easy creator storefront setup with strong mobile-first conversion patterns.
+- Ko-fi: lightweight memberships and tipping with low setup friction.
+- Circle: high-quality community experience for paid groups and knowledge hubs.
+
+Common weaknesses across top platforms:
+- Fragmented stack: creators still stitch together community, CRM, content planning, analytics, and payouts.
+- Weak intelligence layer: tools report what happened, but rarely prescribe next best action in real time.
+- Limited cross-platform growth automation: little native orchestration between social signals, offers, and supporter lifecycle.
+- No true operator view for creator teams: poor handoff between creator, manager, and operator roles.
+- Incomplete global payout intelligence: payout rails exist, but not smart routing for lowest-fee and fastest settlement paths.
+- Generic recommendation systems: not enough creator-specific strategy memory and execution context.
+
+---
+
+## 17. Strategic Gap Map (What Competitors Do Not Fully Do)
+
+Gap A - Revenue OS vs isolated tools:
+- Competitors optimize one lane (community, checkout, course, or link-in-bio).
+- Moguls Mogus should optimize the full revenue loop from signal to sale to retention.
+
+Gap B - AI execution depth:
+- Competitors provide prompts and templates.
+- Moguls Mogus should provide autonomous execution suggestions with measurable outcome tracking.
+
+Gap C - Creator command center for teams:
+- Competitors are mostly solo-creator workflows.
+- Moguls Mogus should provide role-aware workflows for creator plus operator plus assistant.
+
+Gap D - Outcome accountability:
+- Competitors show dashboards but weak decision accountability.
+- Moguls Mogus should tie every recommendation to revenue and retention deltas.
+
+Gap E - Adaptive monetization:
+- Competitors mostly use static pricing or simple A/B.
+- Moguls Mogus should use supporter-segment-aware dynamic pricing, timing, and offer sequencing.
+
+---
+
+## 18. No-Competitor Feature Set (Hot Differentiators)
+
+### 18.1 Revenue War Room (Live)
+- Real-time command view with one-click actions:
+- Raise or lower offer price by segment.
+- Trigger campaign to at-risk high-value supporters.
+- Re-route promotion to best-performing platform in current 24h window.
+- Moat effect: fastest decision-to-action loop in category.
+
+### 18.2 Supporter Genome and Intent Graph
+- Persistent supporter profile that merges:
+- Purchase cadence.
+- Engagement pattern by platform and hour.
+- Offer sensitivity and churn probability.
+- Moat effect: superior personalization accuracy competitors cannot replicate without deep event history.
+
+### 18.3 Autonomous Campaign Orchestrator
+- Creator sets revenue target and guardrails.
+- System generates and schedules multi-step campaign plan across content, offer, and follow-up.
+- Human approves or edits before launch.
+- Moat effect: strategy execution as product, not just analytics.
+
+### 18.4 Dynamic Payout Intelligence
+- Payout advisor ranks payout routes by:
+- Estimated settlement time.
+- Total fee impact.
+- Region and currency constraints.
+- Moat effect: direct net-income advantage for creators globally.
+
+### 18.5 Creator Twin Memory
+- Long-term memory layer storing:
+- Brand voice and creative style.
+- Offer history and what converted.
+- Prior experiments and outcomes.
+- Moat effect: increasing intelligence quality over time per creator account.
+
+### 18.6 Competitive Moves Feed
+- System detects category shifts:
+- Offer format trends.
+- Pricing movement in adjacent niches.
+- Promotion timing spikes.
+- Moat effect: proactive strategy changes before performance drops.
+
+### 18.7 Trust and Safety Revenue Shield
+- Pre-publish risk checks for:
+- Policy violations by platform.
+- Chargeback risk patterns.
+- Fraud or abuse anomalies.
+- Moat effect: protects revenue continuity while competitors react after damage.
+
+### 18.8 Outcome Ledger
+- Every AI recommendation gets logged with:
+- Predicted impact.
+- Action taken.
+- Actual outcome after 24h, 7d, 30d.
+- Moat effect: closed-loop learning and measurable trust in AI system decisions.
+
+---
+
+## 19. Feature Prioritization To Create Competitive Separation
+
+Wave 1 (0-8 weeks):
+- Revenue War Room.
+- Outcome Ledger.
+- Supporter Genome v1.
+
+Wave 2 (8-16 weeks):
+- Autonomous Campaign Orchestrator.
+- Dynamic Payout Intelligence v1.
+- Competitive Moves Feed v1.
+
+Wave 3 (16-24 weeks):
+- Creator Twin Memory.
+- Trust and Safety Revenue Shield.
+- Dynamic Payout Intelligence v2 with region optimization.
+
+Execution rule:
+- Ship only features with direct measurable impact on creator net revenue, retention, or time saved.
+
+---
+
+End of overview.
+
+End of overview.

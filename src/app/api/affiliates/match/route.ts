@@ -7,9 +7,30 @@ import { rankPrograms } from "@/lib/intelligence/affiliate-match";
 import type { AffiliateProgram, CreatorProfile } from "@/lib/intelligence/affiliate-match";
 
 export async function GET() {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user && !allowDevBypass) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user && allowDevBypass) {
+    return NextResponse.json({
+      programs: [],
+      creator_profile: {
+        niche: null,
+        total_followers: 0,
+        avg_engagement_rate: 0,
+        top_platform: null,
+        moguls_score: 0,
+        monthly_revenue_usd: 0,
+      },
+      total: 0,
+      bypassUsed: true,
+    });
+  }
 
   const [profileRes, scoresRes, programsRes] = await Promise.all([
     supabase.from("creator_applications").select("category").eq("user_id", user.id).maybeSingle(),
@@ -49,5 +70,6 @@ export async function GET() {
     programs: result,
     creator_profile: creator,
     total: result.length,
+    bypassUsed: false,
   });
 }
