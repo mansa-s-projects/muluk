@@ -12,17 +12,22 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const allowDevBypass =
+    process.env.ALLOW_DEV_ADMIN_BYPASS === "true" && process.env.NODE_ENV === "development";
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user && !allowDevBypass) {
     redirect("/login");
   }
 
+  const dashboardEmail = user?.email ?? (allowDevBypass ? "dev-bypass@mansasmoguls.local" : "");
+
   return (
-    <DashboardShell userEmail={user.email ?? ""}>
+    <DashboardShell userEmail={dashboardEmail}>
       {children}
     </DashboardShell>
   );
