@@ -1,8 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+// DEPRECATED: This file was a misspelled duplicate (lib/supabe.ts).
+// It now re-exports the validated client implementation from lib/supabase.ts
+// to avoid build/runtime breaks. Remove this file and update imports to
+// import from lib/supabase.ts in the future.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export default supabase;
+export { createSupabaseClient as default, createSupabaseClient } from "./supabase";
